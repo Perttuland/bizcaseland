@@ -102,60 +102,60 @@ export function CashFlowStatement() {
       revenue: {
         formula: `Sales Volume × Unit Price`,
         components: `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatCurrency(currentMonth?.unitPrice || 0)}`,
-        rationale: businessData.assumptions.pricing?.avg_unit_price?.rationale || 'Revenue calculation from volume and pricing'
+        rationale: businessData.assumptions.pricing?.avg_unit_price?.rationale
       },
       salesVolume: {
         formula: `Base Volume × Growth Factor`,
-        baseValue: businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000,
+        baseValue: businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value,
         growthRate: `${(month * 2)}% cumulative growth`,
-        rationale: businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.rationale || 'Customer volume projection'
+        rationale: businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.rationale
       },
       unitPrice: {
         formula: `Average Unit Price`,
-        value: businessData?.assumptions?.pricing?.avg_unit_price?.value || 50,
-        rationale: businessData?.assumptions?.pricing?.avg_unit_price?.rationale || 'Average price per unit'
+        value: businessData?.assumptions?.pricing?.avg_unit_price?.value,
+        rationale: businessData?.assumptions?.pricing?.avg_unit_price?.rationale
       },
       cogs: {
         formula: `Revenue × COGS Rate`,
-        rate: `${((businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3) * 100)}%`,
-        rationale: businessData.assumptions.unit_economics?.cogs_pct?.rationale || 'Cost of goods sold percentage'
+        rate: businessData?.assumptions?.unit_economics?.cogs_pct?.value ? `${(businessData.assumptions.unit_economics.cogs_pct.value * 100)}%` : undefined,
+        rationale: businessData.assumptions.unit_economics?.cogs_pct?.rationale
       },
       salesMarketing: {
         formula: `Base Cost + Monthly Growth`,
-        baseCost: businessData?.assumptions?.opex?.[0]?.value?.value || 15000,
-        rationale: businessData?.assumptions?.opex?.[0]?.value?.rationale || 'Sales and marketing expenses'
+        baseCost: businessData?.assumptions?.opex?.[0]?.value?.value,
+        rationale: businessData?.assumptions?.opex?.[0]?.value?.rationale
       },
       rd: {
         formula: `Base Cost + Monthly Growth`,
-        baseCost: businessData?.assumptions?.opex?.[1]?.value?.value || 8000,
-        rationale: businessData?.assumptions?.opex?.[1]?.value?.rationale || 'Research and development costs'
+        baseCost: businessData?.assumptions?.opex?.[1]?.value?.value,
+        rationale: businessData?.assumptions?.opex?.[1]?.value?.rationale
       },
       ga: {
         formula: `Base Cost + Monthly Growth`,
-        baseCost: businessData?.assumptions?.opex?.[2]?.value?.value || 5000,
-        rationale: businessData?.assumptions?.opex?.[2]?.value?.rationale || 'General and administrative costs'
+        baseCost: businessData?.assumptions?.opex?.[2]?.value?.value,
+        rationale: businessData?.assumptions?.opex?.[2]?.value?.rationale
       },
       cac: {
         formula: `Customer Acquisition Cost per Unit`,
-        value: businessData?.assumptions?.unit_economics?.cac?.value || 0,
-        rationale: businessData?.assumptions?.unit_economics?.cac?.rationale || 'Cost to acquire each customer'
+        value: businessData?.assumptions?.unit_economics?.cac?.value,
+        rationale: businessData?.assumptions?.unit_economics?.cac?.rationale
       },
       totalCAC: {
         formula: `Sales Volume × CAC`,
         components: `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatDecimal(currentMonth?.cac || 0)}`,
-        rationale: 'Total customer acquisition costs for the period'
+        rationale: businessData?.assumptions?.unit_economics?.cac?.rationale
       },
       ebitda: {
         formula: `Gross Profit + Total Operating Expenses`,
-        rationale: 'Earnings before interest, taxes, depreciation, and amortization'
+        rationale: businessData?.meta?.description
       },
       capex: {
         formula: `Initial Investment + Periodic Investments`,
-        rationale: 'Capital expenditures for equipment and infrastructure'
+        rationale: businessData?.assumptions?.capex?.[0]?.name
       },
       netCashFlow: {
         formula: `EBITDA + CAPEX`,
-        rationale: 'Net cash flow after operating profit and capital investments'
+        rationale: businessData?.meta?.description
       }
     };
     
@@ -257,17 +257,17 @@ export function CashFlowStatement() {
                                          <div className="font-mono text-xs bg-muted/50 p-1 rounded">{assumptions.formula}</div>
                                        </div>
                                      )}
-                                     {'rate' in assumptions && assumptions.rate && (
-                                       <div>
-                                         <span className="text-muted-foreground">Rate:</span> {assumptions.rate}
-                                       </div>
-                                     )}
-                                     {'rationale' in assumptions && assumptions.rationale && (
-                                       <div>
-                                         <span className="text-muted-foreground">Rationale:</span>
-                                         <div className="text-xs">{assumptions.rationale}</div>
-                                       </div>
-                                     )}
+                                      {'rate' in assumptions && assumptions.rate && (
+                                        <div>
+                                          <span className="text-muted-foreground">Rate:</span> {String(assumptions.rate)}
+                                        </div>
+                                      )}
+                                      {'rationale' in assumptions && assumptions.rationale && (
+                                        <div>
+                                          <span className="text-muted-foreground">Rationale:</span>
+                                          <div className="text-xs">{String(assumptions.rationale)}</div>
+                                        </div>
+                                      )}
                                    </div>
                                  </div>
                                )}
