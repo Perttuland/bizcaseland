@@ -1,50 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 interface BusinessData {
-  schema_version?: string;
-  instructions?: any;
-  meta: {
-    title: string;
-    description: string;
-    archetype: string;
-    currency: string;
-    periods: number;
-    frequency: string;
-  };
-  assumptions: {
-    pricing: {
-      avg_unit_price: { value: number; unit: string; rationale: string };
-      discount_pct: { value: number; unit: string; rationale: string };
-    };
-    financial: {
-      interest_rate: { value: number; unit: string; rationale: string };
-    };
-    customers: {
-      segments: Array<{
-        id: string;
-        label: string;
-        kind: string;
-        rationale: string;
-        volume: any;
-      }>;
-    };
-    unit_economics: {
-      cogs_pct: { value: number; unit: string; rationale: string };
-      cac: { value: number; unit: string; rationale: string };
-    };
-    opex: Array<{
-      name: string;
-      value: { value: number; unit: string; rationale: string };
-    }>;
-  };
-  structure?: any;
-  scenarios?: any[];
-  drivers?: Array<{
-    key: string;
-    path: string;
-    range: number[];
-    rationale: string;
-  }>;
+  meta: any;
+  assumptions: any;
+  structure: any;
+  scenarios: any[];
+  drivers?: any[];
 }
 
 interface BusinessDataContextType {
