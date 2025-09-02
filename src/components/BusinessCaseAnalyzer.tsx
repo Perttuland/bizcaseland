@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Database } from 'lucide-react';
+import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { JSONTemplate } from './JSONTemplate';
 import { FinancialAnalysis } from './FinancialAnalysis';
 import { DataVisualization } from './DataVisualization';
-import { JSONDataViewer } from './JSONDataViewer';
+import { DatapointsViewer } from './JSONDataViewer';
 import { CashFlowStatement } from './CashFlowStatement';
 
 interface BusinessData {
@@ -203,8 +203,8 @@ export function BusinessCaseAnalyzer() {
                   className="w-full justify-start"
                   disabled={!jsonData}
                 >
-                  <Database className="h-4 w-4 mr-2" />
-                  JSON Data View
+                  <Edit3 className="h-4 w-4 mr-2" />
+                  Datapoints & Assumptions
                 </Button>
                 <Button
                   variant={activeTab === 'cashflow' ? 'default' : 'ghost'}
@@ -259,7 +259,7 @@ export function BusinessCaseAnalyzer() {
 
             {activeTab === 'data' && jsonData && (
               <div className="animate-fade-in">
-                <JSONDataViewer data={jsonData} />
+                <DatapointsViewer data={jsonData} />
               </div>
             )}
 
