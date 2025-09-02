@@ -57,9 +57,11 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       const grossProfit = revenue + cogs;
       
       const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 15000) + (i * 300));
+      const cac = businessData?.assumptions?.unit_economics?.cac?.value || 0;
+      const totalCAC = -Math.round(salesVolume * cac);
       const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 8000) + (i * 200));
       const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 5000) + (i * 100));
-      const totalOpex = salesMarketing + rd + ga;
+      const totalOpex = salesMarketing + totalCAC + rd + ga;
       
       const ebitda = grossProfit + totalOpex;
       const capex = -(i === 0 ? 50000 : (i % 12 === 0 ? 10000 : 0));
@@ -74,6 +76,8 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
         cogs,
         grossProfit,
         salesMarketing,
+        totalCAC,
+        cac,
         rd,
         ga,
         totalOpex,
@@ -132,6 +136,15 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
     }).format(amount);
   };
 
+  const formatDecimal = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
   const formatMonth = (date: Date) => {
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -148,11 +161,13 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
   const rows = [
     { label: 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
     { label: '  Sales Volume', key: 'salesVolume', isSubItem: true, category: 'volume', unit: 'units' },
-    { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'currency' },
+    { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'decimal' },
     { label: 'Cost of Goods Sold', key: 'cogs', category: 'costs' },
     { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
+    { label: '  Customer Acquisition Cost', key: 'cac', isSubItem: true, category: 'cac', unit: 'decimal' },
+    { label: '  Total CAC', key: 'totalCAC', isSubItem: true, category: 'costs' },
     { label: 'Research & Development', key: 'rd', category: 'opex' },
     { label: 'General & Administrative', key: 'ga', category: 'opex' },
     { label: 'Total Operating Expenses', key: 'totalOpex', isSubtotal: true, category: 'opex' },
@@ -205,6 +220,16 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
         formula: `Base Cost + Monthly Growth`,
         baseCost: businessData?.assumptions?.opex?.[2]?.value?.value || 5000,
         rationale: businessData?.assumptions?.opex?.[2]?.value?.rationale || 'General and administrative costs'
+      },
+      cac: {
+        formula: `Customer Acquisition Cost per Unit`,
+        value: businessData?.assumptions?.unit_economics?.cac?.value || 0,
+        rationale: businessData?.assumptions?.unit_economics?.cac?.rationale || 'Cost to acquire each customer'
+      },
+      totalCAC: {
+        formula: `Sales Volume × CAC`,
+        components: `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatDecimal(currentMonth?.cac || 0)}`,
+        rationale: 'Total customer acquisition costs for the period'
       },
       ebitda: {
         formula: `Gross Profit + Total Operating Expenses`,
@@ -299,7 +324,9 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
                             >
                              {typeof value === 'number' ? (
                                  <span className={`font-mono text-sm ${getValueColor(value)}`}>
-                                   {row.unit === 'units' ? value.toLocaleString() : formatCurrency(value)}
+                                   {row.unit === 'units' ? value.toLocaleString() : 
+                                    row.unit === 'decimal' ? formatDecimal(value) : 
+                                    formatCurrency(value)}
                                  </span>
                                ) : (
                                  <span className="text-muted-foreground">-</span>
