@@ -5,6 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Users, TrendingUp, Info, Target, Calendar } from 'lucide-react';
 import { BusinessData } from '@/contexts/BusinessDataContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { calculateSegmentVolumeForMonth } from '@/lib/calculations';
 
 interface CustomerSegmentsProps {
   data: BusinessData;
@@ -65,50 +66,23 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
     return 'Growth pattern not specified';
   };
 
-  // Calculate volume projections for visualization
+  // Calculate volume projections for visualization using centralized calculations
   const calculateVolumeProjections = (): VolumeProjection[] => {
     const projections: VolumeProjection[] = [];
     const segments = data.assumptions?.customers?.segments || [];
     
-    // Generate 60 months of projections
-    for (let month = 1; month <= 60; month++) {
+    // Generate projections for the specified periods
+    const periods = data.meta?.periods || 60;
+    for (let month = 0; month < periods; month++) {
       const projection: VolumeProjection = {
-        month,
+        month: month + 1,
         total: 0,
         segments: {}
       };
 
       segments.forEach((segment) => {
-        let segmentVolume = 0;
-
-        if (segment.volume?.type === 'time_series' && segment.volume.series) {
-          // Use time series data if available
-          const seriesData = segment.volume.series.find((s: any) => s.period === month);
-          segmentVolume = seriesData?.value || 0;
-        } else if (segment.volume?.type === 'pattern') {
-          // Calculate based on pattern type
-          const firstPeriod = segment.volume.series?.[0];
-          const startValue = firstPeriod?.value || 0;
-          
-          switch (segment.volume.pattern_type) {
-            case 'geom_growth':
-              // For now, assume 5% monthly growth as example
-              segmentVolume = startValue * Math.pow(1.05, month - 1);
-              break;
-            case 'linear_growth':
-              // For now, assume 100 units monthly increase as example
-              segmentVolume = startValue + (100 * (month - 1));
-              break;
-            case 'seasonal_growth':
-              // Simple seasonal pattern - higher in certain months
-              const seasonalMultiplier = 1 + 0.3 * Math.sin((month - 1) * Math.PI / 6);
-              segmentVolume = startValue * seasonalMultiplier * Math.pow(1.02, Math.floor((month - 1) / 12));
-              break;
-            default:
-              segmentVolume = startValue;
-          }
-        }
-
+        // Use centralized calculation function
+        const segmentVolume = calculateSegmentVolumeForMonth(segment, month, data);
         projection.segments[segment.id] = Math.max(0, Math.round(segmentVolume));
         projection.total += projection.segments[segment.id];
       });
@@ -133,7 +107,7 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
     return sum + (segment.volume?.series?.[0]?.value || 0);
   }, 0);
 
-  const totalYear5Volume = volumeProjections[59]?.total || 0;
+  const totalYear5Volume = volumeProjections[Math.min(59, volumeProjections.length - 1)]?.total || 0;
 
   return (
     <div className="space-y-6">
@@ -166,7 +140,7 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
                   <h4 className="font-medium text-sm">Starting Volume (Month 1)</h4>
                 </div>
                 <div className="text-2xl font-bold text-financial-success">
-                  {totalStartVolume.toLocaleString()} units
+                  {totalStartVolume.toLocaleString()} {data.meta?.business_model === 'recurring' ? 'accounts' : 'units'}
                 </div>
                 <Badge variant="outline" className="text-xs mt-2">
                   {segments.length} segment{segments.length !== 1 ? 's' : ''}
@@ -181,7 +155,7 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
                   <h4 className="font-medium text-sm">Projected Volume (Year 5)</h4>
                 </div>
                 <div className="text-2xl font-bold text-financial-success">
-                  {totalYear5Volume.toLocaleString()} units
+                  {totalYear5Volume.toLocaleString()} {data.meta?.business_model === 'recurring' ? 'accounts' : 'units'}
                 </div>
                 <Badge variant="outline" className="text-xs mt-2">
                   {totalYear5Volume > 0 && totalStartVolume > 0 
@@ -216,7 +190,7 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
                 <YAxis />
                 <RechartsTooltip 
                   formatter={(value: any, name: string) => [
-                    `${Number(value).toLocaleString()} units`,
+                    `${Number(value).toLocaleString()} ${data.meta?.business_model === 'recurring' ? 'accounts' : 'units'}`,
                     name === 'total' ? 'Total Volume' : `${name} segment`
                   ]}
                 />
@@ -303,7 +277,7 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-muted-foreground">5-Year Projection:</span>
                           <span className="font-medium text-financial-success">
-                            {(volumeProjections[59]?.segments[segment.id] || 0).toLocaleString()} units
+                            {(volumeProjections[Math.min(59, volumeProjections.length - 1)]?.segments[segment.id] || 0).toLocaleString()} {data.meta?.business_model === 'recurring' ? 'accounts' : 'units'}
                           </span>
                         </div>
                       </div>
