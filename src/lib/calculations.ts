@@ -77,13 +77,14 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const currentDate = new Date(startDate);
     currentDate.setMonth(startDate.getMonth() + i);
     
-    // Calculate sales volume and unit price from business data
-    const baseVolume = businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000;
+    // Calculate total sales volume from all customer segments
+    const totalSalesVolume = calculateTotalVolumeForMonth(businessData, i);
     const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
-    const growthFactor = 1 + (i * 0.02); // 2% monthly growth
+    const discountPct = businessData?.assumptions?.pricing?.discount_pct?.value || 0;
+    const effectivePrice = unitPrice * (1 - discountPct);
     
-    const salesVolume = Math.round(baseVolume * growthFactor);
-    const revenue = Math.round(salesVolume * unitPrice);
+    const salesVolume = Math.round(totalSalesVolume);
+    const revenue = Math.round(salesVolume * effectivePrice);
     
     const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3));
     const grossProfit = revenue + cogs;
@@ -132,6 +133,101 @@ export function calculateNPV(monthlyData: MonthlyData[], interestRate: number): 
     const discountFactor = Math.pow(1 + monthlyRate, -(index + 1));
     return npv + (month.netCashFlow * discountFactor);
   }, 0);
+}
+
+/**
+ * Calculate total volume for a specific month from all customer segments
+ */
+export function calculateTotalVolumeForMonth(businessData: BusinessData, monthIndex: number): number {
+  const segments = businessData?.assumptions?.customers?.segments || [];
+  let totalVolume = 0;
+
+  for (const segment of segments) {
+    const volume = calculateSegmentVolumeForMonth(segment, monthIndex);
+    totalVolume += volume;
+  }
+
+  return totalVolume;
+}
+
+/**
+ * Calculate volume for a specific segment and month
+ */
+export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number): number {
+  const volume = segment?.volume;
+  if (!volume) return 0;
+
+  if (volume.type === "pattern") {
+    if (volume.pattern_type === "seasonal_growth") {
+      return calculateSeasonalGrowthVolume(volume, monthIndex);
+    } else if (volume.pattern_type === "geom_growth") {
+      return calculateGeomGrowthVolume(volume, monthIndex);
+    } else if (volume.pattern_type === "linear_growth") {
+      return calculateLinearGrowthVolume(volume, monthIndex);
+    }
+  } else if (volume.type === "time_series") {
+    return calculateTimeSeriesVolume(volume, monthIndex);
+  }
+
+  // Fallback to series data if available
+  const firstSeriesValue = volume?.series?.[0]?.value || 0;
+  return firstSeriesValue * (1 + monthIndex * 0.02); // 2% monthly growth fallback
+}
+
+/**
+ * Calculate volume using seasonal growth pattern
+ */
+export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number): number {
+  const baseYearTotal = volume.base_year_total?.value || 0;
+  const seasonalityIndices = volume.seasonality_index_12 || [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+  const yoyGrowth = volume.yoy_growth?.value || 0;
+
+  // Calculate which year and month we're in
+  const yearIndex = Math.floor(monthIndex / 12);
+  const monthInYear = monthIndex % 12;
+
+  // Apply year-over-year growth
+  const yearlyTotal = baseYearTotal * Math.pow(1 + yoyGrowth, yearIndex);
+  
+  // Calculate monthly average and apply seasonality
+  const monthlyAverage = yearlyTotal / 12;
+  const seasonalityFactor = seasonalityIndices[monthInYear] || 1;
+  
+  return monthlyAverage * seasonalityFactor;
+}
+
+/**
+ * Calculate volume using geometric growth pattern
+ */
+export function calculateGeomGrowthVolume(volume: any, monthIndex: number): number {
+  const startValue = volume?.series?.[0]?.value || 0;
+  const monthlyGrowthRate = volume.monthly_growth_rate?.value || 0.02;
+  
+  return startValue * Math.pow(1 + monthlyGrowthRate, monthIndex);
+}
+
+/**
+ * Calculate volume using linear growth pattern
+ */
+export function calculateLinearGrowthVolume(volume: any, monthIndex: number): number {
+  const startValue = volume?.series?.[0]?.value || 0;
+  const monthlyIncrease = volume.monthly_flat_increase?.value || 0;
+  
+  return startValue + (monthlyIncrease * monthIndex);
+}
+
+/**
+ * Calculate volume using time series data
+ */
+export function calculateTimeSeriesVolume(volume: any, monthIndex: number): number {
+  const series = volume?.series || [];
+  if (monthIndex < series.length) {
+    return series[monthIndex]?.value || 0;
+  }
+  
+  // Extend pattern if we run out of data
+  const lastValue = series[series.length - 1]?.value || 0;
+  return lastValue;
 }
 
 /**
