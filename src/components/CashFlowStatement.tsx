@@ -51,6 +51,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       // Calculate sales volume and unit price from business data
       const baseVolume = businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000;
       const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
+      console.log('Current unit price from datapoints:', unitPrice);
       const growthFactor = 1 + (i * 0.02);
       
       const salesVolume = Math.round(baseVolume * growthFactor);
@@ -121,10 +122,15 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
 
   // Handle sensitivity analysis
   const handleSensitivityChange = (driverKey: string, value: string) => {
+    console.log('Sensitivity button clicked:', { driverKey, value, drivers: businessData?.drivers });
+    
     const driver = businessData?.drivers?.find(d => d.key === driverKey);
+    console.log('Found driver:', driver);
+    
     if (driver && driver.path) {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
+        console.log('Updating assumption:', { path: driver.path, value: numValue });
         updateAssumption(driver.path, numValue);
         
         // Show toast notification
@@ -132,7 +138,11 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
           title: "Sensitivity Analysis Updated",
           description: `${driver.key} updated to ${value}`,
         });
+      } else {
+        console.error('Invalid numeric value:', value);
       }
+    } else {
+      console.error('Driver not found or missing path:', { driverKey, driver });
     }
   };
 
