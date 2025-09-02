@@ -59,6 +59,18 @@ export function BusinessCaseAnalyzer() {
     }
   };
 
+  const resetForNewUpload = () => {
+    setInputJson('');
+    setIsValidJson(null);
+    setHasUploadedData(false);
+    setActiveTab('input');
+    updateData(null);
+    toast({
+      title: "Ready for New Data",
+      description: "You can now upload a new JSON file.",
+    });
+  };
+
   const copyTemplate = async () => {
     try {
       await navigator.clipboard.writeText(JSONTemplate);
@@ -121,24 +133,34 @@ export function BusinessCaseAnalyzer() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar - Input Panel */}
           <div className="lg:col-span-1 space-y-6">
-            {!hasUploadedData && (
-              <Card className="bg-gradient-card shadow-card">
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Upload className="h-5 w-5" />
-                    <span>Data Input</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            {/* Always visible template and upload controls */}
+            <Card className="bg-gradient-card shadow-card">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Upload className="h-5 w-5" />
+                  <span>Data Management</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button 
+                  onClick={copyTemplate}
+                  variant="outline" 
+                  className="w-full"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy JSON Template
+                </Button>
+                
+                {hasUploadedData ? (
                   <Button 
-                    onClick={copyTemplate}
-                    variant="outline" 
+                    onClick={resetForNewUpload}
+                    variant="outline"
                     className="w-full"
                   >
-                    <Copy className="h-4 w-4 mr-2" />
-                    Copy JSON Template
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload New JSON
                   </Button>
-                  
+                ) : (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium">Paste JSON Data</label>
@@ -152,9 +174,9 @@ export function BusinessCaseAnalyzer() {
                       className="min-h-[200px] font-mono text-xs"
                     />
                   </div>
-                </CardContent>
-              </Card>
-            )}
+                )}
+              </CardContent>
+            </Card>
 
             {/* Navigation */}
             <Card className="bg-gradient-card shadow-card">
