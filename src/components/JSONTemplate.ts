@@ -1,5 +1,5 @@
 export const JSONTemplate = `{
-  "schema_version": "0.2",
+  "schema_version": "0.3",
 
   "instructions": {
     "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
@@ -107,12 +107,6 @@ export const JSONTemplate = `{
       "path": "assumptions.unit_economics.cac.value",
       "range": [0, 0, 0, 0, 0],
       "rationale": "TODO"
-    },
-    {
-      "key": "interest_rate",
-      "path": "assumptions.financial.interest_rate.value",
-      "range": [0.05, 0.08, 0.10, 0.12, 0.15],
-      "rationale": "Discount rate for NPV calculation"
     }
   ],
 
