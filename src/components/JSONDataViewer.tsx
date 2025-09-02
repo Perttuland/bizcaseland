@@ -176,8 +176,6 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     item: any,
     icon: React.ComponentType<any>
   ) => {
-    const isEditing = editingItems[itemId];
-    const currentValue = tempValues[itemId] || item;
     const Icon = icon;
     
     // Extract the itemKey from itemId (e.g., "pricing_avg_unit_price" -> "avg_unit_price")
@@ -194,59 +192,11 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                   <h4 className="font-medium text-sm text-foreground leading-tight line-clamp-2">{label}</h4>
                 </div>
                 
-                {isEditing ? (
-                  <div className="space-y-2 flex-1">
-                    <Input
-                      type="number"
-                      value={currentValue.value}
-                      onChange={(e) => setTempValues(prev => ({
-                        ...prev,
-                        [itemId]: { ...prev[itemId], value: parseFloat(e.target.value) || 0 }
-                      }))}
-                      className="h-7 text-xs"
-                    />
-                    <Input
-                      value={currentValue.unit}
-                      onChange={(e) => setTempValues(prev => ({
-                        ...prev,
-                        [itemId]: { ...prev[itemId], unit: e.target.value }
-                      }))}
-                      className="h-7 text-xs"
-                    />
+                <div className="flex-1 flex flex-col justify-center">
+                  <div className="text-xl font-bold text-financial-success mb-1 truncate">
+                    {formatValue(item.value, item.unit, itemKey)}
                   </div>
-                ) : (
-                  <div className="flex-1 flex flex-col justify-center">
-                    <div className="text-xl font-bold text-financial-success mb-1 truncate">
-                      {formatValue(item.value, item.unit, itemKey)}
-                    </div>
-                    <Badge variant="outline" className="text-xs self-start">{item.unit}</Badge>
-                  </div>
-                )}
-                
-                <div className="flex items-center justify-between mt-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3 w-3 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-sm">
-                      <p className="text-sm">{item.rationale}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  
-                  {isEditing ? (
-                    <div className="flex space-x-1">
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => saveEdit(itemId)}>
-                        <Save className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => cancelEditing(itemId)}>
-                        <X className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => startEditing(itemId, item)}>
-                      <Edit3 className="h-3 w-3" />
-                    </Button>
-                  )}
+                  <Badge variant="outline" className="text-xs self-start">{item.unit}</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -358,6 +308,96 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     }
   ];
 
+  // Collect all regular datapoints from all sections
+  const allDatapoints: any[] = [];
+  
+  // Add all section items
+  sections.forEach(({ key, icon, items }) => {
+    items.forEach(([itemKey, itemValue]: [string, any]) => {
+      const itemId = `${key}_${itemKey}`;
+      
+      // Expand common financial acronyms and terms
+      const expandedLabel = (itemValue.name || itemKey)
+        .replace(/\br&d\b/gi, 'Research & Development')
+        .replace(/\bg&a\b/gi, 'General & Administrative')
+        .replace(/\bs&m\b/gi, 'Sales & Marketing')
+        .replace(/\bhr\b/gi, 'Human Resources')
+        .replace(/\bit\b/gi, 'Information Technology')
+        .replace(/\bsaas\b/gi, 'Software as a Service')
+        .replace(/\bb2b\b/gi, 'Business to Business')
+        .replace(/\bb2c\b/gi, 'Business to Consumer')
+        .replace(/\bkpi\b/gi, 'Key Performance Indicator')
+        .replace(/\bp&l\b/gi, 'Profit & Loss')
+        .replace(/\broe\b/gi, 'Return on Equity')
+        .replace(/\broa\b/gi, 'Return on Assets')
+        .replace(/\bnpv\b/gi, 'Net Present Value')
+        .replace(/\birr\b/gi, 'Internal Rate of Return')
+        .replace(/\bwacc\b/gi, 'Weighted Average Cost of Capital')
+        .replace(/\bfcf\b/gi, 'Free Cash Flow')
+        .replace(/\bocf\b/gi, 'Operating Cash Flow')
+        .replace(/\bppe\b/gi, 'Property, Plant & Equipment')
+        .replace(/\bwc\b/gi, 'Working Capital')
+        .replace(/\bar\b/gi, 'Accounts Receivable')
+        .replace(/\bap\b/gi, 'Accounts Payable')
+        .replace(/\binventory\b/gi, 'Stock Inventory')
+        .replace(/cac/gi, 'Customer Acquisition Cost')
+        .replace(/ltv/gi, 'Customer Lifetime Value')
+        .replace(/arpu/gi, 'Average Revenue Per User')
+        .replace(/mrr/gi, 'Monthly Recurring Revenue')
+        .replace(/arr/gi, 'Annual Recurring Revenue')
+        .replace(/cogs/gi, 'Cost of Goods Sold')
+        .replace(/opex/gi, 'Operating Expenses')
+        .replace(/capex/gi, 'Capital Expenditures')
+        .replace(/ebitda/gi, 'EBITDA')
+        .replace(/ebit/gi, 'Earnings Before Interest & Taxes')
+        .replace(/roi/gi, 'Return on Investment')
+        .replace(/roas/gi, 'Return on Ad Spend')
+        .replace(/ctr/gi, 'Click Through Rate')
+        .replace(/cpm/gi, 'Cost Per Thousand Impressions')
+        .replace(/cpc/gi, 'Cost Per Click')
+        .replace(/cpa/gi, 'Cost Per Acquisition')
+        .replace(/rpu/gi, 'Revenue Per User')
+        .replace(/gmv/gi, 'Gross Merchandise Value')
+        .replace(/aov/gi, 'Average Order Value')
+        .replace(/churn/gi, 'Customer Churn Rate')
+        .replace(/conversion/gi, 'Conversion Rate')
+        .replace(/gross_margin/gi, 'Gross Profit Margin')
+        .replace(/net_margin/gi, 'Net Profit Margin')
+        .replace(/burn_rate/gi, 'Monthly Cash Burn Rate')
+        .replace(/runway/gi, 'Cash Runway (Months Until Funds Depleted)')
+        .replace(/market_share/gi, 'Market Share Percentage')
+        .replace(/tam/gi, 'Total Addressable Market')
+        .replace(/sam/gi, 'Serviceable Addressable Market')
+        .replace(/som/gi, 'Serviceable Obtainable Market')
+        .replace(/dau/gi, 'Daily Active Users')
+        .replace(/mau/gi, 'Monthly Active Users')
+        .replace(/wau/gi, 'Weekly Active Users')
+        .replace(/retention/gi, 'Customer Retention Rate')
+        .replace(/nps/gi, 'Net Promoter Score')
+        .replace(/csat/gi, 'Customer Satisfaction Score')
+        .replace(/fte/gi, 'Full-Time Equivalent Employees')
+        .replace(/headcount/gi, 'Total Number of Employees')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, l => l.toUpperCase());
+      
+      const label = expandedLabel;
+      
+      // Skip formulas and sensitivity drivers - they'll be handled separately
+      if (!itemValue.formula && itemValue.unit !== 'sensitivity') {
+        allDatapoints.push({
+          itemId,
+          label,
+          itemValue,
+          icon
+        });
+      }
+    });
+  });
+  
+  // Add structure datapoints (formulas)
+  const structureDatapoints = getStructureDatapoints();
+  const driverDatapoints = getDriverDatapoints();
+
   return (
     <div className="space-y-6">
       <Card className="bg-gradient-card shadow-card">
@@ -367,235 +407,139 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
             <span>Datapoints and Assumptions</span>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            View and edit all business assumptions, formulas, and rationales used in the analysis
+            View all business assumptions and rationales used in the analysis. Hover over datapoints to see detailed rationale.
           </p>
         </CardHeader>
       </Card>
 
-      {allSections.map(({ key, title, icon, items }) => {
-        if (!items || items.length === 0) return null;
+      {/* All Regular Datapoints in Grid */}
+      {allDatapoints.length > 0 && (
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>Business Assumptions</span>
+              <Badge variant="secondary">{allDatapoints.length} datapoints</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {allDatapoints.map(({ itemId, label, itemValue, icon }) => 
+                renderCompactDatapoint(itemId, label, itemValue, icon)
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-        return (
-          <Card key={key} className="bg-gradient-card shadow-card">
-            <Collapsible
-              open={openSections[key]}
-              onOpenChange={() => toggleSection(key)}
-            >
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      {React.createElement(icon, { className: "h-5 w-5" })}
-                      <span>{title}</span>
-                      <Badge variant="secondary">{items.length} items</Badge>
-                    </div>
-                    {openSections[key] ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </CardTitle>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {items.map(([itemKey, itemValue]: [string, any]) => {
-                     const itemId = `${key}_${itemKey}`;
-                     
-                     // Expand common financial acronyms and terms
-                     const expandedLabel = (itemValue.name || itemKey)
-                       .replace(/\br&d\b/gi, 'Research & Development')
-                       .replace(/\bg&a\b/gi, 'General & Administrative')
-                       .replace(/\bs&m\b/gi, 'Sales & Marketing')
-                       .replace(/\bhr\b/gi, 'Human Resources')
-                       .replace(/\bit\b/gi, 'Information Technology')
-                       .replace(/\bsaas\b/gi, 'Software as a Service')
-                       .replace(/\bb2b\b/gi, 'Business to Business')
-                       .replace(/\bb2c\b/gi, 'Business to Consumer')
-                       .replace(/\bkpi\b/gi, 'Key Performance Indicator')
-                       .replace(/\bp&l\b/gi, 'Profit & Loss')
-                       .replace(/\broe\b/gi, 'Return on Equity')
-                       .replace(/\broa\b/gi, 'Return on Assets')
-                       .replace(/\bnpv\b/gi, 'Net Present Value')
-                       .replace(/\birr\b/gi, 'Internal Rate of Return')
-                       .replace(/\bwacc\b/gi, 'Weighted Average Cost of Capital')
-                       .replace(/\bfcf\b/gi, 'Free Cash Flow')
-                       .replace(/\bocf\b/gi, 'Operating Cash Flow')
-                       .replace(/\bppe\b/gi, 'Property, Plant & Equipment')
-                       .replace(/\bwc\b/gi, 'Working Capital')
-                       .replace(/\bar\b/gi, 'Accounts Receivable')
-                       .replace(/\bap\b/gi, 'Accounts Payable')
-                       .replace(/\binventory\b/gi, 'Stock Inventory')
-                       .replace(/cac/gi, 'Customer Acquisition Cost')
-                       .replace(/ltv/gi, 'Customer Lifetime Value')
-                       .replace(/arpu/gi, 'Average Revenue Per User')
-                       .replace(/mrr/gi, 'Monthly Recurring Revenue')
-                       .replace(/arr/gi, 'Annual Recurring Revenue')
-                       .replace(/cogs/gi, 'Cost of Goods Sold')
-                       .replace(/opex/gi, 'Operating Expenses')
-                       .replace(/capex/gi, 'Capital Expenditures')
-                       .replace(/ebitda/gi, 'EBITDA')
-                       .replace(/ebit/gi, 'Earnings Before Interest & Taxes')
-                       .replace(/roi/gi, 'Return on Investment')
-                       .replace(/roas/gi, 'Return on Ad Spend')
-                       .replace(/ctr/gi, 'Click Through Rate')
-                       .replace(/cpm/gi, 'Cost Per Thousand Impressions')
-                       .replace(/cpc/gi, 'Cost Per Click')
-                       .replace(/cpa/gi, 'Cost Per Acquisition')
-                       .replace(/rpu/gi, 'Revenue Per User')
-                       .replace(/gmv/gi, 'Gross Merchandise Value')
-                       .replace(/aov/gi, 'Average Order Value')
-                       .replace(/churn/gi, 'Customer Churn Rate')
-                       .replace(/conversion/gi, 'Conversion Rate')
-                       .replace(/gross_margin/gi, 'Gross Profit Margin')
-                       .replace(/net_margin/gi, 'Net Profit Margin')
-                       .replace(/burn_rate/gi, 'Monthly Cash Burn Rate')
-                       .replace(/runway/gi, 'Cash Runway (Months Until Funds Depleted)')
-                       .replace(/market_share/gi, 'Market Share Percentage')
-                       .replace(/tam/gi, 'Total Addressable Market')
-                       .replace(/sam/gi, 'Serviceable Addressable Market')
-                       .replace(/som/gi, 'Serviceable Obtainable Market')
-                       .replace(/dau/gi, 'Daily Active Users')
-                       .replace(/mau/gi, 'Monthly Active Users')
-                       .replace(/wau/gi, 'Weekly Active Users')
-                       .replace(/retention/gi, 'Customer Retention Rate')
-                       .replace(/nps/gi, 'Net Promoter Score')
-                       .replace(/csat/gi, 'Customer Satisfaction Score')
-                       .replace(/fte/gi, 'Full-Time Equivalent Employees')
-                       .replace(/headcount/gi, 'Total Number of Employees')
-                       .replace(/_/g, ' ')
-                       .replace(/\b\w/g, l => l.toUpperCase());
-                     
-                     const label = expandedLabel;
-                     
-                      if (itemValue.formula) {
-                        // Special rendering for formula-based items (keep larger)
-                        return (
-                          <div key={itemId} className="md:col-span-2 lg:col-span-3 xl:col-span-4">
-                            <Card className="bg-muted/30 border-l-4 border-l-financial-secondary">
-                              <CardContent className="p-4">
-                                <div className="flex items-start space-x-3">
-                                  {React.createElement(icon, { className: "h-5 w-5 text-financial-secondary mt-1" })}
-                                  <div className="flex-1 space-y-2">
-                                    <h4 className="font-semibold text-lg">{label}</h4>
-                                    <Badge variant="outline">{itemValue.unit}</Badge>
-                                    <div className="p-2 bg-card rounded font-mono text-sm">
-                                      {itemValue.formula}
-                                    </div>
-                                    <TooltipProvider>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="p-3 bg-muted/50 rounded-lg cursor-help">
-                                            <p className="text-sm text-muted-foreground">
-                                              <strong>Rationale:</strong> {itemValue.rationale.length > 80 ? 
-                                                `${itemValue.rationale.substring(0, 80)}...` : 
-                                                itemValue.rationale}
-                                            </p>
-                                          </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent className="max-w-md">
-                                          <p className="text-sm">{itemValue.rationale}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
+      {/* Revenue & Cost Structure */}
+      {structureDatapoints.length > 0 && (
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>Revenue & Cost Structure</span>
+              <Badge variant="secondary">{structureDatapoints.length} formulas</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {structureDatapoints.map(([itemKey, itemValue]: [string, any]) => {
+              const itemId = `structure_${itemKey}`;
+              const label = itemValue.value;
+              
+              return (
+                <TooltipProvider key={itemId}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card className="bg-muted/30 border-l-4 border-l-financial-secondary hover:bg-muted/50 transition-colors cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex items-start space-x-3">
+                            <TrendingUp className="h-5 w-5 text-financial-secondary mt-1" />
+                            <div className="flex-1 space-y-2">
+                              <h4 className="font-semibold text-lg">{label}</h4>
+                              <Badge variant="outline">{itemValue.unit}</Badge>
+                              <div className="p-2 bg-card rounded font-mono text-sm">
+                                {itemValue.formula}
+                              </div>
+                            </div>
                           </div>
-                        );
-                      }
-                      
-                      if (itemValue.unit === 'sensitivity' && itemValue.range) {
-                        // Special rendering for sensitivity drivers (keep larger)
-                        const rangeLabels = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
-                        const isEditing = editingItems[itemId];
-                        const currentValue = tempValues[itemId] || itemValue;
-                        
-                        return (
-                          <div key={itemId} className="md:col-span-2 lg:col-span-3 xl:col-span-4">
-                            <Card className="bg-muted/30 border-l-4 border-l-financial-warning">
-                              <CardContent className="p-4">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex items-start space-x-3 flex-1">
-                                    {React.createElement(icon, { className: "h-5 w-5 text-financial-warning mt-1" })}
-                                    <div className="flex-1 space-y-3">
-                                      <div className="flex items-center gap-2">
-                                        <h4 className="font-semibold text-lg">Driver {itemValue.driverNumber}: {isEditing ? currentValue.value : itemValue.value}</h4>
-                                        <Badge variant="outline">Sensitivity Analysis</Badge>
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-md">
+                      <p className="text-sm">{itemValue.rationale}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sensitivity Drivers */}
+      {driverDatapoints.length > 0 && (
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Settings className="h-5 w-5" />
+              <span>Sensitivity Drivers</span>
+              <Badge variant="secondary">{driverDatapoints.length} drivers</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {driverDatapoints.map(([itemKey, itemValue]: [string, any]) => {
+              const itemId = `drivers_${itemKey}`;
+              const rangeLabels = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
+              
+              return (
+                <TooltipProvider key={itemId}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Card className="bg-muted/30 border-l-4 border-l-financial-warning hover:bg-muted/50 transition-colors cursor-pointer">
+                        <CardContent className="p-4">
+                          <div className="flex items-start space-x-3">
+                            <Settings className="h-5 w-5 text-financial-warning mt-1" />
+                            <div className="flex-1 space-y-3">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold text-lg">Driver {itemValue.driverNumber}: {itemValue.value}</h4>
+                                <Badge variant="outline">Sensitivity Analysis</Badge>
+                              </div>
+                              
+                              <div className="p-3 bg-financial-warning/10 rounded-lg border border-financial-warning/20">
+                                <h5 className="font-medium mb-2 text-sm text-muted-foreground">Sensitivity Range:</h5>
+                                <div className="grid grid-cols-5 gap-2">
+                                  {itemValue.range.map((value: number, index: number) => (
+                                    <div key={index} className="text-center p-2 bg-card rounded border">
+                                      <div className="text-xs font-medium text-muted-foreground mb-1">
+                                        {rangeLabels[index] || `Level ${index + 1}`}
                                       </div>
-                                      
-                                      {!isEditing && (
-                                        <>
-                                          <div className="p-3 bg-financial-warning/10 rounded-lg border border-financial-warning/20">
-                                            <h5 className="font-medium mb-2 text-sm text-muted-foreground">Sensitivity Range:</h5>
-                                            <div className="grid grid-cols-5 gap-2">
-                                              {itemValue.range.map((value: number, index: number) => (
-                                                <div key={index} className="text-center p-2 bg-card rounded border">
-                                                  <div className="text-xs font-medium text-muted-foreground mb-1">
-                                                    {rangeLabels[index] || `Level ${index + 1}`}
-                                                  </div>
-                                                  <div className="text-sm font-semibold text-financial-warning">
-                                                    {typeof value === 'number' ? value.toLocaleString() : value}
-                                                  </div>
-                                                </div>
-                                              ))}
-                                            </div>
-                                          </div>
-                                          
-                                          <div className="p-2 bg-card rounded font-mono text-sm">
-                                            <span className="text-muted-foreground">Path:</span> {itemValue.path}
-                                          </div>
-                                          
-                                          <TooltipProvider>
-                                            <Tooltip>
-                                              <TooltipTrigger asChild>
-                                                <div className="p-3 bg-muted/50 rounded-lg cursor-help">
-                                                  <p className="text-sm text-muted-foreground">
-                                                    <strong>Rationale:</strong> {itemValue.rationale.length > 80 ? 
-                                                      `${itemValue.rationale.substring(0, 80)}...` : 
-                                                      itemValue.rationale}
-                                                  </p>
-                                                </div>
-                                              </TooltipTrigger>
-                                              <TooltipContent className="max-w-md">
-                                                <p className="text-sm">{itemValue.rationale}</p>
-                                              </TooltipContent>
-                                            </Tooltip>
-                                          </TooltipProvider>
-                                        </>
-                                      )}
+                                      <div className="text-sm font-semibold text-financial-warning">
+                                        {typeof value === 'number' ? value.toLocaleString() : value}
+                                      </div>
                                     </div>
-                                  </div>
-                                  
-                                  <div className="flex items-center space-x-2 ml-4">
-                                    <Button size="sm" variant="outline" onClick={() => startEditing(itemId, itemValue)}>
-                                      <Edit3 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
+                                  ))}
                                 </div>
-                              </CardContent>
-                            </Card>
+                              </div>
+                              
+                              <div className="p-2 bg-card rounded font-mono text-sm">
+                                <span className="text-muted-foreground">Path:</span> {itemValue.path}
+                              </div>
+                            </div>
                           </div>
-                        );
-                      }
-                     
-                     // Use compact rendering for regular datapoints
-                     return renderCompactDatapoint(
-                       itemId,
-                       label,
-                       itemValue,
-                       icon
-                     );
-                   })}
-                   </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-        );
-      })}
+                        </CardContent>
+                      </Card>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-md">
+                      <p className="text-sm">{itemValue.rationale}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Customer Segments */}
       {data.assumptions.customers?.segments && (
