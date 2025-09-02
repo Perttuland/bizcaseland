@@ -1,5 +1,5 @@
 export const JSONTemplate = `{
-  "schema_version": "0.4",
+  "schema_version": "0.5",
   "instructions": {
     "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
     "rules": [
@@ -18,7 +18,6 @@ export const JSONTemplate = `{
   "meta": {
     "title": "TODO-Short title",
     "description": "TODO-Concept description",
-    "archetype": "TODO-subscription|transactional|licensing|profit_share|hybrid",
     "currency": "EUR",
     "periods": 60,
     "frequency": "monthly"
@@ -43,8 +42,7 @@ export const JSONTemplate = `{
             "pattern_type": "geom_growth|seasonal_growth|linear_growth",
             "series": [
               { "period": 1, "value": 0, "unit": "units|accounts", "rationale": "TODO" }
-            ],
-            "fallback_formula": "TODO-optional formula"
+            ]
           }
         }
       ]
@@ -78,6 +76,12 @@ export const JSONTemplate = `{
     {
       "key": "cac",
       "path": "assumptions.unit_economics.cac.value",
+      "range": [0, 0, 0, 0, 0],
+      "rationale": "TODO"
+    },
+    {
+      "key": "cogs_pct",
+      "path": "assumptions.unit_economics.cogs_pct.value",
       "range": [0, 0, 0, 0, 0],
       "rationale": "TODO"
     }

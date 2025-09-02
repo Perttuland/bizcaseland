@@ -467,8 +467,11 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                         </CardContent>
                       </Card>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-md">
-                      <p className="text-sm">{itemValue.rationale}</p>
+                    <TooltipContent side="top" className="max-w-sm">
+                      <div className="space-y-1">
+                        <p className="font-medium text-xs">{label}</p>
+                        <p className="text-xs text-muted-foreground">{itemValue.rationale}</p>
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -531,8 +534,11 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                         </CardContent>
                       </Card>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-md">
-                      <p className="text-sm">{itemValue.rationale}</p>
+                    <TooltipContent side="top" className="max-w-sm">
+                      <div className="space-y-1">
+                        <p className="font-medium text-xs">{itemValue.value}</p>
+                        <p className="text-xs text-muted-foreground">{itemValue.rationale}</p>
+                      </div>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
