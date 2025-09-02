@@ -2,17 +2,26 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle } from 'lucide-react';
 import { useBusinessData } from '@/contexts/BusinessDataContext';
 
 interface BusinessData {
   meta: {
     title: string;
+    description?: string;
     currency: string;
     start_date: string;
     periods: number;
   };
   assumptions: any;
+  drivers?: Array<{
+    key: string;
+    path: string;
+    range: number[];
+    rationale: string;
+  }>;
 }
 
 interface CashFlowStatementProps {
@@ -20,8 +29,9 @@ interface CashFlowStatementProps {
 }
 
 export function CashFlowStatement({ data }: CashFlowStatementProps) {
-  const { data: contextData } = useBusinessData();
+  const { data: contextData, updateAssumption } = useBusinessData();
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
+  const [sensitivityValues, setSensitivityValues] = useState<{[key: string]: string}>({});
   
   // Use context data if available, otherwise use prop data
   const businessData = contextData || data;
@@ -88,6 +98,29 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       const discountFactor = Math.pow(1 + monthlyRate, -(index + 1));
       return npv + (month.netCashFlow * discountFactor);
     }, 0);
+  };
+
+  // Calculate break-even point
+  const calculateBreakEven = () => {
+    let cumulativeCashFlow = 0;
+    for (let i = 0; i < monthlyData.length; i++) {
+      cumulativeCashFlow += monthlyData[i].netCashFlow;
+      if (cumulativeCashFlow > 0) {
+        return i + 1; // Return month number
+      }
+    }
+    return null; // Never breaks even
+  };
+
+  // Handle sensitivity analysis
+  const handleSensitivityChange = (driverKey: string, value: string) => {
+    const driver = businessData?.drivers?.find(d => d.key === driverKey);
+    if (driver && driver.path) {
+      const numValue = parseFloat(value);
+      if (!isNaN(numValue)) {
+        updateAssumption(driver.path, numValue);
+      }
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -196,9 +229,14 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
-            <span>Profit & Loss Statement</span>
+            <span>{businessData.meta?.title || 'Profit & Loss Statement'}</span>
           </CardTitle>
-          <p className="text-sm text-muted-foreground">
+          {businessData.meta?.description && (
+            <p className="text-sm text-muted-foreground">
+              {businessData.meta.description}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
             Monthly cash flow projection with full P&L structure
           </p>
         </CardHeader>
@@ -306,7 +344,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-success shadow-card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -348,7 +386,68 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
             </div>
           </CardContent>
         </Card>
+
+        <Card className={`shadow-card ${calculateBreakEven() ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-white/80">Break-even Point</p>
+                <p className="text-xl font-bold text-white">
+                  {calculateBreakEven() ? `Month ${calculateBreakEven()}` : '-'}
+                </p>
+              </div>
+              {calculateBreakEven() ? (
+                <Target className="h-6 w-6 text-white" />
+              ) : (
+                <AlertTriangle className="h-6 w-6 text-white" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Sensitivity Analysis */}
+      {businessData?.drivers && businessData.drivers.length > 0 && (
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Target className="h-5 w-5" />
+              <span>Sensitivity Analysis</span>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Click on driver values to test different scenarios
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {businessData.drivers.map((driver) => (
+                <div key={driver.key} className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium capitalize">{driver.key}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {driver.path.split('.').pop()}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {driver.range.map((value, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => handleSensitivityChange(driver.key, value.toString())}
+                      >
+                        {typeof value === 'number' ? value.toLocaleString() : value}
+                      </Button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{driver.rationale}</p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
