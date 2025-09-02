@@ -10,24 +10,10 @@ import { FinancialAnalysis } from './FinancialAnalysis';
 import { DataVisualization } from './DataVisualization';
 import { DatapointsViewer } from './JSONDataViewer';
 import { CashFlowStatement } from './CashFlowStatement';
-
-interface BusinessData {
-  meta: {
-    title: string;
-    description: string;
-    archetype: string;
-    currency: string;
-    start_date: string;
-    periods: number;
-    frequency: string;
-  };
-  assumptions: any;
-  structure: any;
-  scenarios: any[];
-}
+import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
 export function BusinessCaseAnalyzer() {
-  const [jsonData, setJsonData] = useState<BusinessData | null>(null);
+  const { data: jsonData, updateData } = useBusinessData();
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow'>('input');
@@ -37,7 +23,7 @@ export function BusinessCaseAnalyzer() {
     setInputJson(value);
     if (!value.trim()) {
       setIsValidJson(null);
-      setJsonData(null);
+      updateData(null);
       return;
     }
 
@@ -45,14 +31,14 @@ export function BusinessCaseAnalyzer() {
       const parsed = JSON.parse(value);
       if (parsed.meta && parsed.assumptions) {
         setIsValidJson(true);
-        setJsonData(parsed);
+        updateData(parsed);
         toast({
           title: "JSON Validated",
           description: "Business case data loaded successfully!",
         });
       } else {
         setIsValidJson(false);
-        setJsonData(null);
+        updateData(null);
         toast({
           title: "Invalid Format",
           description: "JSON must contain 'meta' and 'assumptions' fields.",
@@ -61,7 +47,7 @@ export function BusinessCaseAnalyzer() {
       }
     } catch (error) {
       setIsValidJson(false);
-      setJsonData(null);
+      updateData(null);
       toast({
         title: "Invalid JSON",
         description: "Please check your JSON syntax.",
@@ -245,7 +231,7 @@ export function BusinessCaseAnalyzer() {
 
             {activeTab === 'analysis' && jsonData && (
               <div className="animate-fade-in">
-                <FinancialAnalysis data={jsonData} />
+                <FinancialAnalysis />
               </div>
             )}
 
@@ -263,7 +249,7 @@ export function BusinessCaseAnalyzer() {
 
             {activeTab === 'cashflow' && jsonData && (
               <div className="animate-fade-in">
-                <CashFlowStatement data={jsonData} />
+                <CashFlowStatement />
               </div>
             )}
 

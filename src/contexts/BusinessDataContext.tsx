@@ -1,11 +1,18 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
-interface BusinessData {
-  meta: any;
+export interface BusinessData {
+  meta: {
+    title: string;
+    description: string;
+    archetype: string;
+    currency: string;
+    periods: number;
+    frequency: string;
+  };
   assumptions: any;
-  structure: any;
-  scenarios: any[];
   drivers?: any[];
+  scenarios?: any[];
+  structure?: any;
 }
 
 interface BusinessDataContextType {

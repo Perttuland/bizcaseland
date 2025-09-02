@@ -2,22 +2,7 @@ import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, BarChart3, Users, DollarSign, PieChart, Activity } from 'lucide-react';
-import { useBusinessData } from '@/contexts/BusinessDataContext';
-
-interface BusinessData {
-  meta: {
-    title: string;
-    description: string;
-    archetype: string;
-    currency: string;
-    start_date: string;
-    periods: number;
-    frequency: string;
-  };
-  assumptions: any;
-  structure: any;
-  scenarios: any[];
-}
+import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
 interface DataVisualizationProps {
   data: BusinessData;

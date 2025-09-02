@@ -6,119 +6,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle } from 'lucide-react';
-import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { useToast } from '@/hooks/use-toast';
+import { calculateBusinessMetrics, formatCurrency } from '@/lib/calculations';
 
-interface BusinessData {
-  meta: {
-    title: string;
-    description?: string;
-    currency: string;
-    start_date: string;
-    periods: number;
-  };
-  assumptions: any;
-  drivers?: Array<{
-    key: string;
-    path: string;
-    range: number[];
-    rationale: string;
-  }>;
-}
-
-interface CashFlowStatementProps {
-  data: BusinessData;
-}
-
-export function CashFlowStatement({ data }: CashFlowStatementProps) {
-  const { data: contextData, updateAssumption } = useBusinessData();
+export function CashFlowStatement() {
+  const { data: businessData, updateAssumption } = useBusinessData();
   const { toast } = useToast();
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
   const [sensitivityValues, setSensitivityValues] = useState<{[key: string]: string}>({});
   
-  // Always use context data if available for real-time updates
-  const businessData = contextData || data;
+  if (!businessData) {
+    return (
+      <Card className="bg-gradient-card shadow-card">
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center space-y-3">
+            <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto" />
+            <h3 className="text-lg font-semibold">No Data Available</h3>
+            <p className="text-muted-foreground">Please load business case data to view cash flow analysis.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
-  // Generate monthly data based on business assumptions
-  const generateMonthlyData = () => {
-    const months = [];
-    const startDate = new Date(businessData.meta.start_date);
-    
-    for (let i = 0; i < Math.min(businessData.meta.periods, 60); i++) {
-      const currentDate = new Date(startDate);
-      currentDate.setMonth(startDate.getMonth() + i);
-      
-      // Calculate sales volume and unit price from business data
-      const baseVolume = businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000;
-      const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
-      const growthFactor = 1 + (i * 0.02);
-      
-      const salesVolume = Math.round(baseVolume * growthFactor);
-      const revenue = Math.round(salesVolume * unitPrice);
-      
-      const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3));
-      const grossProfit = revenue + cogs;
-      
-      const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 15000) + (i * 300));
-      const cac = businessData?.assumptions?.unit_economics?.cac?.value || 0;
-      const totalCAC = -Math.round(salesVolume * cac);
-      const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 8000) + (i * 200));
-      const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 5000) + (i * 100));
-      const totalOpex = salesMarketing + totalCAC + rd + ga;
-      
-      const ebitda = grossProfit + totalOpex;
-      const capex = -(i === 0 ? 50000 : (i % 12 === 0 ? 10000 : 0));
-      const netCashFlow = ebitda + capex;
-      
-      months.push({
-        month: i + 1,
-        date: currentDate,
-        salesVolume,
-        unitPrice,
-        revenue,
-        cogs,
-        grossProfit,
-        salesMarketing,
-        totalCAC,
-        cac,
-        rd,
-        ga,
-        totalOpex,
-        ebitda,
-        capex,
-        netCashFlow,
-      });
-    }
-    
-    return months;
-  };
-
-  const monthlyData = generateMonthlyData();
-  const currency = businessData.meta.currency || 'EUR';
+  // Use centralized calculation engine
+  const calculatedMetrics = calculateBusinessMetrics(businessData);
+  const monthlyData = calculatedMetrics.monthlyData;
+  const currency = businessData.meta?.currency || 'EUR';
   
-  // Calculate NPV using interest rate from business data
-  const calculateNPV = () => {
-    const interestRate = businessData?.assumptions?.financial?.interest_rate?.value || 0.10;
-    const monthlyRate = interestRate / 12;
-    
-    return monthlyData.reduce((npv, month, index) => {
-      const discountFactor = Math.pow(1 + monthlyRate, -(index + 1));
-      return npv + (month.netCashFlow * discountFactor);
-    }, 0);
-  };
-
-  // Calculate break-even point
-  const calculateBreakEven = () => {
-    let cumulativeCashFlow = 0;
-    for (let i = 0; i < monthlyData.length; i++) {
-      cumulativeCashFlow += monthlyData[i].netCashFlow;
-      if (cumulativeCashFlow > 0) {
-        return i + 1; // Return month number
-      }
-    }
-    return null; // Never breaks even
-  };
-
   // Handle sensitivity analysis
   const handleSensitivityChange = (driverKey: string, value: string) => {
     const driver = businessData?.drivers?.find(d => d.key === driverKey);
@@ -134,15 +50,6 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
         });
       }
     }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
   };
 
   const formatDecimal = (amount: number) => {
@@ -190,7 +97,6 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
   const getAssumptions = (rowKey: string, month: number) => {
     if (!businessData.assumptions) return null;
     
-    const monthlyData = generateMonthlyData();
     const currentMonth = monthlyData[month - 1];
     
     const assumptions = {
@@ -387,7 +293,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
               <div>
                 <p className="text-sm text-white/80">Total Revenue</p>
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0))}
+                  {formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0), currency)}
                 </p>
               </div>
               <TrendingUp className="h-6 w-6 text-white" />
@@ -401,7 +307,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
               <div>
                 <p className="text-sm text-white/80">Net Present Value</p>
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(calculateNPV())}
+                  {formatCurrency(calculatedMetrics.npv, currency)}
                 </p>
               </div>
               <DollarSign className="h-6 w-6 text-white" />
@@ -423,16 +329,16 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
           </CardContent>
         </Card>
 
-        <Card className={`shadow-card ${calculateBreakEven() ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+        <Card className={`shadow-card ${calculatedMetrics.breakEvenMonth ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-white/80">Break-even Point</p>
                 <p className="text-xl font-bold text-white">
-                  {calculateBreakEven() ? `Month ${calculateBreakEven()}` : '-'}
+                  {calculatedMetrics.breakEvenMonth ? `Month ${calculatedMetrics.breakEvenMonth}` : '-'}
                 </p>
               </div>
-              {calculateBreakEven() ? (
+              {calculatedMetrics.breakEvenMonth ? (
                 <Target className="h-6 w-6 text-white" />
               ) : (
                 <AlertTriangle className="h-6 w-6 text-white" />

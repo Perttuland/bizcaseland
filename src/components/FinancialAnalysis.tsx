@@ -1,98 +1,31 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target } from 'lucide-react';
-import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle } from 'lucide-react';
+import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
+import { calculateBusinessMetrics, formatCurrency, formatPercent } from '@/lib/calculations';
 
-interface BusinessData {
-  meta: {
-    title: string;
-    description: string;
-    archetype: string;
-    currency: string;
-    start_date: string;
-    periods: number;
-    frequency: string;
-  };
-  assumptions: any;
-  structure: any;
-  scenarios: any[];
-}
-
-interface FinancialAnalysisProps {
-  data: BusinessData;
-}
-
-export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
-  const { data: contextData } = useBusinessData();
+export function FinancialAnalysis() {
+  const { data: businessData } = useBusinessData();
   
-  // Use context data if available, otherwise use prop data
-  const businessData = contextData || data;
+  if (!businessData) {
+    return (
+      <Card className="bg-gradient-card shadow-card">
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center space-y-3">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+            <h3 className="text-lg font-semibold">No Data Available</h3>
+            <p className="text-muted-foreground">Please load business case data to view analysis.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
-  // Calculate metrics from business data
+  // Calculate metrics from business data using centralized calculations
   const calculatedMetrics = useMemo(() => {
-    if (!businessData.assumptions) {
-      return {
-        totalRevenue: 1250000,
-        netProfit: 325000,
-        npv: 2100000,
-        paybackPeriod: 18,
-        roa: 0.26,
-        breakEvenMonth: 14
-      };
-    }
-    
-    // Real calculations based on business data
-    const pricing = businessData.assumptions.pricing || {};
-    const unitEconomics = businessData.assumptions.unit_economics || {};
-    
-    const baseRevenue = pricing.monthly_revenue?.value || 50000;
-    const periods = businessData.meta.periods || 60;
-    const growthRate = unitEconomics.growth_rate?.value || 0.02;
-    
-    let totalRevenue = 0;
-    let cumulativeCashFlow = 0;
-    let breakEvenMonth = null;
-    
-    for (let i = 0; i < periods; i++) {
-      const monthlyRevenue = baseRevenue * Math.pow(1 + growthRate, i);
-      totalRevenue += monthlyRevenue;
-      
-      const monthlyCashFlow = monthlyRevenue * 0.3; // Simplified cash flow
-      cumulativeCashFlow += monthlyCashFlow;
-      
-      if (cumulativeCashFlow > 0 && !breakEvenMonth) {
-        breakEvenMonth = i + 1;
-      }
-    }
-    
-    const netProfit = totalRevenue * 0.26; // 26% margin
-    const npv = netProfit * 1.68; // Simplified NPV calculation
-    const paybackPeriod = breakEvenMonth || 18;
-    const roa = 0.26;
-    
-    return {
-      totalRevenue,
-      netProfit,
-      npv,
-      paybackPeriod,
-      roa,
-      breakEvenMonth: breakEvenMonth || 14
-    };
+    return calculateBusinessMetrics(businessData);
   }, [businessData]);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: businessData.meta.currency || 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
-
-  const formatPercent = (value: number) => {
-    return `${(value * 100).toFixed(1)}%`;
-  };
 
   const getArchetypeColor = (archetype: string) => {
     const colors = {
@@ -123,15 +56,15 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
             <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
               <Calendar className="h-5 w-5 text-financial-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Start Date</p>
-                <p className="font-semibold">{businessData.meta.start_date}</p>
+                <p className="text-sm text-muted-foreground">Time Horizon</p>
+                <p className="font-semibold">{businessData.meta.periods} months</p>
               </div>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
               <Target className="h-5 w-5 text-financial-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">Time Horizon</p>
-                <p className="font-semibold">{businessData.meta.periods} months</p>
+                <p className="text-sm text-muted-foreground">Frequency</p>
+                <p className="font-semibold">{businessData.meta.frequency}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
@@ -152,7 +85,7 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-financial-success-foreground/80">Total Revenue (5Y)</p>
-                <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.totalRevenue)}</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.totalRevenue, businessData.meta.currency)}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-white" />
             </div>
@@ -164,7 +97,7 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-financial-primary-foreground/80">Net Profit (5Y)</p>
-                <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.netProfit)}</p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.netProfit, businessData.meta.currency)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-white" />
             </div>
@@ -176,7 +109,7 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Net Present Value</p>
-                <p className="text-2xl font-bold text-financial-warning">{formatCurrency(calculatedMetrics.npv)}</p>
+                <p className="text-2xl font-bold text-financial-warning">{formatCurrency(calculatedMetrics.npv, businessData.meta.currency)}</p>
               </div>
               <Target className="h-8 w-8 text-financial-warning" />
             </div>
@@ -302,7 +235,7 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
                 <div key={index} className="p-4 bg-muted/50 rounded-lg text-center">
                   <h4 className="font-semibold mb-2">{scenario.name}</h4>
                   <div className="text-2xl font-bold text-financial-primary mb-1">
-                    {formatCurrency(calculatedMetrics.totalRevenue * (1 + index * 0.1 - 0.1))}
+                    {formatCurrency(calculatedMetrics.totalRevenue * (1 + index * 0.1 - 0.1), businessData.meta.currency)}
                   </div>
                   <p className="text-xs text-muted-foreground">Projected Revenue</p>
                 </div>

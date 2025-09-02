@@ -7,15 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, ChevronRight, Edit3, Save, X, DollarSign, TrendingUp, Users, Settings, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useBusinessData } from '@/contexts/BusinessDataContext';
-
-interface BusinessData {
-  meta: any;
-  assumptions: any;
-  structure: any;
-  scenarios: any[];
-  drivers?: any[];
-}
+import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
 interface DatapointsViewerProps {
   data: BusinessData;
