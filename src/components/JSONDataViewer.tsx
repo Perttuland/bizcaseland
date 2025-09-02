@@ -31,7 +31,7 @@ interface EditableItem {
 }
 
 export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) {
-  const { updateData, updateDriver, exportData } = useBusinessData();
+  const { updateData, updateDriver, updateAssumption, exportData } = useBusinessData();
   const [editingItems, setEditingItems] = useState<Record<string, boolean>>({});
   const [tempValues, setTempValues] = useState<Record<string, EditableItem>>({});
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -94,6 +94,23 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
           ...updatedData.assumptions.customers.segments[segmentIndex].volume.series[periodIndex],
           ...tempValue
         };
+      }
+    } else if (itemId.startsWith('driver_')) {
+      // Handle sensitivity driver updates
+      const driverIndex = parseInt(itemId.split('_')[1]) - 1;
+      if (updatedData.drivers?.[driverIndex] && tempValue) {
+        updatedData.drivers[driverIndex] = {
+          ...updatedData.drivers[driverIndex],
+          key: tempValue.value,
+          path: tempValue.path,
+          range: tempValue.range,
+          rationale: tempValue.rationale
+        };
+        // Also update the corresponding assumption if path exists
+        if (tempValue.path && tempValue.range) {
+          const currentValue = tempValue.range[2]; // Use middle value as current
+          updateAssumption(tempValue.path, currentValue);
+        }
       }
     } else if (tempValue) {
       // Handle other assumption updates

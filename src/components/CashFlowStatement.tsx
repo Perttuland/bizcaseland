@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle } from 'lucide-react';
 import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface BusinessData {
   meta: {
@@ -31,6 +32,7 @@ interface CashFlowStatementProps {
 
 export function CashFlowStatement({ data }: CashFlowStatementProps) {
   const { data: contextData, updateAssumption } = useBusinessData();
+  const { toast } = useToast();
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
   const [sensitivityValues, setSensitivityValues] = useState<{[key: string]: string}>({});
   
@@ -124,6 +126,12 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       const numValue = parseFloat(value);
       if (!isNaN(numValue)) {
         updateAssumption(driver.path, numValue);
+        
+        // Show toast notification
+        toast({
+          title: "Sensitivity Analysis Updated",
+          description: `${driver.key} updated to ${value}`,
+        });
       }
     }
   };
