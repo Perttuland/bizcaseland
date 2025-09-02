@@ -152,7 +152,7 @@ export function calculateTotalVolumeForMonth(businessData: BusinessData, monthIn
   let totalVolume = 0;
 
   for (const segment of segments) {
-    const volume = calculateSegmentVolumeForMonth(segment, monthIndex);
+    const volume = calculateSegmentVolumeForMonth(segment, monthIndex, businessData);
     totalVolume += volume;
   }
 
@@ -162,17 +162,17 @@ export function calculateTotalVolumeForMonth(businessData: BusinessData, monthIn
 /**
  * Calculate volume for a specific segment and month
  */
-export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number): number {
+export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number, businessData?: BusinessData): number {
   const volume = segment?.volume;
   if (!volume) return 0;
 
   if (volume.type === "pattern") {
     if (volume.pattern_type === "seasonal_growth") {
-      return calculateSeasonalGrowthVolume(volume, monthIndex);
+      return calculateSeasonalGrowthVolume(volume, monthIndex, businessData);
     } else if (volume.pattern_type === "geom_growth") {
-      return calculateGeomGrowthVolume(volume, monthIndex);
+      return calculateGeomGrowthVolume(volume, monthIndex, businessData);
     } else if (volume.pattern_type === "linear_growth") {
-      return calculateLinearGrowthVolume(volume, monthIndex);
+      return calculateLinearGrowthVolume(volume, monthIndex, businessData);
     }
   } else if (volume.type === "time_series") {
     return calculateTimeSeriesVolume(volume, monthIndex);
@@ -186,10 +186,27 @@ export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number)
 /**
  * Calculate volume using seasonal growth pattern
  */
-export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number): number {
-  const baseYearTotal = volume.base_year_total?.value || 0;
-  const seasonalityIndices = volume.seasonality_index_12 || [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-  const yoyGrowth = volume.yoy_growth?.value || 0;
+export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number, businessData?: BusinessData): number {
+  // Try to get values from volume object first, then fallback to growth_settings
+  let baseYearTotal = volume.base_year_total?.value;
+  let seasonalityIndices = volume.seasonality_index_12;
+  let yoyGrowth = volume.yoy_growth?.value;
+  
+  // If not found in volume, try growth_settings
+  if (baseYearTotal === undefined && businessData?.assumptions?.growth_settings?.seasonal_growth) {
+    baseYearTotal = businessData.assumptions.growth_settings.seasonal_growth.base_year_total?.value;
+  }
+  if (!seasonalityIndices && businessData?.assumptions?.growth_settings?.seasonal_growth) {
+    seasonalityIndices = businessData.assumptions.growth_settings.seasonal_growth.seasonality_index_12?.value;
+  }
+  if (yoyGrowth === undefined && businessData?.assumptions?.growth_settings?.seasonal_growth) {
+    yoyGrowth = businessData.assumptions.growth_settings.seasonal_growth.yoy_growth?.value;
+  }
+  
+  // Apply defaults
+  baseYearTotal = baseYearTotal || 0;
+  seasonalityIndices = seasonalityIndices || [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+  yoyGrowth = yoyGrowth || 0;
 
   // Calculate which year and month we're in
   const yearIndex = Math.floor(monthIndex / 12);
@@ -208,9 +225,22 @@ export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number): 
 /**
  * Calculate volume using geometric growth pattern
  */
-export function calculateGeomGrowthVolume(volume: any, monthIndex: number): number {
-  const startValue = volume?.series?.[0]?.value || 0;
-  const monthlyGrowthRate = volume.monthly_growth_rate?.value || 0;
+export function calculateGeomGrowthVolume(volume: any, monthIndex: number, businessData?: BusinessData): number {
+  // Try to get values from volume object first, then fallback to growth_settings
+  let startValue = volume?.series?.[0]?.value;
+  let monthlyGrowthRate = volume.monthly_growth_rate?.value;
+  
+  // If not found in volume, try growth_settings
+  if (startValue === undefined && businessData?.assumptions?.growth_settings?.geom_growth) {
+    startValue = businessData.assumptions.growth_settings.geom_growth.start?.value;
+  }
+  if (monthlyGrowthRate === undefined && businessData?.assumptions?.growth_settings?.geom_growth) {
+    monthlyGrowthRate = businessData.assumptions.growth_settings.geom_growth.monthly_growth?.value;
+  }
+  
+  // Apply defaults
+  startValue = startValue || 0;
+  monthlyGrowthRate = monthlyGrowthRate || 0;
   
   return startValue * Math.pow(1 + monthlyGrowthRate, monthIndex);
 }
@@ -218,9 +248,22 @@ export function calculateGeomGrowthVolume(volume: any, monthIndex: number): numb
 /**
  * Calculate volume using linear growth pattern
  */
-export function calculateLinearGrowthVolume(volume: any, monthIndex: number): number {
-  const startValue = volume?.series?.[0]?.value || 0;
-  const monthlyIncrease = volume.monthly_flat_increase?.value || 0;
+export function calculateLinearGrowthVolume(volume: any, monthIndex: number, businessData?: BusinessData): number {
+  // Try to get values from volume object first, then fallback to growth_settings
+  let startValue = volume?.series?.[0]?.value;
+  let monthlyIncrease = volume.monthly_flat_increase?.value;
+  
+  // If not found in volume, try growth_settings
+  if (startValue === undefined && businessData?.assumptions?.growth_settings?.linear_growth) {
+    startValue = businessData.assumptions.growth_settings.linear_growth.start?.value;
+  }
+  if (monthlyIncrease === undefined && businessData?.assumptions?.growth_settings?.linear_growth) {
+    monthlyIncrease = businessData.assumptions.growth_settings.linear_growth.monthly_flat_increase?.value;
+  }
+  
+  // Apply defaults
+  startValue = startValue || 0;
+  monthlyIncrease = monthlyIncrease || 0;
   
   return startValue + (monthlyIncrease * monthIndex);
 }

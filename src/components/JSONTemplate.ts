@@ -1,5 +1,5 @@
 export const JSONTemplate = `{
-  "schema_version": "0.7",
+  "schema_version": "0.8",
   "instructions": {
     "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
     "rules": [
@@ -13,7 +13,8 @@ export const JSONTemplate = `{
       "geom_growth": "start + monthly_growth rate; engine applies for all periods.",
       "seasonal_growth": "Provide seasonality_index_12 and base_year_total (engine repeats pattern yearly with optional yoy_growth).",
       "linear_growth": "start + monthly_flat_increase; engine applies for all periods."
-    }
+    },
+    "drivers_guidance": "Drivers are optional. You can create drivers for ANY numeric field as long as driver.path resolves to a '.value' in this JSON (e.g., 'assumptions.pricing.avg_unit_price.value'). The engine will apply the values in 'range' as scenario test points. If you don't need drivers, leave the 'drivers' array empty."
   },
   "meta": {
     "title": "TODO-Short title",
@@ -25,7 +26,7 @@ export const JSONTemplate = `{
   },
   "assumptions": {
     "pricing": {
-      "avg_unit_price": { "value": 0.0, "unit": "EUR_per_unit", "rationale": "TODO-average price rationale" },
+      "avg_unit_price": { "value": 0.0, "unit": "EUR_per_unit", "rationale": "TODO-average price rationale" }
     },
     "financial": {
       "interest_rate": { "value": 0.10, "unit": "ratio", "rationale": "10% discount rate for NPV calculations" }
@@ -67,7 +68,22 @@ export const JSONTemplate = `{
           ]
         }
       }
-    ]
+    ],
+    "growth_settings": {
+      "geom_growth": {
+        "start": { "value": 0, "unit": "units|accounts", "rationale": "TODO-starting level at period 1" },
+        "monthly_growth": { "value": 0.0, "unit": "ratio_per_month", "rationale": "TODO-monthly compounded growth rate" }
+      },
+      "seasonal_growth": {
+        "base_year_total": { "value": 0, "unit": "units|accounts", "rationale": "TODO-expected total for base year" },
+        "seasonality_index_12": { "value": [0,0,0,0,0,0,0,0,0,0,0,0], "unit": "ratio", "rationale": "TODO-12 monthly multipliers that sum to ~1.0" },
+        "yoy_growth": { "value": 0.0, "unit": "ratio_per_year", "rationale": "TODO-year-over-year growth applied to totals" }
+      },
+      "linear_growth": {
+        "start": { "value": 0, "unit": "units|accounts", "rationale": "TODO-starting level at period 1" },
+        "monthly_flat_increase": { "value": 0, "unit": "units|accounts_per_month", "rationale": "TODO-fixed monthly increment" }
+      }
+    }
   },
   "drivers": [
     {
