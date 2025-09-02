@@ -1,5 +1,5 @@
 export const JSONTemplate = `{
-  "schema_version": "0.5",
+  "schema_version": "0.6",
   "instructions": {
     "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
     "rules": [
@@ -18,6 +18,7 @@ export const JSONTemplate = `{
   "meta": {
     "title": "TODO-Short title",
     "description": "TODO-Concept description",
+    "business_model": "TODO-recurring|unit_sales",
     "currency": "EUR",
     "periods": 60,
     "frequency": "monthly"
@@ -31,11 +32,11 @@ export const JSONTemplate = `{
       "interest_rate": { "value": 0.10, "unit": "ratio", "rationale": "10% discount rate for NPV calculations" }
     },
     "customers": {
+      "churn_pct": { "value": 0.0, "unit": "ratio_per_month", "rationale": "TODO-monthly churn; used only if business_model=recurring" },
       "segments": [
         {
           "id": "TODO-segment_id_snake_case",
           "label": "TODO-Human label",
-          "kind": "demand|accounts",
           "rationale": "TODO-why this segment matters",
           "volume": {
             "type": "pattern|time_series",
@@ -52,17 +53,20 @@ export const JSONTemplate = `{
       "cac": { "value": 0.0, "unit": "EUR", "rationale": "TODO" }
     },
     "opex": [
+      { "name": "Sales & Marketing", "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" } },
+      { "name": "R&D",              "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" } },
+      { "name": "G&A",              "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" } }
+    ],
+    "capex": [
       {
-        "name": "Sales & Marketing",
-        "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" }
-      },
-      {
-        "name": "R&D",
-        "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" }
-      },
-      {
-        "name": "G&A",
-        "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" }
+        "name": "TODO-Asset or project",
+        "timeline": {
+          "type": "pattern|time_series",
+          "pattern_type": "geom_growth|seasonal_growth|linear_growth",
+          "series": [
+            { "period": 1, "value": 0, "unit": "EUR", "rationale": "TODO-one-off or phased investment" }
+          ]
+        }
       }
     ]
   },
@@ -82,6 +86,12 @@ export const JSONTemplate = `{
     {
       "key": "cogs_pct",
       "path": "assumptions.unit_economics.cogs_pct.value",
+      "range": [0, 0, 0, 0, 0],
+      "rationale": "TODO"
+    },
+    {
+      "key": "churn_pct",
+      "path": "assumptions.customers.churn_pct.value",
       "range": [0, 0, 0, 0, 0],
       "rationale": "TODO"
     }
