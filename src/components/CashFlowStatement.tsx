@@ -247,17 +247,17 @@ export function CashFlowStatement() {
                                  <span className="text-muted-foreground">-</span>
                                )}
                               
-                              {/* Tooltip */}
-                              {hoveredCell?.row === row.key && hoveredCell?.month === month.month && assumptions && (
-                                <div className="absolute z-50 bg-card border border-border rounded-lg p-3 shadow-elevation min-w-[250px] top-full left-1/2 transform -translate-x-1/2 mt-1">
-                                  <div className="text-sm space-y-2">
-                                    <div className="font-semibold text-foreground">{row.label} - Month {month.month}</div>
-                                    {assumptions.formula && (
-                                      <div>
-                                        <span className="text-muted-foreground">Formula:</span>
-                                        <div className="font-mono text-xs bg-muted/50 p-1 rounded">{assumptions.formula}</div>
-                                      </div>
-                                    )}
+                               {/* Tooltip */}
+                               {hoveredCell?.row === row.key && hoveredCell?.month === month.month && assumptions && (
+                                 <div className="absolute z-[100] bg-card border border-border rounded-lg p-3 shadow-elevation min-w-[250px] top-full left-1/2 transform -translate-x-1/2 mt-1">
+                                   <div className="text-sm space-y-2">
+                                     <div className="font-semibold text-foreground">{row.label} - Month {month.month}</div>
+                                     {assumptions.formula && (
+                                       <div>
+                                         <span className="text-muted-foreground">Formula:</span>
+                                         <div className="font-mono text-xs bg-muted/50 p-1 rounded">{assumptions.formula}</div>
+                                       </div>
+                                     )}
                                      {'rate' in assumptions && assumptions.rate && (
                                        <div>
                                          <span className="text-muted-foreground">Rate:</span> {assumptions.rate}
@@ -269,9 +269,9 @@ export function CashFlowStatement() {
                                          <div className="text-xs">{assumptions.rationale}</div>
                                        </div>
                                      )}
-                                  </div>
-                                </div>
-                              )}
+                                   </div>
+                                 </div>
+                               )}
                             </td>
                           );
                         })}

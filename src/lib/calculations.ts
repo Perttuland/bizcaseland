@@ -242,7 +242,7 @@ export function calculateTimeSeriesVolume(volume: any, monthIndex: number): numb
 }
 
 /**
- * Calculate capex for a specific month
+ * Calculate capex for a specific month based on period-specific investments
  */
 export function calculateCapexForMonth(businessData: BusinessData, monthIndex: number): number {
   const capexItems = businessData?.assumptions?.capex || [];
@@ -252,7 +252,15 @@ export function calculateCapexForMonth(businessData: BusinessData, monthIndex: n
     const timeline = item?.timeline;
     if (!timeline) continue;
 
-    if (timeline.type === "pattern") {
+    if (timeline.type === "time_series") {
+      // For time series, check if this specific month has a capex investment
+      const series = timeline.series || [];
+      const monthData = series.find((s: any) => s.period === monthIndex + 1);
+      if (monthData) {
+        totalCapex += monthData.value || 0;
+      }
+    } else if (timeline.type === "pattern") {
+      // For patterns, apply the same logic as volume calculations
       if (timeline.pattern_type === "seasonal_growth") {
         totalCapex += calculateSeasonalGrowthVolume(timeline, monthIndex);
       } else if (timeline.pattern_type === "geom_growth") {
@@ -260,8 +268,6 @@ export function calculateCapexForMonth(businessData: BusinessData, monthIndex: n
       } else if (timeline.pattern_type === "linear_growth") {
         totalCapex += calculateLinearGrowthVolume(timeline, monthIndex);
       }
-    } else if (timeline.type === "time_series") {
-      totalCapex += calculateTimeSeriesVolume(timeline, monthIndex);
     }
   }
 

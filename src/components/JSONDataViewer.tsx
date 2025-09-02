@@ -257,7 +257,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     },
     {
       key: 'capex',
-      title: 'Capital Expenditures',
+      title: 'Capex',
       icon: Settings,
       items: data.assumptions.capex ? data.assumptions.capex.map((item: any, index: number) => [
         `capex_${index}`,
