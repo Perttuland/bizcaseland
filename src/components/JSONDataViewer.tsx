@@ -324,7 +324,41 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                 <CardContent className="space-y-4">
                   {items.map(([itemKey, itemValue]: [string, any]) => {
                     const itemId = `${key}_${itemKey}`;
-                    const label = itemValue.name || itemKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    // Expand common financial acronyms and terms
+                    const expandedLabel = (itemValue.name || itemKey)
+                      .replace(/cac/gi, 'Customer Acquisition Cost')
+                      .replace(/ltv/gi, 'Customer Lifetime Value')
+                      .replace(/arpu/gi, 'Average Revenue Per User')
+                      .replace(/mrr/gi, 'Monthly Recurring Revenue')
+                      .replace(/arr/gi, 'Annual Recurring Revenue')
+                      .replace(/cogs/gi, 'Cost of Goods Sold')
+                      .replace(/opex/gi, 'Operating Expenses')
+                      .replace(/capex/gi, 'Capital Expenditures')
+                      .replace(/ebitda/gi, 'Earnings Before Interest, Taxes, Depreciation, and Amortization')
+                      .replace(/roi/gi, 'Return on Investment')
+                      .replace(/roas/gi, 'Return on Ad Spend')
+                      .replace(/ctr/gi, 'Click Through Rate')
+                      .replace(/cpm/gi, 'Cost Per Mille (Thousand Impressions)')
+                      .replace(/cpc/gi, 'Cost Per Click')
+                      .replace(/cpa/gi, 'Cost Per Acquisition')
+                      .replace(/rpu/gi, 'Revenue Per User')
+                      .replace(/gmv/gi, 'Gross Merchandise Value')
+                      .replace(/aov/gi, 'Average Order Value')
+                      .replace(/churn/gi, 'Customer Churn Rate')
+                      .replace(/conversion/gi, 'Conversion Rate')
+                      .replace(/gross_margin/gi, 'Gross Profit Margin')
+                      .replace(/net_margin/gi, 'Net Profit Margin')
+                      .replace(/burn_rate/gi, 'Monthly Cash Burn Rate')
+                      .replace(/runway/gi, 'Cash Runway')
+                      .replace(/market_share/gi, 'Market Share Percentage')
+                      .replace(/tam/gi, 'Total Addressable Market')
+                      .replace(/sam/gi, 'Serviceable Addressable Market')
+                      .replace(/som/gi, 'Serviceable Obtainable Market')
+                      .replace(/_/g, ' ')
+                      .replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    const label = expandedLabel;
                     
                     if (itemValue.formula) {
                       // Special rendering for formula-based items
