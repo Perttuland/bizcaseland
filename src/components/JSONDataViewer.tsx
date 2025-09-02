@@ -472,22 +472,55 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                             
                             {/* Show volume data if available */}
                             {segment.volume && (
-                              <div className="mt-3 p-3 bg-card rounded-lg border">
-                                <h5 className="font-medium mb-2">Volume Configuration</h5>
-                                <div className="space-y-1 text-sm">
-                                  <div><strong>Type:</strong> {segment.volume.type}</div>
-                                  <div><strong>Pattern:</strong> {segment.volume.pattern_type}</div>
-                                  {segment.volume.series && segment.volume.series.length > 0 && (
-                                    <div className="mt-2">
-                                      <strong>Initial Data:</strong>
-                                      <div className="p-2 bg-muted/50 rounded mt-1">
-                                        Period {segment.volume.series[0].period}: {segment.volume.series[0].value} {segment.volume.series[0].unit}
-                                        <br />
-                                        <span className="text-xs text-muted-foreground">{segment.volume.series[0].rationale}</span>
-                                      </div>
-                                    </div>
-                                  )}
+                              <div className="mt-3 p-3 bg-financial-success/10 rounded-lg border border-financial-success/20">
+                                <h5 className="font-medium mb-3 flex items-center gap-2">
+                                  <TrendingUp className="h-4 w-4 text-financial-success" />
+                                  Customer Volume Information
+                                </h5>
+                                <div className="grid grid-cols-2 gap-4 mb-3">
+                                  <div>
+                                    <span className="text-sm font-medium text-muted-foreground">Volume Type</span>
+                                    <p className="text-sm font-semibold">{segment.volume.type}</p>
+                                  </div>
+                                  <div>
+                                    <span className="text-sm font-medium text-muted-foreground">Growth Pattern</span>
+                                    <p className="text-sm font-semibold">{segment.volume.pattern_type}</p>
+                                  </div>
                                 </div>
+                                {segment.volume.series && segment.volume.series.length > 0 && (
+                                  <div className="space-y-2">
+                                    <span className="text-sm font-medium text-muted-foreground">Volume Series Data:</span>
+                                    <div className="space-y-2">
+                                      {segment.volume.series.slice(0, 3).map((period: any, idx: number) => (
+                                        <div key={idx} className="p-2 bg-card rounded border">
+                                          <div className="flex justify-between items-start">
+                                            <div>
+                                              <span className="font-medium text-financial-success">
+                                                Period {period.period}: {period.value?.toLocaleString() || period.value} {period.unit}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          {period.rationale && (
+                                            <p className="text-xs text-muted-foreground mt-1">{period.rationale}</p>
+                                          )}
+                                        </div>
+                                      ))}
+                                      {segment.volume.series.length > 3 && (
+                                        <p className="text-xs text-muted-foreground">
+                                          ... and {segment.volume.series.length - 3} more periods
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                {segment.volume.growth_rate && (
+                                  <div className="mt-3 p-2 bg-muted/50 rounded">
+                                    <span className="text-sm font-medium">Growth Rate: </span>
+                                    <span className="text-sm font-semibold text-financial-success">
+                                      {(segment.volume.growth_rate * 100).toFixed(1)}% per period
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
