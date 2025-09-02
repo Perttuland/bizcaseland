@@ -35,6 +35,8 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     customers: true,
     economics: true,
     opex: true,
+    structure: false,
+    drivers: false,
   });
   const { toast } = useToast();
 
@@ -157,7 +159,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                       <Badge variant="outline">{item.unit}</Badge>
                     </div>
                     <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
                         <strong>Rationale:</strong> {item.rationale}
                       </p>
                     </div>
@@ -212,6 +214,73 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     }
   ];
 
+  // Get all financial assumptions from the structure section
+  const getStructureDatapoints = () => {
+    const structureItems: any[] = [];
+    
+    if (data.structure?.revenue_streams) {
+      data.structure.revenue_streams.forEach((stream: any, index: number) => {
+        structureItems.push([
+          `revenue_${index}`,
+          {
+            value: stream.name,
+            unit: 'formula',
+            rationale: stream.rationale,
+            formula: stream.formula
+          }
+        ]);
+      });
+    }
+    
+    if (data.structure?.cost_items) {
+      data.structure.cost_items.forEach((cost: any, index: number) => {
+        structureItems.push([
+          `cost_${index}`,
+          {
+            value: cost.name,
+            unit: 'formula',
+            rationale: cost.rationale,
+            formula: cost.formula
+          }
+        ]);
+      });
+    }
+    
+    return structureItems;
+  };
+
+  // Get driver data points
+  const getDriverDatapoints = () => {
+    if (!data.drivers) return [];
+    
+    return data.drivers.map((driver: any, index: number) => [
+      `driver_${index}`,
+      {
+        value: driver.key,
+        unit: 'sensitivity',
+        rationale: driver.rationale,
+        path: driver.path,
+        range: driver.range
+      }
+    ]);
+  };
+
+  const allSections = [
+    ...sections,
+    {
+      key: 'structure',
+      title: 'Revenue & Cost Structure',
+      icon: TrendingUp,
+      items: getStructureDatapoints()
+    },
+    {
+      key: 'drivers',
+      title: 'Sensitivity Drivers',
+      icon: Settings,
+      items: getDriverDatapoints()
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <Card className="bg-gradient-card shadow-card">
@@ -221,12 +290,12 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
             <span>Datapoints and Assumptions</span>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            View and edit key business assumptions with their underlying rationales
+            View and edit all business assumptions, formulas, and rationales used in the analysis
           </p>
         </CardHeader>
       </Card>
 
-      {sections.map(({ key, title, icon, items }) => {
+      {allSections.map(({ key, title, icon, items }) => {
         if (!items || items.length === 0) return null;
 
         return (
@@ -256,6 +325,31 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                   {items.map(([itemKey, itemValue]: [string, any]) => {
                     const itemId = `${key}_${itemKey}`;
                     const label = itemValue.name || itemKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    
+                    if (itemValue.formula) {
+                      // Special rendering for formula-based items
+                      return (
+                        <Card key={itemId} className="bg-muted/30 border-l-4 border-l-financial-secondary">
+                          <CardContent className="p-4">
+                            <div className="flex items-start space-x-3">
+                              {React.createElement(icon, { className: "h-5 w-5 text-financial-secondary mt-1" })}
+                              <div className="flex-1 space-y-2">
+                                <h4 className="font-semibold text-lg">{label}</h4>
+                                <Badge variant="outline">{itemValue.unit}</Badge>
+                                <div className="p-2 bg-card rounded font-mono text-sm">
+                                  {itemValue.formula}
+                                </div>
+                                <div className="p-3 bg-muted/50 rounded-lg">
+                                  <p className="text-base text-muted-foreground leading-relaxed">
+                                    <strong>Rationale:</strong> {itemValue.rationale}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    }
                     
                     return renderEditableDatapoint(
                       itemId,
@@ -306,10 +400,31 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                             <h4 className="font-semibold text-lg">{segment.label}</h4>
                             <Badge variant="outline">{segment.kind}</Badge>
                             <div className="p-3 bg-muted/50 rounded-lg">
-                              <p className="text-sm text-muted-foreground">
+                              <p className="text-base text-muted-foreground leading-relaxed">
                                 <strong>Rationale:</strong> {segment.rationale}
                               </p>
                             </div>
+                            
+                            {/* Show volume data if available */}
+                            {segment.volume && (
+                              <div className="mt-3 p-3 bg-card rounded-lg border">
+                                <h5 className="font-medium mb-2">Volume Configuration</h5>
+                                <div className="space-y-1 text-sm">
+                                  <div><strong>Type:</strong> {segment.volume.type}</div>
+                                  <div><strong>Pattern:</strong> {segment.volume.pattern_type}</div>
+                                  {segment.volume.series && segment.volume.series.length > 0 && (
+                                    <div className="mt-2">
+                                      <strong>Initial Data:</strong>
+                                      <div className="p-2 bg-muted/50 rounded mt-1">
+                                        Period {segment.volume.series[0].period}: {segment.volume.series[0].value} {segment.volume.series[0].unit}
+                                        <br />
+                                        <span className="text-xs text-muted-foreground">{segment.volume.series[0].rationale}</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
