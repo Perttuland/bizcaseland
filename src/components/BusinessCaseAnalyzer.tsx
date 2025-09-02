@@ -224,8 +224,7 @@ export function BusinessCaseAnalyzer() {
                 <Button
                   variant={activeTab === 'data' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('data')}
-                  className="w-full justify-start"
-                  disabled={!jsonData}
+                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
                 >
                   <Edit3 className="h-4 w-4 mr-2" />
                   Datapoints & Assumptions
@@ -233,11 +232,26 @@ export function BusinessCaseAnalyzer() {
                 <Button
                   variant={activeTab === 'cashflow' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('cashflow')}
-                  className="w-full justify-start"
-                  disabled={!jsonData}
+                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
                 >
                   <Calculator className="h-4 w-4 mr-2" />
                   Business case analysis
+                </Button>
+                <Button
+                  variant={activeTab === 'analysis' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('analysis')}
+                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Financial Analysis
+                </Button>
+                <Button
+                  variant={activeTab === 'charts' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('charts')}
+                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                >
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Charts & Visualizations
                 </Button>
               </CardContent>
             </Card>
@@ -282,7 +296,43 @@ export function BusinessCaseAnalyzer() {
               </div>
             )}
 
-            {!jsonData && (activeTab !== 'input' || hasUploadedData) && (
+            {activeTab === 'analysis' && jsonData && (
+              <div className="animate-fade-in">
+                <FinancialAnalysis />
+              </div>
+            )}
+
+            {activeTab === 'charts' && jsonData && (
+              <div className="animate-fade-in">
+                <DataVisualization data={jsonData} />
+              </div>
+            )}
+
+            {activeTab === 'analysis' && !jsonData && (
+              <Card className="bg-gradient-card shadow-card">
+                <CardContent className="flex items-center justify-center py-12">
+                  <div className="text-center space-y-3">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+                    <h3 className="text-lg font-semibold">No Data Available</h3>
+                    <p className="text-muted-foreground">Please paste valid JSON data to view financial analysis.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeTab === 'charts' && !jsonData && (
+              <Card className="bg-gradient-card shadow-card">
+                <CardContent className="flex items-center justify-center py-12">
+                  <div className="text-center space-y-3">
+                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+                    <h3 className="text-lg font-semibold">No Data Available</h3>
+                    <p className="text-muted-foreground">Please paste valid JSON data to view charts and visualizations.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {!jsonData && (activeTab !== 'input' || hasUploadedData) && activeTab !== 'analysis' && activeTab !== 'charts' && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
                   <div className="text-center space-y-3">
