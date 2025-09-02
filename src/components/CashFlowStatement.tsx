@@ -206,7 +206,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
 
       <Card className="bg-gradient-card shadow-card">
         <CardContent className="p-0">
-          <ScrollArea className="w-full" style={{ maxWidth: '100vw' }}>
+          <div className="overflow-x-auto max-w-full">
             <div className="min-w-max" style={{ width: `${200 + (monthlyData.length * 100)}px` }}>
               <table className="w-full">
                 <thead>
@@ -301,7 +301,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
                 </tbody>
               </table>
             </div>
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
 
