@@ -46,9 +46,14 @@ export function FinancialAnalysis() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">{businessData.meta.title}</CardTitle>
-            <Badge className={getArchetypeColor(businessData.meta.archetype)}>
-              {businessData.meta.archetype}
-            </Badge>
+            <div className="flex items-center space-x-2">
+              <Badge className={getArchetypeColor(businessData.meta.archetype)}>
+                {businessData.meta.archetype}
+              </Badge>
+              <Badge variant="outline" className="bg-financial-primary text-financial-primary-foreground">
+                {businessData.meta.business_model === 'recurring' ? 'Recurring Revenue' : 'Unit Sales'}
+              </Badge>
+            </div>
           </div>
           <p className="text-muted-foreground">{businessData.meta.description}</p>
         </CardHeader>

@@ -74,17 +74,28 @@ export function CashFlowStatement() {
     return 'text-muted-foreground';
   };
 
+  // Determine if we're using a recurring revenue model
+  const isRecurringModel = businessData?.meta?.business_model === 'recurring' || 
+                          businessData?.meta?.business_model === 'subscription';
+
   const rows = [
     { label: 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
     { label: '  Sales Volume', key: 'salesVolume', isSubItem: true, category: 'volume', unit: 'units' },
-    { label: '  New Customers', key: 'newCustomers', isSubItem: true, category: 'volume', unit: 'units' },
-    { label: '  Existing Customers', key: 'existingCustomers', isSubItem: true, category: 'volume', unit: 'units' },
+    ...(isRecurringModel ? [
+      { label: '  New Customers', key: 'newCustomers', isSubItem: true, category: 'volume', unit: 'units' },
+      { label: '  Existing Customers', key: 'existingCustomers', isSubItem: true, category: 'volume', unit: 'units' }
+    ] : []),
     { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'decimal' },
     { label: 'Cost of Goods Sold', key: 'cogs', category: 'costs' },
     { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
-    { label: '  Total CAC (New Customers Only)', key: 'totalCAC', isSubItem: true, category: 'costs' },
+    { 
+      label: isRecurringModel ? '  Total CAC (New Customers Only)' : '  Total CAC', 
+      key: 'totalCAC', 
+      isSubItem: true, 
+      category: 'costs' 
+    },
     { label: 'Research & Development', key: 'rd', category: 'opex' },
     { label: 'General & Administrative', key: 'ga', category: 'opex' },
     { label: 'Total Operating Expenses', key: 'totalOpex', isSubtotal: true, category: 'opex' },
@@ -143,9 +154,13 @@ export function CashFlowStatement() {
         rationale: businessData?.assumptions?.unit_economics?.cac?.rationale
       },
       totalCAC: {
-        formula: `New Customers × CAC`,
-        components: `${currentMonth?.newCustomers?.toLocaleString()} new customers × ${formatDecimal(currentMonth?.cac || 0)}`,
-        rationale: `CAC only applies to new customer acquisitions. ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
+        formula: isRecurringModel ? `New Customers × CAC` : `Sales Volume × CAC`,
+        components: isRecurringModel 
+          ? `${currentMonth?.newCustomers?.toLocaleString()} new customers × ${formatDecimal(currentMonth?.cac || 0)}`
+          : `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatDecimal(currentMonth?.cac || 0)}`,
+        rationale: isRecurringModel 
+          ? `CAC only applies to new customer acquisitions in recurring models. ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
+          : `CAC applies to all unit sales in transactional models. ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
       },
       ebitda: {
         formula: `Gross Profit + Total Operating Expenses`,

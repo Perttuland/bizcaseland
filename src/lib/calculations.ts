@@ -104,8 +104,9 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
         newCustomers = Math.max(0, totalSalesVolume - existingCustomers);
       }
     } else {
-      // For transactional models, all volume represents new customers each month
-      newCustomers = totalSalesVolume;
+      // For transactional/unit sales models, all volume represents new transactions each month
+      // We don't track customers separately - each unit sale is independent
+      newCustomers = totalSalesVolume; // This represents units sold, not customers
       existingCustomers = 0;
     }
     
@@ -120,8 +121,11 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 0));
     const cac = businessData?.assumptions?.unit_economics?.cac?.value || 0;
     
-    // CAC only applies to new customers, not existing ones
-    const totalCAC = -Math.round(newCustomers * cac);
+    // For recurring models: CAC only applies to new customers
+    // For unit sales models: CAC applies to all units (since each sale is independent)
+    const totalCAC = businessModel === 'recurring' || businessModel === 'subscription'
+      ? -Math.round(newCustomers * cac)
+      : -Math.round(totalSalesVolume * cac);
     
     const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 0));
     const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 0));
