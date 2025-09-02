@@ -4,8 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle, BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { useToast } from '@/hooks/use-toast';
 import { calculateBusinessMetrics, formatCurrency } from '@/lib/calculations';
@@ -347,18 +347,15 @@ export function CashFlowStatement() {
         </Card>
       </div>
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue and Net Cash Flow Line Chart */}
+      {/* Three Charts Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 1. Revenue & Operating Expense */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-financial-primary" />
-              <span>Revenue & Net Cash Flow</span>
+              <span>Revenue & Operating Expense</span>
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Monthly trends comparison
-            </p>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -369,6 +366,7 @@ export function CashFlowStatement() {
                     dataKey="month" 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
+                    interval={Math.floor(monthlyData.length / 10)}
                   />
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"
@@ -395,18 +393,19 @@ export function CashFlowStatement() {
                   <Line 
                     type="monotone" 
                     dataKey="revenue" 
-                    stroke="hsl(var(--financial-success))" 
+                    stroke="hsl(var(--financial-primary))" 
                     strokeWidth={3}
                     dot={false}
                     name="Revenue"
                   />
                   <Line 
                     type="monotone" 
-                    dataKey="netCashFlow" 
-                    stroke="hsl(var(--financial-primary))" 
-                    strokeWidth={3}
+                    dataKey="totalOpex" 
+                    stroke="hsl(var(--financial-danger))" 
+                    strokeWidth={2}
                     dot={false}
-                    name="Net Cash Flow"
+                    strokeDasharray="5 5"
+                    name="Operating Expense"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -414,64 +413,37 @@ export function CashFlowStatement() {
           </CardContent>
         </Card>
 
-        {/* Cost Structure Bar Chart */}
+        {/* 2. Sales Volume */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <DollarSign className="h-5 w-5 text-financial-warning" />
-              <span>Cost Structure (Month 12)</span>
+              <BarChart3 className="h-5 w-5 text-financial-success" />
+              <span>Sales Volume</span>
             </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Breakdown of major cost components
-            </p>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={[
-                  {
-                    name: 'Sales & Marketing',
-                    value: Math.abs(monthlyData[11]?.salesMarketing || 0),
-                    color: 'hsl(var(--financial-danger))'
-                  },
-                  {
-                    name: 'R&D',
-                    value: Math.abs(monthlyData[11]?.rd || 0),
-                    color: 'hsl(var(--financial-warning))'
-                  },
-                  {
-                    name: 'G&A',
-                    value: Math.abs(monthlyData[11]?.ga || 0),
-                    color: 'hsl(var(--financial-secondary))'
-                  },
-                  {
-                    name: 'COGS',
-                    value: Math.abs(monthlyData[11]?.cogs || 0),
-                    color: 'hsl(var(--financial-primary))'
-                  }
-                ]}>
+                <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
-                    dataKey="name" 
+                    dataKey="month" 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
+                    interval={Math.floor(monthlyData.length / 10)}
                   />
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip 
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         return (
                           <div className="bg-card border border-border rounded-lg p-3 shadow-md">
-                            <p className="font-semibold">{label}</p>
+                            <p className="font-semibold">{`Month ${label}`}</p>
                             <p style={{ color: payload[0].color }}>
-                              {`Cost: ${formatCurrency(payload[0].value as number)}`}
+                              {`Sales Volume: ${(payload[0].value as number).toLocaleString()} units`}
                             </p>
                           </div>
                         );
@@ -479,12 +451,77 @@ export function CashFlowStatement() {
                       return null;
                     }}
                   />
-                  <Bar 
-                    dataKey="value" 
-                    fill="hsl(var(--financial-danger))"
-                    radius={[4, 4, 0, 0]}
+                  <Line 
+                    type="monotone" 
+                    dataKey="salesVolume" 
+                    stroke="hsl(var(--financial-success))" 
+                    strokeWidth={3}
+                    dot={false}
+                    name="Sales Volume"
                   />
-                </BarChart>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 3. Cost Structure Pie Chart */}
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <PieChartIcon className="h-5 w-5 text-financial-warning" />
+              <span>Total Cost Structure</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { 
+                        name: 'Sales & Marketing', 
+                        value: monthlyData.reduce((sum, m) => sum + (m.salesMarketing || 0), 0),
+                        color: 'hsl(var(--financial-primary))'
+                      },
+                      { 
+                        name: 'R&D', 
+                        value: monthlyData.reduce((sum, m) => sum + (m.rd || 0), 0),
+                        color: 'hsl(var(--financial-success))'
+                      },
+                      { 
+                        name: 'G&A', 
+                        value: monthlyData.reduce((sum, m) => sum + (m.ga || 0), 0),
+                        color: 'hsl(var(--financial-warning))'
+                      },
+                      { 
+                        name: 'CAPEX', 
+                        value: monthlyData.reduce((sum, m) => sum + (m.capex || 0), 0),
+                        color: 'hsl(var(--financial-danger))'
+                      }
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {[
+                      { color: 'hsl(var(--financial-primary))' },
+                      { color: 'hsl(var(--financial-success))' },
+                      { color: 'hsl(var(--financial-warning))' },
+                      { color: 'hsl(var(--financial-danger))' }
+                    ].map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => [formatCurrency(value), '']}
+                    labelFormatter={(label) => `${label}`}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
