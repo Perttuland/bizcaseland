@@ -5,7 +5,7 @@ export interface CalculatedMetrics {
   netProfit: number;
   npv: number;
   paybackPeriod: number;
-  roi: number;
+  totalInvestmentRequired: number;
   breakEvenMonth: number;
   monthlyData: MonthlyData[];
 }
@@ -55,17 +55,20 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   const netProfit = monthlyData.reduce((sum, month) => sum + month.netCashFlow, 0);
   const paybackPeriod = breakEvenMonth || 0;
   
-  // Calculate ROI: (Net Profit / Total Investment) * 100
-  const totalInvestment = monthlyData.reduce((sum, month) => sum + month.capex, 0) + 
-                         (businessData.assumptions?.financial?.initial_investment?.value || 0);
-  const roi = totalInvestment > 0 ? (netProfit / totalInvestment) : 0;
+  // Calculate Total Investment Required: sum of Capex + sum of negative net cash flows until break even
+  const totalCapex = monthlyData.reduce((sum, month) => sum + month.capex, 0);
+  const breakEvenIndex = breakEvenMonth ? breakEvenMonth - 1 : monthlyData.length;
+  const negativeNetCashFlowsUntilBreakeven = monthlyData
+    .slice(0, breakEvenIndex)
+    .reduce((sum, month) => sum + Math.min(0, month.netCashFlow), 0);
+  const totalInvestmentRequired = totalCapex + Math.abs(negativeNetCashFlowsUntilBreakeven);
 
   return {
     totalRevenue,
     netProfit,
     npv,
     paybackPeriod,
-    roi,
+    totalInvestmentRequired,
     breakEvenMonth: breakEvenMonth || 0,
     monthlyData
   };
@@ -370,7 +373,7 @@ function getDefaultMetrics(): CalculatedMetrics {
     netProfit: 0,
     npv: 0,
     paybackPeriod: 0,
-    roi: 0,
+    totalInvestmentRequired: 0,
     breakEvenMonth: 0,
     monthlyData: []
   };

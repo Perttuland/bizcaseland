@@ -135,8 +135,8 @@ export function FinancialAnalysis() {
               <div className="text-sm text-muted-foreground">Payback Period (months)</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
-              <div className="text-3xl font-bold text-financial-success mb-2">{formatPercent(calculatedMetrics.roi)}</div>
-              <div className="text-sm text-muted-foreground">Return on Investment</div>
+              <div className="text-3xl font-bold text-financial-warning mb-2">{formatCurrency(calculatedMetrics.totalInvestmentRequired, businessData.meta.currency)}</div>
+              <div className="text-sm text-muted-foreground">Total Investment Required</div>
             </div>
             <div className="text-center p-4 bg-muted/50 rounded-lg">
               <div className="text-3xl font-bold text-financial-warning mb-2">{calculatedMetrics.breakEvenMonth}</div>
