@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3 } from 'lucide-react';
+import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { JSONTemplate } from './JSONTemplate';
 import { FinancialAnalysis } from './FinancialAnalysis';
@@ -22,9 +22,12 @@ export function BusinessCaseAnalyzer() {
 
   const handleJsonPaste = (value: string) => {
     setInputJson(value);
+    validateJson(value);
+  };
+
+  const validateJson = (value: string) => {
     if (!value.trim()) {
       setIsValidJson(null);
-      updateData(null);
       return;
     }
 
@@ -32,16 +35,8 @@ export function BusinessCaseAnalyzer() {
       const parsed = JSON.parse(value);
       if (parsed.meta && parsed.assumptions) {
         setIsValidJson(true);
-        updateData(parsed);
-        setHasUploadedData(true);
-        setActiveTab('data'); // Switch to datapoints tab after upload
-        toast({
-          title: "JSON Validated",
-          description: "Business case data loaded successfully! JSON discarded - edit values in Datapoints tab.",
-        });
       } else {
         setIsValidJson(false);
-        updateData(null);
         toast({
           title: "Invalid Format",
           description: "JSON must contain 'meta' and 'assumptions' fields.",
@@ -50,10 +45,37 @@ export function BusinessCaseAnalyzer() {
       }
     } catch (error) {
       setIsValidJson(false);
-      updateData(null);
       toast({
         title: "Invalid JSON",
         description: "Please check your JSON syntax.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const refreshData = () => {
+    if (!isValidJson || !inputJson.trim()) {
+      toast({
+        title: "Cannot Refresh",
+        description: "Please ensure JSON is valid before refreshing.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(inputJson);
+      updateData(parsed);
+      setHasUploadedData(true);
+      setActiveTab('data');
+      toast({
+        title: "Data Refreshed",
+        description: "Business case data updated from JSON!",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Error parsing JSON data.",
         variant: "destructive",
       });
     }
@@ -151,30 +173,36 @@ export function BusinessCaseAnalyzer() {
                   Copy JSON Template
                 </Button>
                 
-                {hasUploadedData ? (
+                <Button 
+                  onClick={resetForNewUpload}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Clear & Upload New JSON
+                </Button>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm font-medium">JSON Data</label>
+                    {getValidationIcon()}
+                    {getValidationBadge()}
+                  </div>
+                  <Textarea
+                    placeholder="Paste your AI-filled JSON here..."
+                    value={inputJson}
+                    onChange={(e) => handleJsonPaste(e.target.value)}
+                    className="min-h-[200px] font-mono text-xs"
+                  />
                   <Button 
-                    onClick={resetForNewUpload}
-                    variant="outline"
+                    onClick={refreshData}
+                    disabled={!isValidJson}
                     className="w-full"
                   >
-                    <Upload className="h-4 w-4 mr-2" />
-                    Upload New JSON
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Data from JSON
                   </Button>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-medium">Paste JSON Data</label>
-                      {getValidationIcon()}
-                      {getValidationBadge()}
-                    </div>
-                    <Textarea
-                      placeholder="Paste your AI-filled JSON here..."
-                      value={inputJson}
-                      onChange={(e) => handleJsonPaste(e.target.value)}
-                      className="min-h-[200px] font-mono text-xs"
-                    />
-                  </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
