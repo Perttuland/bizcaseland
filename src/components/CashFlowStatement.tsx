@@ -82,7 +82,6 @@ export function CashFlowStatement() {
     { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
-    { label: '  Customer Acquisition Cost', key: 'cac', isSubItem: true, category: 'cac', unit: 'decimal' },
     { label: '  Total CAC', key: 'totalCAC', isSubItem: true, category: 'costs' },
     { label: 'Research & Development', key: 'rd', category: 'opex' },
     { label: 'General & Administrative', key: 'ga', category: 'opex' },
