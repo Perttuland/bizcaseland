@@ -1,5 +1,5 @@
 export const JSONTemplate = `{
-  "schema_version": "0.6",
+  "schema_version": "0.7",
   "instructions": {
     "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
     "rules": [
@@ -26,7 +26,6 @@ export const JSONTemplate = `{
   "assumptions": {
     "pricing": {
       "avg_unit_price": { "value": 0.0, "unit": "EUR_per_unit", "rationale": "TODO-average price rationale" },
-      "discount_pct": { "value": 0.0, "unit": "ratio", "rationale": "TODO-discount policy" }
     },
     "financial": {
       "interest_rate": { "value": 0.10, "unit": "ratio", "rationale": "10% discount rate for NPV calculations" }
