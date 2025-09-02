@@ -35,34 +35,31 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       const currentDate = new Date(startDate);
       currentDate.setMonth(startDate.getMonth() + i);
       
-      // Mock financial data with some growth pattern
-      const baseRevenue = 50000 + (i * 2000);
+      // Calculate sales volume and unit price from business data
+      const baseVolume = businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000;
+      const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
       const growthFactor = 1 + (i * 0.02);
-      const seasonality = 1 + Math.sin((i / 12) * 2 * Math.PI) * 0.1;
       
-      const revenue = Math.round(baseRevenue * growthFactor * seasonality);
-      const cogs = -Math.round(revenue * 0.3); // Negative cost
-      const grossProfit = revenue + cogs; // Adding because cogs is negative
+      const salesVolume = Math.round(baseVolume * growthFactor);
+      const revenue = Math.round(salesVolume * unitPrice);
       
-      const salesMarketing = -Math.round(15000 + (i * 300)); // Negative cost
-      const rd = -Math.round(8000 + (i * 200)); // Negative cost
-      const ga = -Math.round(5000 + (i * 100)); // Negative cost
+      const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3));
+      const grossProfit = revenue + cogs;
+      
+      const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 15000) + (i * 300));
+      const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 8000) + (i * 200));
+      const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 5000) + (i * 100));
       const totalOpex = salesMarketing + rd + ga;
       
-      const ebitda = grossProfit - totalOpex;
-      const depreciation = -2000; // Negative cost
-      const ebit = ebitda + depreciation; // Adding because depreciation is negative
-      const interest = -500; // Negative cost
-      const taxes = -Math.max(0, (ebit + interest) * 0.25); // Negative cost
-      const netIncome = ebit + interest + taxes; // Adding because they're negative
-      
-      const capex = -(i === 0 ? 50000 : (i % 12 === 0 ? 10000 : 0)); // Negative cost
-      const workingCapitalChange = -Math.round(revenue * 0.02); // Negative cost
-      const netCashFlow = netIncome - depreciation + capex + workingCapitalChange; // Adjusted for net cash flow
+      const ebitda = grossProfit + totalOpex;
+      const capex = -(i === 0 ? 50000 : (i % 12 === 0 ? 10000 : 0));
+      const netCashFlow = ebitda + capex;
       
       months.push({
         month: i + 1,
         date: currentDate,
+        salesVolume,
+        unitPrice,
         revenue,
         cogs,
         grossProfit,
@@ -71,13 +68,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
         ga,
         totalOpex,
         ebitda,
-        depreciation,
-        ebit,
-        interest,
-        taxes,
-        netIncome,
         capex,
-        workingCapitalChange,
         netCashFlow,
       });
     }
@@ -87,6 +78,17 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
 
   const monthlyData = generateMonthlyData();
   const currency = data.meta.currency || 'EUR';
+  
+  // Calculate NPV using interest rate from business data
+  const calculateNPV = () => {
+    const interestRate = businessData?.assumptions?.financial?.interest_rate?.value || 0.10;
+    const monthlyRate = interestRate / 12;
+    
+    return monthlyData.reduce((npv, month, index) => {
+      const discountFactor = Math.pow(1 + monthlyRate, -(index + 1));
+      return npv + (month.netCashFlow * discountFactor);
+    }, 0);
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -112,6 +114,8 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
 
   const rows = [
     { label: 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
+    { label: '  Sales Volume', key: 'salesVolume', isSubItem: true, category: 'volume', unit: 'units' },
+    { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'currency' },
     { label: 'Cost of Goods Sold', key: 'cogs', category: 'costs' },
     { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
@@ -121,6 +125,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
     { label: 'Total Operating Expenses', key: 'totalOpex', isSubtotal: true, category: 'opex' },
     { label: '', key: 'spacer2', category: 'spacer' },
     { label: 'EBITDA', key: 'ebitda', isTotal: true, category: 'profit' },
+    { label: 'CAPEX', key: 'capex', category: 'capex' },
     { label: '', key: 'spacer3', category: 'spacer' },
     { label: 'Net Cash Flow', key: 'netCashFlow', isTotal: true, category: 'cash' },
   ];
@@ -128,24 +133,57 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
   const getAssumptions = (rowKey: string, month: number) => {
     if (!businessData.assumptions) return null;
     
-    // Mock assumptions based on row key and business data
+    const monthlyData = generateMonthlyData();
+    const currentMonth = monthlyData[month - 1];
+    
     const assumptions = {
       revenue: {
-        formula: `Base Revenue × Growth Factor × Seasonality`,
-        baseValue: 50000,
-        growthRate: `${(month * 2)}% monthly growth`,
-        seasonality: `${(Math.sin((month / 12) * 2 * Math.PI) * 10).toFixed(1)}% seasonal adjustment`
+        formula: `Sales Volume × Unit Price`,
+        components: `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatCurrency(currentMonth?.unitPrice || 0)}`,
+        rationale: businessData.assumptions.pricing?.avg_unit_price?.rationale || 'Revenue calculation from volume and pricing'
+      },
+      salesVolume: {
+        formula: `Base Volume × Growth Factor`,
+        baseValue: businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000,
+        growthRate: `${(month * 2)}% cumulative growth`,
+        rationale: businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.rationale || 'Customer volume projection'
+      },
+      unitPrice: {
+        formula: `Average Unit Price`,
+        value: businessData?.assumptions?.pricing?.avg_unit_price?.value || 50,
+        rationale: businessData?.assumptions?.pricing?.avg_unit_price?.rationale || 'Average price per unit'
       },
       cogs: {
         formula: `Revenue × COGS Rate`,
-        rate: '30%',
-        rationale: businessData.assumptions.unit_economics?.cogs?.rationale || 'Standard industry COGS percentage'
+        rate: `${((businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3) * 100)}%`,
+        rationale: businessData.assumptions.unit_economics?.cogs_pct?.rationale || 'Cost of goods sold percentage'
       },
       salesMarketing: {
-        formula: `Base Cost + Monthly Increment`,
-        baseCost: 15000,
-        increment: 300,
-        rationale: businessData.assumptions.opex?.[0]?.rationale || 'Marketing spend scaling with growth'
+        formula: `Base Cost + Monthly Growth`,
+        baseCost: businessData?.assumptions?.opex?.[0]?.value?.value || 15000,
+        rationale: businessData?.assumptions?.opex?.[0]?.value?.rationale || 'Sales and marketing expenses'
+      },
+      rd: {
+        formula: `Base Cost + Monthly Growth`,
+        baseCost: businessData?.assumptions?.opex?.[1]?.value?.value || 8000,
+        rationale: businessData?.assumptions?.opex?.[1]?.value?.rationale || 'Research and development costs'
+      },
+      ga: {
+        formula: `Base Cost + Monthly Growth`,
+        baseCost: businessData?.assumptions?.opex?.[2]?.value?.value || 5000,
+        rationale: businessData?.assumptions?.opex?.[2]?.value?.rationale || 'General and administrative costs'
+      },
+      ebitda: {
+        formula: `Gross Profit + Total Operating Expenses`,
+        rationale: 'Earnings before interest, taxes, depreciation, and amortization'
+      },
+      capex: {
+        formula: `Initial Investment + Periodic Investments`,
+        rationale: 'Capital expenditures for equipment and infrastructure'
+      },
+      netCashFlow: {
+        formula: `EBITDA + CAPEX`,
+        rationale: 'Net cash flow after operating profit and capital investments'
       }
     };
     
@@ -168,21 +206,19 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
 
       <Card className="bg-gradient-card shadow-card">
         <CardContent className="p-0">
-          <ScrollArea className="w-full">
-            <div className="min-w-max">
+          <ScrollArea className="w-full" style={{ maxWidth: '100vw' }}>
+            <div className="min-w-max" style={{ width: `${200 + (monthlyData.length * 100)}px` }}>
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
                     <th className="sticky left-0 bg-gradient-card z-10 px-4 py-3 text-left font-semibold min-w-[200px]">
                       Line Item
                     </th>
-                    {monthlyData.map((month) => (
-                      <th key={month.month} className="px-3 py-3 text-center font-medium min-w-[100px] border-l border-border">
-                        <div className="flex flex-col items-center space-y-1">
-                          <span className="text-xs text-muted-foreground">{month.month}</span>
-                        </div>
-                      </th>
-                    ))}
+                     {monthlyData.map((month) => (
+                       <th key={month.month} className="px-3 py-3 text-center font-medium min-w-[100px] border-l border-border">
+                         <span className="text-sm font-medium">{month.month}</span>
+                       </th>
+                     ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -195,11 +231,12 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
                       );
                     }
 
-                    const rowClasses = [
-                      'border-b border-border/50',
-                      row.isTotal && 'bg-muted/30 font-semibold',
-                      row.isSubtotal && 'bg-muted/20 font-medium',
-                    ].filter(Boolean).join(' ');
+                     const rowClasses = [
+                       'border-b border-border/50',
+                       row.isTotal && 'bg-muted/30 font-semibold',
+                       row.isSubtotal && 'bg-muted/20 font-medium',
+                       row.isSubItem && 'bg-muted/10 text-sm',
+                     ].filter(Boolean).join(' ');
 
                     return (
                       <tr key={index} className={rowClasses}>
@@ -222,13 +259,13 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
                               onMouseEnter={() => setHoveredCell({row: row.key, month: month.month})}
                               onMouseLeave={() => setHoveredCell(null)}
                             >
-                              {typeof value === 'number' ? (
-                                <span className={`font-mono text-sm ${getValueColor(value)}`}>
-                                  {formatCurrency(value)}
-                                </span>
-                              ) : (
-                                <span className="text-muted-foreground">-</span>
-                              )}
+                             {typeof value === 'number' ? (
+                                 <span className={`font-mono text-sm ${getValueColor(value)}`}>
+                                   {row.unit === 'units' ? value.toLocaleString() : formatCurrency(value)}
+                                 </span>
+                               ) : (
+                                 <span className="text-muted-foreground">-</span>
+                               )}
                               
                               {/* Tooltip */}
                               {hoveredCell?.row === row.key && hoveredCell?.month === month.month && assumptions && (
@@ -288,9 +325,9 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Total EBITDA</p>
+                <p className="text-sm text-white/80">Net Present Value</p>
                 <p className="text-xl font-bold text-white">
-                  {formatCurrency(monthlyData.reduce((sum, m) => sum + m.ebitda, 0))}
+                  {formatCurrency(calculateNPV())}
                 </p>
               </div>
               <DollarSign className="h-6 w-6 text-white" />

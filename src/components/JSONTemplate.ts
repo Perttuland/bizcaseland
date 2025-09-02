@@ -34,6 +34,10 @@ export const JSONTemplate = `{
       "discount_pct": { "value": 0.0, "unit": "ratio", "rationale": "TODO-discount policy" }
     },
 
+    "financial": {
+      "interest_rate": { "value": 0.10, "unit": "ratio", "rationale": "10% discount rate for NPV calculations" }
+    },
+
     "customers": {
       "segments": [
         {
@@ -101,8 +105,14 @@ export const JSONTemplate = `{
     {
       "key": "cac",
       "path": "assumptions.unit_economics.cac.value",
-      "range": [0, 0, 0, 0],
+      "range": [0, 0, 0, 0, 0],
       "rationale": "TODO"
+    },
+    {
+      "key": "interest_rate",
+      "path": "assumptions.financial.interest_rate.value",
+      "range": [0.05, 0.08, 0.10, 0.12, 0.15],
+      "rationale": "Discount rate for NPV calculation"
     }
   ],
 
