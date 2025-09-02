@@ -1,5 +1,5 @@
 export const JSONTemplate = `{
-  "schema_version": "0.8",
+  "schema_version": "0.62",
   "instructions": {
     "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
     "rules": [
@@ -7,7 +7,8 @@ export const JSONTemplate = `{
       "Every numeric datum must have value, unit, and rationale.",
       "Default horizon is 5 years (60 months). Provide at least Year 1 detail OR a pattern; the engine expands the rest.",
       "Use global pricing only (no per-segment pricing).",
-      "If a field does not apply, set unit='n/a' and explain in rationale."
+      "If a field does not apply, set unit='n/a' and explain in rationale.",
+      "Only one growth model (geom_growth, seasonal_growth, or linear_growth) should be selected and populated per case. Leave the others empty."
     ],
     "growth_patterns": {
       "geom_growth": "start + monthly_growth rate; engine applies for all periods.",

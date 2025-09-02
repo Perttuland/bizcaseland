@@ -378,8 +378,8 @@ export function CashFlowStatement() {
               <span>Revenue & Operating Expense</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
+          <CardContent className="flex items-center justify-center">
+            <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -442,8 +442,8 @@ export function CashFlowStatement() {
               <span>Sales Volume</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
+          <CardContent className="flex items-center justify-center">
+            <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -494,8 +494,8 @@ export function CashFlowStatement() {
               <span>Net Cash Flow</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-80">
+          <CardContent className="flex items-center justify-center">
+            <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
                   <XAxis 
