@@ -129,6 +129,12 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
         if (updatedData.assumptions.capex[capexIndex]?.timeline?.series?.[0]) {
           updatedData.assumptions.capex[capexIndex].timeline.series[0] = tempValue;
         }
+      } else if (section === 'growth' && updatedData.assumptions?.growth_settings) {
+        // Handle growth settings updates
+        const [modelType, paramKey] = itemKey.split('_', 2);
+        if (updatedData.assumptions.growth_settings[modelType]?.[paramKey]) {
+          updatedData.assumptions.growth_settings[modelType][paramKey] = tempValue;
+        }
       }
     }
     
@@ -266,6 +272,31 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     }
   ];
 
+  const getGrowthSettingsDatapoints = () => {
+    if (!data.assumptions?.growth_settings) return [];
+    
+    const growthItems: any[] = [];
+    
+    // Check which growth models are defined and their data
+    Object.entries(data.assumptions.growth_settings).forEach(([modelKey, modelData]: [string, any]) => {
+      if (modelData && typeof modelData === 'object') {
+        Object.entries(modelData).forEach(([paramKey, paramValue]: [string, any]) => {
+          if (paramValue && typeof paramValue === 'object' && paramValue.value !== undefined) {
+            growthItems.push([
+              `${modelKey}_${paramKey}`,
+              {
+                ...paramValue,
+                modelType: modelKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
+              }
+            ]);
+          }
+        });
+      }
+    });
+    
+    return growthItems;
+  };
+
   const getStructureDatapoints = () => {
     const structureItems: any[] = [];
     
@@ -318,6 +349,12 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
 
   const allSections = [
     ...sections,
+    {
+      key: 'growth',
+      title: 'Growth Settings',
+      icon: TrendingUp,
+      items: getGrowthSettingsDatapoints()
+    },
     {
       key: 'structure',
       title: 'Revenue & Cost Structure',

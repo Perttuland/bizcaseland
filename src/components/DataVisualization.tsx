@@ -1,8 +1,10 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, BarChart3, Users, DollarSign, Activity, PieChart as PieChartIcon } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
+import { calculateBusinessMetrics } from '@/lib/calculations';
 
 interface DataVisualizationProps {
   data: BusinessData;
@@ -13,6 +15,24 @@ export function DataVisualization({ data }: DataVisualizationProps) {
   
   // Use context data if available, otherwise use prop data
   const businessData = contextData || data;
+  
+  // Calculate metrics using the centralized calculation engine
+  const calculatedMetrics = useMemo(() => {
+    return calculateBusinessMetrics(businessData);
+  }, [businessData]);
+
+  // Get the active growth model being used
+  const getActiveGrowthModel = () => {
+    const segments = businessData?.assumptions?.customers?.segments || [];
+    for (const segment of segments) {
+      if (segment.volume?.pattern_type) {
+        return segment.volume.pattern_type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+      }
+    }
+    return null;
+  };
+
+  const activeGrowthModel = getActiveGrowthModel();
   
   // Generate data from business assumptions using calculations
   const monthlyData = useMemo(() => {
@@ -138,8 +158,8 @@ export function DataVisualization({ data }: DataVisualizationProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Total Revenue</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0))}</p>
+                 <p className="text-sm text-white/80">Total Revenue</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(calculatedMetrics.totalRevenue)}</p>
               </div>
               <DollarSign className="h-6 w-6 text-white" />
             </div>
@@ -163,7 +183,9 @@ export function DataVisualization({ data }: DataVisualizationProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-financial-warning-foreground/80">Break-even</p>
-                <p className="text-xl font-bold text-financial-warning-foreground">Month 14</p>
+                <p className="text-xl font-bold text-financial-warning-foreground">
+                  {calculatedMetrics.breakEvenMonth > 0 ? `Month ${calculatedMetrics.breakEvenMonth}` : 'Never'}
+                </p>
               </div>
               <Activity className="h-6 w-6 text-financial-warning-foreground" />
             </div>
@@ -174,8 +196,8 @@ export function DataVisualization({ data }: DataVisualizationProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Final Net Present Value</p>
-                <p className="text-xl font-bold text-financial-primary">{formatCurrency(monthlyData[monthlyData.length - 1]?.cumulativeCashFlow || 0)}</p>
+                <p className="text-sm text-muted-foreground">Net Present Value</p>
+                <p className="text-xl font-bold text-financial-primary">{formatCurrency(calculatedMetrics.npv)}</p>
               </div>
               <TrendingUp className="h-6 w-6 text-financial-primary" />
             </div>
@@ -231,9 +253,16 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         {/* 2. Sales Volume */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-financial-success" />
-              <span>Sales Volume</span>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="h-5 w-5 text-financial-success" />
+                <span>Sales Volume</span>
+              </div>
+              {activeGrowthModel && (
+                <Badge variant="secondary" className="text-xs">
+                  {activeGrowthModel}
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
