@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, Edit3, Save, X, DollarSign, TrendingUp, Users, Settings, Download, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
+import { CustomerSegments } from './CustomerSegments';
 
 interface DatapointsViewerProps {
   data: BusinessData;
@@ -183,7 +184,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
 
     return (
       <TooltipProvider key={itemId}>
-        <Tooltip>
+        <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <Card className="bg-muted/30 border-l-4 border-l-financial-primary hover:bg-muted/50 transition-colors cursor-pointer h-32">
               <CardContent className="p-3 h-full flex flex-col justify-between">
@@ -449,7 +450,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
               
               return (
                 <TooltipProvider key={itemId}>
-                  <Tooltip>
+                  <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <Card className="bg-muted/30 border-l-4 border-l-financial-secondary hover:bg-muted/50 transition-colors cursor-pointer">
                         <CardContent className="p-4">
@@ -493,9 +494,9 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
               const rangeLabels = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
               
               return (
-                <TooltipProvider key={itemId}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+              <TooltipProvider key={itemId}>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
                       <Card className="bg-muted/30 border-l-4 border-l-financial-warning hover:bg-muted/50 transition-colors cursor-pointer">
                         <CardContent className="p-4">
                           <div className="flex items-start space-x-3">
@@ -541,228 +542,8 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
         </Card>
       )}
 
-      {/* Customer Segments */}
-      {data.assumptions.customers?.segments && (
-        <Card className="bg-gradient-card shadow-card">
-          <Collapsible
-            open={openSections.customers}
-            onOpenChange={() => toggleSection('customers')}
-          >
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-5 w-5" />
-                    <span>Customer Segments</span>
-                    <Badge variant="secondary">{data.assumptions.customers.segments.length} segments</Badge>
-                  </div>
-                  {openSections.customers ? (
-                    <ChevronDown className="h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4" />
-                  )}
-                </CardTitle>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="space-y-4">
-                 {data.assumptions.customers.segments.map((segment: any, index: number) => {
-                   const segmentId = `segment_${index}`;
-                   const isSegmentEditing = editingItems[segmentId];
-                   const currentSegment = tempValues[segmentId] || segment;
-                   
-                   return (
-                     <Card key={index} className="bg-muted/30 border-l-4 border-l-financial-warning">
-                       <CardContent className="p-4">
-                         <div className="flex items-start justify-between">
-                           <div className="flex items-start space-x-3 flex-1">
-                             <Users className="h-5 w-5 text-financial-warning mt-1" />
-                             <div className="flex-1 space-y-2">
-                               {isSegmentEditing ? (
-                                 <div className="space-y-3">
-                                   <div>
-                                     <label className="text-sm font-medium text-muted-foreground">Segment Label</label>
-                                     <Input
-                                       value={currentSegment.label || ''}
-                                       onChange={(e) => setTempValues(prev => ({
-                                         ...prev,
-                                         [segmentId]: { ...prev[segmentId], label: e.target.value }
-                                       }))}
-                                       className="mt-1"
-                                     />
-                                   </div>
-                                   <div>
-                                     <label className="text-sm font-medium text-muted-foreground">Rationale</label>
-                                     <Textarea
-                                       value={currentSegment.rationale || ''}
-                                       onChange={(e) => setTempValues(prev => ({
-                                         ...prev,
-                                         [segmentId]: { ...prev[segmentId], rationale: e.target.value }
-                                       }))}
-                                       className="mt-1"
-                                       rows={3}
-                                     />
-                                   </div>
-                                 </div>
-                               ) : (
-                                 <>
-                                   <h4 className="font-semibold text-lg">{segment.label}</h4>
-                                   <Badge variant="outline">{segment.kind}</Badge>
-                                   <div className="p-3 bg-muted/50 rounded-lg">
-                                     <p className="text-base text-muted-foreground leading-relaxed">
-                                       <strong>Rationale:</strong> {segment.rationale}
-                                     </p>
-                                   </div>
-                                 </>
-                               )}
-                               
-                               {/* Show volume data if available */}
-                               {segment.volume && (
-                                 <div className="mt-3 p-3 bg-financial-success/10 rounded-lg border border-financial-success/20">
-                                   <h5 className="font-medium mb-3 flex items-center gap-2">
-                                     <TrendingUp className="h-4 w-4 text-financial-success" />
-                                     Customer Volume Information
-                                   </h5>
-                                   <div className="grid grid-cols-2 gap-4 mb-3">
-                                     <div>
-                                       <span className="text-sm font-medium text-muted-foreground">Volume Type</span>
-                                       <p className="text-sm font-semibold">{segment.volume.type}</p>
-                                     </div>
-                                     <div>
-                                       <span className="text-sm font-medium text-muted-foreground">Growth Pattern</span>
-                                       <p className="text-sm font-semibold">{segment.volume.pattern_type}</p>
-                                     </div>
-                                   </div>
-                                   {segment.volume.series && segment.volume.series.length > 0 && (
-                                     <div className="space-y-2">
-                                       <span className="text-sm font-medium text-muted-foreground">Volume Series Data:</span>
-                                       <div className="space-y-2">
-                                         {segment.volume.series.slice(0, 3).map((period: any, idx: number) => {
-                                           const volumeId = `volume_${index}_${idx}`;
-                                           const isVolumeEditing = editingItems[volumeId];
-                                           const currentVolume = tempValues[volumeId] || period;
-                                           
-                                           return (
-                                             <div key={idx} className="p-2 bg-card rounded border">
-                                               <div className="flex justify-between items-start">
-                                                 {isVolumeEditing ? (
-                                                   <div className="flex-1 space-y-2">
-                                                     <div className="grid grid-cols-3 gap-2">
-                                                       <Input
-                                                         type="number"
-                                                         value={currentVolume.value || 0}
-                                                         onChange={(e) => setTempValues(prev => ({
-                                                           ...prev,
-                                                           [volumeId]: { ...prev[volumeId], value: parseFloat(e.target.value) || 0 }
-                                                         }))}
-                                                         placeholder="Value"
-                                                       />
-                                                       <Input
-                                                         value={currentVolume.unit || ''}
-                                                         onChange={(e) => setTempValues(prev => ({
-                                                           ...prev,
-                                                           [volumeId]: { ...prev[volumeId], unit: e.target.value }
-                                                         }))}
-                                                         placeholder="Unit"
-                                                       />
-                                                       <Input
-                                                         type="number"
-                                                         value={currentVolume.period || 1}
-                                                         onChange={(e) => setTempValues(prev => ({
-                                                           ...prev,
-                                                           [volumeId]: { ...prev[volumeId], period: parseInt(e.target.value) || 1 }
-                                                         }))}
-                                                         placeholder="Period"
-                                                       />
-                                                     </div>
-                                                     <Textarea
-                                                       value={currentVolume.rationale || ''}
-                                                       onChange={(e) => setTempValues(prev => ({
-                                                         ...prev,
-                                                         [volumeId]: { ...prev[volumeId], rationale: e.target.value }
-                                                       }))}
-                                                       placeholder="Rationale"
-                                                       rows={2}
-                                                     />
-                                                     <div className="flex gap-2">
-                                                       <Button size="sm" onClick={() => saveEdit(volumeId)}>
-                                                         <Save className="h-3 w-3" />
-                                                       </Button>
-                                                       <Button size="sm" variant="outline" onClick={() => cancelEditing(volumeId)}>
-                                                         <X className="h-3 w-3" />
-                                                       </Button>
-                                                     </div>
-                                                   </div>
-                                                 ) : (
-                                                   <>
-                                                     <div>
-                                                       <span className="font-medium text-financial-success">
-                                                         Period {period.period}: {period.value?.toLocaleString() || period.value} {period.unit}
-                                                       </span>
-                                                       {period.rationale && (
-                                                         <p className="text-xs text-muted-foreground mt-1">{period.rationale}</p>
-                                                       )}
-                                                     </div>
-                                                     <Button 
-                                                       size="sm" 
-                                                       variant="ghost" 
-                                                       onClick={() => startEditing(volumeId, period)}
-                                                     >
-                                                       <Edit3 className="h-3 w-3" />
-                                                     </Button>
-                                                   </>
-                                                 )}
-                                               </div>
-                                             </div>
-                                           );
-                                         })}
-                                         {segment.volume.series.length > 3 && (
-                                           <p className="text-xs text-muted-foreground">
-                                             ... and {segment.volume.series.length - 3} more periods
-                                           </p>
-                                         )}
-                                       </div>
-                                     </div>
-                                   )}
-                                   {segment.volume.growth_rate && (
-                                     <div className="mt-3 p-2 bg-muted/50 rounded">
-                                       <span className="text-sm font-medium">Growth Rate: </span>
-                                       <span className="text-sm font-semibold text-financial-success">
-                                         {(segment.volume.growth_rate * 100).toFixed(1)}% per period
-                                       </span>
-                                     </div>
-                                   )}
-                                 </div>
-                               )}
-                             </div>
-                           </div>
-                           
-                           <div className="flex items-center space-x-2 ml-4">
-                             {isSegmentEditing ? (
-                               <>
-                                 <Button size="sm" onClick={() => saveEdit(segmentId)}>
-                                   <Save className="h-4 w-4" />
-                                 </Button>
-                                 <Button size="sm" variant="outline" onClick={() => cancelEditing(segmentId)}>
-                                   <X className="h-4 w-4" />
-                                 </Button>
-                               </>
-                             ) : (
-                               <Button size="sm" variant="outline" onClick={() => startEditing(segmentId, segment)}>
-                                 <Edit3 className="h-4 w-4" />
-                               </Button>
-                             )}
-                           </div>
-                         </div>
-                       </CardContent>
-                     </Card>
-                   );
-                 })}
-              </CardContent>
-            </CollapsibleContent>
-          </Collapsible>
-        </Card>
-      )}
+      {/* Customer Segments - Use dedicated component */}
+      <CustomerSegments data={data} />
 
       {/* Export JSON Button */}
       <Card className="bg-gradient-card shadow-card">
