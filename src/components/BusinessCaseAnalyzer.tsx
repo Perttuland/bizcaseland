@@ -5,33 +5,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useBusinessData } from '@/contexts/BusinessDataContext';
 import { JSONTemplate } from './JSONTemplate';
-import { FinancialAnalysis } from './FinancialAnalysis';
-import { DataVisualization } from './DataVisualization';
-import { DatapointsViewer } from './JSONDataViewer';
-import { CashFlowStatement } from './CashFlowStatement';
+import { DatapointsViewer } from './DatapointsViewer';
+import { BusinessCaseAnalysis } from './BusinessCaseAnalysis';
 
 interface BusinessData {
+  schema_version?: string;
+  instructions?: any;
   meta: {
     title: string;
     description: string;
     archetype: string;
     currency: string;
-    start_date: string;
     periods: number;
     frequency: string;
   };
   assumptions: any;
-  structure: any;
-  scenarios: any[];
+  drivers?: any[];
 }
 
 export function BusinessCaseAnalyzer() {
   const [jsonData, setJsonData] = useState<BusinessData | null>(null);
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'data' | 'analysis'>('input');
   const { toast } = useToast();
+  const { updateData } = useBusinessData();
 
   const handleJsonPaste = (value: string) => {
     setInputJson(value);
@@ -46,6 +46,7 @@ export function BusinessCaseAnalyzer() {
       if (parsed.meta && parsed.assumptions) {
         setIsValidJson(true);
         setJsonData(parsed);
+        updateData(parsed); // Update context data
         toast({
           title: "JSON Validated",
           description: "Business case data loaded successfully!",
@@ -180,22 +181,6 @@ export function BusinessCaseAnalyzer() {
                   Data Input
                 </Button>
                 <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
-                  disabled={true}
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Financial Analysis
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
-                  disabled={true}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Charts & Metrics
-                </Button>
-                <Button
                   variant={activeTab === 'data' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('data')}
                   className="w-full justify-start"
@@ -205,8 +190,8 @@ export function BusinessCaseAnalyzer() {
                   Datapoints & Assumptions
                 </Button>
                 <Button
-                  variant={activeTab === 'cashflow' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('cashflow')}
+                  variant={activeTab === 'analysis' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('analysis')}
                   className="w-full justify-start"
                   disabled={!jsonData}
                 >
@@ -243,27 +228,15 @@ export function BusinessCaseAnalyzer() {
               </Card>
             )}
 
-            {activeTab === 'analysis' && jsonData && (
-              <div className="animate-fade-in">
-                <FinancialAnalysis data={jsonData} />
-              </div>
-            )}
-
-            {activeTab === 'charts' && jsonData && (
-              <div className="animate-fade-in">
-                <DataVisualization data={jsonData} />
-              </div>
-            )}
-
             {activeTab === 'data' && jsonData && (
               <div className="animate-fade-in">
                 <DatapointsViewer data={jsonData} />
               </div>
             )}
 
-            {activeTab === 'cashflow' && jsonData && (
+            {activeTab === 'analysis' && jsonData && (
               <div className="animate-fade-in">
-                <CashFlowStatement data={jsonData} />
+                <BusinessCaseAnalysis data={jsonData} />
               </div>
             )}
 
