@@ -225,7 +225,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Activity className="h-5 w-5 text-financial-danger" />
-            <span>Cumulative Cash Flow & Earnings Before Interest, Taxes, Depreciation & Amortization</span>
+            <span>Cumulative Cash Flow & EBITDA</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -255,7 +255,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
                   strokeWidth={2}
                   dot={false}
                   strokeDasharray="5 5"
-                  name="Earnings Before Interest, Taxes, Depreciation & Amortization"
+                  name="EBITDA"
                 />
               </LineChart>
             </ResponsiveContainer>
