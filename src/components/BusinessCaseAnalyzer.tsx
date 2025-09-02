@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download } from 'lucide-react';
+import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { JSONTemplate } from './JSONTemplate';
 import { FinancialAnalysis } from './FinancialAnalysis';
 import { DataVisualization } from './DataVisualization';
+import { JSONDataViewer } from './JSONDataViewer';
+import { CashFlowStatement } from './CashFlowStatement';
 
 interface BusinessData {
   meta: {
@@ -28,7 +30,7 @@ export function BusinessCaseAnalyzer() {
   const [jsonData, setJsonData] = useState<BusinessData | null>(null);
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow'>('input');
   const { toast } = useToast();
 
   const handleJsonPaste = (value: string) => {
@@ -195,6 +197,24 @@ export function BusinessCaseAnalyzer() {
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Charts & Metrics
                 </Button>
+                <Button
+                  variant={activeTab === 'data' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('data')}
+                  className="w-full justify-start"
+                  disabled={!jsonData}
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  JSON Data View
+                </Button>
+                <Button
+                  variant={activeTab === 'cashflow' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('cashflow')}
+                  className="w-full justify-start"
+                  disabled={!jsonData}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Cash Flow P&L
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -234,6 +254,18 @@ export function BusinessCaseAnalyzer() {
             {activeTab === 'charts' && jsonData && (
               <div className="animate-fade-in">
                 <DataVisualization data={jsonData} />
+              </div>
+            )}
+
+            {activeTab === 'data' && jsonData && (
+              <div className="animate-fade-in">
+                <JSONDataViewer data={jsonData} />
+              </div>
+            )}
+
+            {activeTab === 'cashflow' && jsonData && (
+              <div className="animate-fade-in">
+                <CashFlowStatement data={jsonData} />
               </div>
             )}
 
