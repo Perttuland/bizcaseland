@@ -17,6 +17,7 @@ export function BusinessCaseAnalyzer() {
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow'>('input');
+  const [hasUploadedData, setHasUploadedData] = useState(false);
   const { toast } = useToast();
 
   const handleJsonPaste = (value: string) => {
@@ -32,9 +33,11 @@ export function BusinessCaseAnalyzer() {
       if (parsed.meta && parsed.assumptions) {
         setIsValidJson(true);
         updateData(parsed);
+        setHasUploadedData(true);
+        setActiveTab('data'); // Switch to datapoints tab after upload
         toast({
           title: "JSON Validated",
-          description: "Business case data loaded successfully!",
+          description: "Business case data loaded successfully! JSON discarded - edit values in Datapoints tab.",
         });
       } else {
         setIsValidJson(false);
@@ -118,38 +121,40 @@ export function BusinessCaseAnalyzer() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar - Input Panel */}
           <div className="lg:col-span-1 space-y-6">
-            <Card className="bg-gradient-card shadow-card">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Upload className="h-5 w-5" />
-                  <span>Data Input</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button 
-                  onClick={copyTemplate}
-                  variant="outline" 
-                  className="w-full"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy JSON Template
-                </Button>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Paste JSON Data</label>
-                    {getValidationIcon()}
-                    {getValidationBadge()}
+            {!hasUploadedData && (
+              <Card className="bg-gradient-card shadow-card">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Upload className="h-5 w-5" />
+                    <span>Data Input</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button 
+                    onClick={copyTemplate}
+                    variant="outline" 
+                    className="w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy JSON Template
+                  </Button>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Paste JSON Data</label>
+                      {getValidationIcon()}
+                      {getValidationBadge()}
+                    </div>
+                    <Textarea
+                      placeholder="Paste your AI-filled JSON here..."
+                      value={inputJson}
+                      onChange={(e) => handleJsonPaste(e.target.value)}
+                      className="min-h-[200px] font-mono text-xs"
+                    />
                   </div>
-                  <Textarea
-                    placeholder="Paste your AI-filled JSON here..."
-                    value={inputJson}
-                    onChange={(e) => handleJsonPaste(e.target.value)}
-                    className="min-h-[200px] font-mono text-xs"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Navigation */}
             <Card className="bg-gradient-card shadow-card">
@@ -157,30 +162,16 @@ export function BusinessCaseAnalyzer() {
                 <CardTitle className="text-lg">Analysis Tools</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button
-                  variant={activeTab === 'input' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('input')}
-                  className="w-full justify-start"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Data Input
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
-                  disabled={true}
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Financial Analysis
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
-                  disabled={true}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Charts & Metrics
-                </Button>
+                {!hasUploadedData && (
+                  <Button
+                    variant={activeTab === 'input' ? 'default' : 'ghost'}
+                    onClick={() => setActiveTab('input')}
+                    className="w-full justify-start"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Data Input
+                  </Button>
+                )}
                 <Button
                   variant={activeTab === 'data' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('data')}
@@ -196,7 +187,7 @@ export function BusinessCaseAnalyzer() {
                   className="w-full justify-start"
                   disabled={!jsonData}
                 >
-                  <BarChart3 className="h-4 w-4 mr-2" />
+                  <Calculator className="h-4 w-4 mr-2" />
                   Business case analysis
                 </Button>
               </CardContent>
@@ -205,7 +196,7 @@ export function BusinessCaseAnalyzer() {
 
           {/* Main Content Area */}
           <div className="lg:col-span-3">
-            {activeTab === 'input' && (
+            {activeTab === 'input' && !hasUploadedData && (
               <Card className="bg-gradient-card shadow-card animate-fade-in">
                 <CardHeader>
                   <CardTitle>JSON Template & Instructions</CardTitle>
@@ -229,17 +220,6 @@ export function BusinessCaseAnalyzer() {
               </Card>
             )}
 
-            {activeTab === 'analysis' && jsonData && (
-              <div className="animate-fade-in">
-                <FinancialAnalysis />
-              </div>
-            )}
-
-            {activeTab === 'charts' && jsonData && (
-              <div className="animate-fade-in">
-                <DataVisualization data={jsonData} />
-              </div>
-            )}
 
             {activeTab === 'data' && jsonData && (
               <div className="animate-fade-in">
@@ -253,7 +233,7 @@ export function BusinessCaseAnalyzer() {
               </div>
             )}
 
-            {!jsonData && activeTab !== 'input' && (
+            {!jsonData && (activeTab !== 'input' || hasUploadedData) && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
                   <div className="text-center space-y-3">
