@@ -52,8 +52,7 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   const breakEvenMonth = calculateBreakEven(monthlyData);
   
   // Calculate other metrics
-  const totalCosts = monthlyData.reduce((sum, month) => sum + month.totalOpex + month.capex + month.cogs, 0);
-  const netProfit = totalRevenue - totalCosts;
+  const netProfit = monthlyData.reduce((sum, month) => sum + month.netCashFlow, 0);
   const paybackPeriod = breakEvenMonth || 0;
   
   // Calculate ROI: (Net Profit / Total Investment) * 100
