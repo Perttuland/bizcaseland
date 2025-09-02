@@ -113,7 +113,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Final NPV</p>
+                <p className="text-sm text-muted-foreground">Final Net Present Value</p>
                 <p className="text-xl font-bold text-financial-primary">{formatCurrency(2100000)}</p>
               </div>
               <TrendingUp className="h-6 w-6 text-financial-primary" />
@@ -225,7 +225,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <Activity className="h-5 w-5 text-financial-danger" />
-            <span>Cumulative Cash Flow & EBITDA</span>
+            <span>Cumulative Cash Flow & Earnings Before Interest, Taxes, Depreciation & Amortization</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -255,7 +255,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
                   strokeWidth={2}
                   dot={false}
                   strokeDasharray="5 5"
-                  name="EBITDA"
+                  name="Earnings Before Interest, Taxes, Depreciation & Amortization"
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -268,7 +268,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <PieChart className="h-5 w-5 text-financial-primary" />
-            <span>5-Year P&L Summary</span>
+            <span>5-Year Profit & Loss Summary</span>
           </CardTitle>
         </CardHeader>
         <CardContent>

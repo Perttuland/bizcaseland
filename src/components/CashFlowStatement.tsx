@@ -109,19 +109,19 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
     { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
-    { label: 'R&D', key: 'rd', category: 'opex' },
-    { label: 'G&A', key: 'ga', category: 'opex' },
-    { label: 'Total OpEx', key: 'totalOpex', isSubtotal: true, category: 'opex' },
+    { label: 'Research & Development', key: 'rd', category: 'opex' },
+    { label: 'General & Administrative', key: 'ga', category: 'opex' },
+    { label: 'Total Operating Expenses', key: 'totalOpex', isSubtotal: true, category: 'opex' },
     { label: '', key: 'spacer2', category: 'spacer' },
-    { label: 'EBITDA', key: 'ebitda', isTotal: true, category: 'profit' },
+    { label: 'Earnings Before Interest, Taxes, Depreciation & Amortization', key: 'ebitda', isTotal: true, category: 'profit' },
     { label: 'Depreciation', key: 'depreciation', category: 'costs' },
-    { label: 'EBIT', key: 'ebit', isSubtotal: true, category: 'profit' },
+    { label: 'Earnings Before Interest & Taxes', key: 'ebit', isSubtotal: true, category: 'profit' },
     { label: 'Interest', key: 'interest', category: 'costs' },
     { label: 'Taxes', key: 'taxes', category: 'costs' },
     { label: 'Net Income', key: 'netIncome', isTotal: true, category: 'profit' },
     { label: '', key: 'spacer3', category: 'spacer' },
-    { label: 'CapEx', key: 'capex', category: 'cash' },
-    { label: 'Working Capital Δ', key: 'workingCapitalChange', category: 'cash' },
+    { label: 'Capital Expenditures', key: 'capex', category: 'cash' },
+    { label: 'Working Capital Change', key: 'workingCapitalChange', category: 'cash' },
     { label: 'Free Cash Flow', key: 'freeCashFlow', isTotal: true, category: 'cash' },
   ];
 
@@ -229,7 +229,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-white/80">Total EBITDA (24M)</p>
+                <p className="text-sm text-white/80">Total Earnings Before Interest, Taxes, Depreciation & Amortization (24M)</p>
                 <p className="text-xl font-bold text-white">
                   {formatCurrency(monthlyData.slice(0, 24).reduce((sum, m) => sum + m.ebitda, 0))}
                 </p>
