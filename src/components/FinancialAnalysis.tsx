@@ -42,18 +42,18 @@ export function FinancialAnalysis() {
   return (
     <div className="space-y-6">
       {/* Business Case Overview */}
-      <Card className="bg-gradient-card shadow-elevation">
+      <Card className="bg-gradient-card shadow-elevation relative">
+        {/* Business Model Badge in top-right corner */}
+        <Badge variant="outline" className="absolute top-4 right-4 bg-financial-primary text-financial-primary-foreground">
+          {businessData.meta.business_model === 'recurring' ? 'Recurring Revenue' : 'Unit Sales'}
+        </Badge>
+        
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-32">
             <CardTitle className="text-xl">{businessData.meta.title}</CardTitle>
-            <div className="flex items-center space-x-2">
-              <Badge className={getArchetypeColor(businessData.meta.archetype)}>
-                {businessData.meta.archetype}
-              </Badge>
-              <Badge variant="outline" className="bg-financial-primary text-financial-primary-foreground">
-                {businessData.meta.business_model === 'recurring' ? 'Recurring Revenue' : 'Unit Sales'}
-              </Badge>
-            </div>
+            <Badge className={getArchetypeColor(businessData.meta.archetype)}>
+              {businessData.meta.archetype}
+            </Badge>
           </div>
           <p className="text-muted-foreground">{businessData.meta.description}</p>
         </CardHeader>
