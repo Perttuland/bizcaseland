@@ -360,12 +360,6 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
       title: 'Revenue & Cost Structure',
       icon: TrendingUp,
       items: getStructureDatapoints()
-    },
-    {
-      key: 'drivers',
-      title: 'Sensitivity Drivers',
-      icon: Settings,
-      items: getDriverDatapoints()
     }
   ];
 
@@ -473,6 +467,9 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
         </CardHeader>
       </Card>
 
+      {/* Customer Segments & Volume Overview - First section */}
+      <CustomerSegments data={data} />
+
       {/* All Regular Datapoints in Grid */}
       {allDatapoints.length > 0 && (
         <Card className="bg-gradient-card shadow-card">
@@ -540,104 +537,6 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
           </CardContent>
         </Card>
       )}
-
-      {/* Sensitivity Drivers */}
-      {driverDatapoints.length > 0 && (
-        <Card className="bg-gradient-card shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Settings className="h-5 w-5" />
-              <span>Sensitivity Drivers</span>
-              <Badge variant="secondary">{driverDatapoints.length} drivers</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {driverDatapoints.map(([itemKey, itemValue]: [string, any]) => {
-              const itemId = `drivers_${itemKey}`;
-              const rangeLabels = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
-              
-              return (
-              <TooltipProvider key={itemId}>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                      <Card className="bg-muted/30 border-l-4 border-l-financial-warning hover:bg-muted/50 transition-colors cursor-pointer">
-                        <CardContent className="p-4">
-                          <div className="flex items-start space-x-3">
-                            <Settings className="h-5 w-5 text-financial-warning mt-1" />
-                            <div className="flex-1 space-y-3">
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold text-lg">Driver {itemValue.driverNumber}: {itemValue.value}</h4>
-                                <Badge variant="outline">Sensitivity Analysis</Badge>
-                              </div>
-                              
-                              <div className="p-3 bg-financial-warning/10 rounded-lg border border-financial-warning/20">
-                                <h5 className="font-medium mb-2 text-sm text-muted-foreground">Sensitivity Range:</h5>
-                                <div className="grid grid-cols-5 gap-2">
-                                  {itemValue.range.map((value: number, index: number) => (
-                                    <div key={index} className="text-center p-2 bg-card rounded border">
-                                      <div className="text-xs font-medium text-muted-foreground mb-1">
-                                        {rangeLabels[index] || `Level ${index + 1}`}
-                                      </div>
-                                      <div className="text-sm font-semibold text-financial-warning">
-                                        {typeof value === 'number' ? value.toLocaleString() : value}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <div className="p-2 bg-card rounded font-mono text-sm">
-                                <span className="text-muted-foreground">Path:</span> {itemValue.path}
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-sm">
-                      <div className="space-y-1">
-                        <p className="font-medium text-xs">{itemValue.value}</p>
-                        <p className="text-xs text-muted-foreground">{itemValue.rationale}</p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            })}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Customer Segments - Use dedicated component */}
-      <CustomerSegments data={data} />
-
-      {/* Export JSON Button */}
-      <Card className="bg-gradient-card shadow-card">
-        <CardContent className="p-4">
-          <Button 
-            onClick={() => {
-              const dataStr = exportData();
-              const blob = new Blob([dataStr], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = 'business-data.json';
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-              toast({
-                title: "Data Exported",
-                description: "JSON file has been downloaded successfully.",
-              });
-            }}
-            className="w-full"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export as JSON
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }
