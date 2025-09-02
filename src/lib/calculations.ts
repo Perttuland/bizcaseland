@@ -5,7 +5,7 @@ export interface CalculatedMetrics {
   netProfit: number;
   npv: number;
   paybackPeriod: number;
-  roa: number;
+  roi: number;
   breakEvenMonth: number;
   monthlyData: MonthlyData[];
 }
@@ -52,16 +52,21 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   const breakEvenMonth = calculateBreakEven(monthlyData);
   
   // Calculate other metrics
-  const netProfit = totalRevenue * (businessData.assumptions?.financial?.net_margin?.value || 0);
+  const totalCosts = monthlyData.reduce((sum, month) => sum + month.totalOpex + month.capex + month.cogs, 0);
+  const netProfit = totalRevenue - totalCosts;
   const paybackPeriod = breakEvenMonth || 0;
-  const roa = businessData.assumptions?.financial?.roa?.value || 0;
+  
+  // Calculate ROI: (Net Profit / Total Investment) * 100
+  const totalInvestment = monthlyData.reduce((sum, month) => sum + month.capex, 0) + 
+                         (businessData.assumptions?.financial?.initial_investment?.value || 0);
+  const roi = totalInvestment > 0 ? (netProfit / totalInvestment) : 0;
 
   return {
     totalRevenue,
     netProfit,
     npv,
     paybackPeriod,
-    roa,
+    roi,
     breakEvenMonth: breakEvenMonth || 0,
     monthlyData
   };
@@ -366,7 +371,7 @@ function getDefaultMetrics(): CalculatedMetrics {
     netProfit: 0,
     npv: 0,
     paybackPeriod: 0,
-    roa: 0,
+    roi: 0,
     breakEvenMonth: 0,
     monthlyData: []
   };
