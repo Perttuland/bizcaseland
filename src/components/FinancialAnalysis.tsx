@@ -127,7 +127,7 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">NPV</p>
+                <p className="text-sm text-muted-foreground">Net Present Value</p>
                 <p className="text-2xl font-bold text-financial-warning">{formatCurrency(mockMetrics.npv)}</p>
               </div>
               <Target className="h-8 w-8 text-financial-warning" />
@@ -173,7 +173,24 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
                   {Object.entries(data.assumptions.pricing).map(([key, value]: [string, any]) => (
                     <div key={key} className="space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                        <span className="text-sm font-medium capitalize">{
+                          key.replace(/_/g, ' ')
+                            .replace(/\bcac\b/gi, 'Customer Acquisition Cost')
+                            .replace(/\bltv\b/gi, 'Customer Lifetime Value')
+                            .replace(/\barpu\b/gi, 'Average Revenue Per User')
+                            .replace(/\bmrr\b/gi, 'Monthly Recurring Revenue')
+                            .replace(/\barr\b/gi, 'Annual Recurring Revenue')
+                            .replace(/\baov\b/gi, 'Average Order Value')
+                            .replace(/\bchurn\b/gi, 'Customer Churn Rate')
+                            .replace(/\bconversion\b/gi, 'Conversion Rate')
+                            .replace(/\bctr\b/gi, 'Click Through Rate')
+                            .replace(/\bcpm\b/gi, 'Cost Per Thousand Impressions')
+                            .replace(/\bcpc\b/gi, 'Cost Per Click')
+                            .replace(/\bcpa\b/gi, 'Cost Per Acquisition')
+                            .replace(/\broas\b/gi, 'Return on Ad Spend')
+                            .replace(/\broi\b/gi, 'Return on Investment')
+                            .replace(/\b\w/g, l => l.toUpperCase())
+                        }</span>
                         <Badge variant="outline">{value.unit}</Badge>
                       </div>
                       <p className="text-lg font-semibold">{value.value}</p>
@@ -191,7 +208,27 @@ export function FinancialAnalysis({ data }: FinancialAnalysisProps) {
                   {Object.entries(data.assumptions.unit_economics).map(([key, value]: [string, any]) => (
                     <div key={key} className="space-y-1">
                       <div className="flex justify-between">
-                        <span className="text-sm font-medium capitalize">{key.replace(/_/g, ' ')}</span>
+                        <span className="text-sm font-medium capitalize">{
+                          key.replace(/_/g, ' ')
+                            .replace(/\bcac\b/gi, 'Customer Acquisition Cost')
+                            .replace(/\bltv\b/gi, 'Customer Lifetime Value')
+                            .replace(/\barpu\b/gi, 'Average Revenue Per User')
+                            .replace(/\bmrr\b/gi, 'Monthly Recurring Revenue')
+                            .replace(/\barr\b/gi, 'Annual Recurring Revenue')
+                            .replace(/\baov\b/gi, 'Average Order Value')
+                            .replace(/\bchurn\b/gi, 'Customer Churn Rate')
+                            .replace(/\bconversion\b/gi, 'Conversion Rate')
+                            .replace(/\bctr\b/gi, 'Click Through Rate')
+                            .replace(/\bcpm\b/gi, 'Cost Per Thousand Impressions')
+                            .replace(/\bcpc\b/gi, 'Cost Per Click')
+                            .replace(/\bcpa\b/gi, 'Cost Per Acquisition')
+                            .replace(/\broas\b/gi, 'Return on Ad Spend')
+                            .replace(/\broi\b/gi, 'Return on Investment')
+                            .replace(/\bcogs\b/gi, 'Cost of Goods Sold')
+                            .replace(/\bgross.margin\b/gi, 'Gross Profit Margin')
+                            .replace(/\bnet.margin\b/gi, 'Net Profit Margin')
+                            .replace(/\b\w/g, l => l.toUpperCase())
+                        }</span>
                         <Badge variant="outline">{value.unit}</Badge>
                       </div>
                       <p className="text-lg font-semibold">{value.value}</p>
