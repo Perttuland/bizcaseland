@@ -53,7 +53,9 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
 
   const startEditing = (itemId: string, currentValue: EditableItem) => {
     setEditingItems(prev => ({ ...prev, [itemId]: true }));
-    setTempValues(prev => ({ ...prev, [itemId]: { ...currentValue } }));
+    // Deep clone for complex objects like sensitivity drivers
+    const clonedValue = JSON.parse(JSON.stringify(currentValue));
+    setTempValues(prev => ({ ...prev, [itemId]: clonedValue }));
   };
 
   const cancelEditing = (itemId: string) => {
@@ -146,8 +148,8 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: data.meta.currency || 'EUR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -157,9 +159,12 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
         return formatCurrency(value);
       }
       if (unit === 'ratio' || unit.includes('pct')) {
-        return `${(value * 100).toFixed(1)}%`;
+        return `${(value * 100).toFixed(2)}%`;
       }
-      return value.toLocaleString();
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
     }
     return String(value);
   };
@@ -586,9 +591,12 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                                                <div className="text-xs font-medium text-muted-foreground mb-1">
                                                  {rangeLabels[index] || `Level ${index + 1}`}
                                                </div>
-                                               <div className="text-sm font-semibold text-financial-warning">
-                                                 {typeof value === 'number' ? value.toLocaleString() : value}
-                                               </div>
+                                                <div className="text-sm font-semibold text-financial-warning">
+                                                  {typeof value === 'number' ? value.toLocaleString('en-US', {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2
+                                                  }) : value}
+                                                </div>
                                              </div>
                                            ))}
                                          </div>
