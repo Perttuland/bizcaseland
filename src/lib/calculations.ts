@@ -89,7 +89,7 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     let newCustomers = 0;
     let existingCustomers = 0;
     
-    if (businessModel === 'recurring' || businessModel === 'subscription') {
+    if (businessModel === 'recurring') {
       // For recurring models, differentiate between new and existing customers
       if (i === 0) {
         // First month: all customers are new
@@ -123,7 +123,7 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     
     // For recurring models: CAC only applies to new customers
     // For unit sales models: CAC applies to all units (since each sale is independent)
-    const totalCAC = businessModel === 'recurring' || businessModel === 'subscription'
+    const totalCAC = businessModel === 'recurring'
       ? -Math.round(newCustomers * cac)
       : -Math.round(totalSalesVolume * cac);
     

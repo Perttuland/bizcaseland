@@ -75,8 +75,7 @@ export function CashFlowStatement() {
   };
 
   // Determine if we're using a recurring revenue model
-  const isRecurringModel = businessData?.meta?.business_model === 'recurring' || 
-                          businessData?.meta?.business_model === 'subscription';
+  const isRecurringModel = businessData?.meta?.business_model === 'recurring';
 
   const rows = [
     { label: 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
