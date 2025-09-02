@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, BarChart3, Users, DollarSign, PieChart, Activity } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, BarChart3, Users, DollarSign, Activity, PieChart as PieChartIcon } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
 interface DataVisualizationProps {
@@ -14,7 +14,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
   // Use context data if available, otherwise use prop data
   const businessData = contextData || data;
   
-  // Generate data from business assumptions
+  // Generate data from business assumptions using calculations
   const monthlyData = useMemo(() => {
     if (!businessData.assumptions) {
       return Array.from({ length: 60 }, (_, i) => ({
@@ -24,18 +24,25 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         customers: Math.floor(50 + i * 15 + Math.random() * 10),
         cashFlow: Math.floor(-10000 + i * 1500 + Math.random() * 500),
         ebitda: Math.floor(-5000 + i * 1200 + Math.random() * 400),
-        cumulativeCashFlow: Math.floor(-50000 + i * 2000)
+        cumulativeCashFlow: Math.floor(-50000 + i * 2000),
+        salesVolume: Math.floor(100 + i * 20),
+        operatingExpense: Math.floor(15000 + i * 500),
+        salesMarketing: Math.floor(5000 + i * 200),
+        rd: Math.floor(3000 + i * 100),
+        ga: Math.floor(4000 + i * 150),
+        capex: i === 0 ? 20000 : 0
       }));
     }
     
     const pricing = businessData.assumptions.pricing || {};
     const unitEconomics = businessData.assumptions.unit_economics || {};
+    const costs = businessData.assumptions.costs || {};
     
     const baseRevenue = pricing.monthly_revenue?.value || 50000;
     const growthRate = unitEconomics.growth_rate?.value || 0.02;
-    const customerGrowthRate = 0.15; // 15% monthly customer growth
+    const customerGrowthRate = 0.15;
     
-    let cumulativeCashFlow = -50000; // Initial investment
+    let cumulativeCashFlow = -50000;
     
     return Array.from({ length: businessData.meta.periods || 60 }, (_, i) => {
       const growthFactor = Math.pow(1 + growthRate, i);
@@ -43,8 +50,15 @@ export function DataVisualization({ data }: DataVisualizationProps) {
       
       const revenue = Math.floor(baseRevenue * growthFactor * seasonality);
       const customers = Math.floor(50 + i * customerGrowthRate * 15);
-      const cashFlow = Math.floor(revenue * 0.3 - 15000); // 30% cash flow margin minus fixed costs
-      const ebitda = Math.floor(revenue * 0.25); // 25% EBITDA margin
+      const salesVolume = Math.floor(customers * 2); // 2 units per customer
+      
+      const salesMarketing = Math.floor((costs.sales_marketing_percent?.value || 0.15) * revenue);
+      const rd = Math.floor((costs.rd_percent?.value || 0.08) * revenue);
+      const ga = Math.floor((costs.ga_percent?.value || 0.12) * revenue);
+      const operatingExpense = salesMarketing + rd + ga;
+      
+      const cashFlow = Math.floor(revenue * 0.3 - operatingExpense);
+      const ebitda = Math.floor(revenue * 0.25);
       
       cumulativeCashFlow += cashFlow;
       
@@ -53,12 +67,33 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         period: `M${i + 1}`,
         revenue,
         customers,
+        salesVolume,
+        operatingExpense,
+        salesMarketing,
+        rd,
+        ga,
+        capex: i === 0 ? 20000 : 0, // One-off CAPEX in first month
         cashFlow,
         ebitda,
         cumulativeCashFlow: Math.floor(cumulativeCashFlow)
       };
     });
   }, [businessData]);
+
+  // Cost structure data for pie chart
+  const costStructureData = useMemo(() => {
+    const totalSalesMarketing = monthlyData.reduce((sum, m) => sum + m.salesMarketing, 0);
+    const totalRD = monthlyData.reduce((sum, m) => sum + m.rd, 0);
+    const totalGA = monthlyData.reduce((sum, m) => sum + m.ga, 0);
+    const totalCapex = monthlyData.reduce((sum, m) => sum + m.capex, 0);
+    
+    return [
+      { name: 'Sales & Marketing', value: totalSalesMarketing, color: 'hsl(var(--financial-primary))' },
+      { name: 'R&D', value: totalRD, color: 'hsl(var(--financial-success))' },
+      { name: 'G&A', value: totalGA, color: 'hsl(var(--financial-warning))' },
+      { name: 'CAPEX', value: totalCapex, color: 'hsl(var(--financial-danger))' }
+    ];
+  }, [monthlyData]);
 
   const yearlyData = Array.from({ length: 5 }, (_, i) => ({
     year: `Year ${i + 1}`,
@@ -148,50 +183,18 @@ export function DataVisualization({ data }: DataVisualizationProps) {
         </Card>
       </div>
 
-      {/* Revenue Growth Chart */}
-      <Card className="bg-gradient-card shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <TrendingUp className="h-5 w-5 text-financial-primary" />
-            <span>Revenue Growth (60 Months)</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="period" 
-                  stroke="hsl(var(--muted-foreground))"
-                  interval={5}
-                />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip content={<CustomTooltip />} />
-                <Area 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="hsl(var(--financial-primary))" 
-                  fill="hsl(var(--financial-primary) / 0.2)"
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Customer Growth */}
+      {/* Three Charts Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* 1. Revenue & Operating Expense */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Users className="h-5 w-5 text-financial-success" />
-              <span>Customer Growth</span>
+              <TrendingUp className="h-5 w-5 text-financial-primary" />
+              <span>Revenue & Operating Expense</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -204,10 +207,20 @@ export function DataVisualization({ data }: DataVisualizationProps) {
                   <Tooltip content={<CustomTooltip />} />
                   <Line 
                     type="monotone" 
-                    dataKey="customers" 
-                    stroke="hsl(var(--financial-success))" 
+                    dataKey="revenue" 
+                    stroke="hsl(var(--financial-primary))" 
                     strokeWidth={3}
                     dot={false}
+                    name="Revenue"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="operatingExpense" 
+                    stroke="hsl(var(--financial-danger))" 
+                    strokeWidth={2}
+                    dot={false}
+                    strokeDasharray="5 5"
+                    name="Operating Expense"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -215,104 +228,76 @@ export function DataVisualization({ data }: DataVisualizationProps) {
           </CardContent>
         </Card>
 
-        {/* Cash Flow Analysis */}
+        {/* 2. Sales Volume */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <BarChart3 className="h-5 w-5 text-financial-warning" />
-              <span>Monthly Cash Flow</span>
+              <BarChart3 className="h-5 w-5 text-financial-success" />
+              <span>Sales Volume</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyData.slice(0, 24)}>
+                <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="period" 
                     stroke="hsl(var(--muted-foreground))"
+                    interval={9}
                   />
                   <YAxis stroke="hsl(var(--muted-foreground))" />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="cashFlow" 
-                    fill="hsl(var(--financial-warning))"
-                    radius={[4, 4, 0, 0]}
+                  <Line 
+                    type="monotone" 
+                    dataKey="salesVolume" 
+                    stroke="hsl(var(--financial-success))" 
+                    strokeWidth={3}
+                    dot={false}
+                    name="Sales Volume"
                   />
-                </BarChart>
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 3. Cost Structure Pie Chart */}
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <PieChartIcon className="h-5 w-5 text-financial-warning" />
+              <span>Total Cost Structure</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={costStructureData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {costStructureData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number) => [formatCurrency(value), '']}
+                    labelFormatter={(label) => `${label}`}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Cumulative Cash Flow */}
-      <Card className="bg-gradient-card shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Activity className="h-5 w-5 text-financial-danger" />
-            <span>Cumulative Cash Flow & EBITDA</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis 
-                  dataKey="period" 
-                  stroke="hsl(var(--muted-foreground))"
-                  interval={5}
-                />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip content={<CustomTooltip />} />
-                <Line 
-                  type="monotone" 
-                  dataKey="cumulativeCashFlow" 
-                  stroke="hsl(var(--financial-danger))" 
-                  strokeWidth={3}
-                  dot={false}
-                  name="Cumulative Cash Flow"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="ebitda" 
-                  stroke="hsl(var(--financial-primary))" 
-                  strokeWidth={2}
-                  dot={false}
-                  strokeDasharray="5 5"
-                  name="EBITDA"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Yearly P&L Summary */}
-      <Card className="bg-gradient-card shadow-card">
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <PieChart className="h-5 w-5 text-financial-primary" />
-            <span>5-Year Profit & Loss Summary</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={yearlyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="year" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="revenue" fill="hsl(var(--financial-primary))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="costs" fill="hsl(var(--financial-danger))" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="profit" fill="hsl(var(--financial-success))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
