@@ -91,7 +91,7 @@ export function CashFlowStatement() {
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
     { 
-      label: isRecurringModel ? '  Total CAC (New Customers Only)' : '  Total CAC', 
+      label: isRecurringModel ? 'CAC (New Customers Only)' : 'CAC', 
       key: 'totalCAC', 
       isSubItem: true, 
       category: 'costs' 
@@ -158,9 +158,9 @@ export function CashFlowStatement() {
         components: isRecurringModel 
           ? `${currentMonth?.newCustomers?.toLocaleString()} new customers × ${formatDecimal(currentMonth?.cac || 0)}`
           : `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatDecimal(currentMonth?.cac || 0)}`,
-        rationale: isRecurringModel 
-          ? `CAC only applies to new customer acquisitions in recurring models. ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
-          : `CAC applies to all unit sales in transactional models. ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
+        rationale: `CAC Value: ${formatDecimal(businessData?.assumptions?.unit_economics?.cac?.value || 0)} per ${isRecurringModel ? 'customer' : 'unit'}. ${isRecurringModel 
+          ? 'Applied only to new customer acquisitions in recurring models.' 
+          : 'Applied to all unit sales in transactional models.'} ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
       },
       ebitda: {
         formula: `Gross Profit + Total Operating Expenses`,
