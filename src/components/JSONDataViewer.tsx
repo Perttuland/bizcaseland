@@ -254,13 +254,14 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     if (!data.drivers) return [];
     
     return data.drivers.map((driver: any, index: number) => [
-      `driver_${index}`,
+      `driver_${index + 1}`, // Start numbering from 1
       {
         value: driver.key,
         unit: 'sensitivity',
         rationale: driver.rationale,
         path: driver.path,
-        range: driver.range
+        range: driver.range,
+        driverNumber: index + 1 // Add driver number for display
       }
     ]);
   };
@@ -391,30 +392,78 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                     
                     const label = expandedLabel;
                     
-                    if (itemValue.formula) {
-                      // Special rendering for formula-based items
-                      return (
-                        <Card key={itemId} className="bg-muted/30 border-l-4 border-l-financial-secondary">
-                          <CardContent className="p-4">
-                            <div className="flex items-start space-x-3">
-                              {React.createElement(icon, { className: "h-5 w-5 text-financial-secondary mt-1" })}
-                              <div className="flex-1 space-y-2">
-                                <h4 className="font-semibold text-lg">{label}</h4>
-                                <Badge variant="outline">{itemValue.unit}</Badge>
-                                <div className="p-2 bg-card rounded font-mono text-sm">
-                                  {itemValue.formula}
-                                </div>
-                                <div className="p-3 bg-muted/50 rounded-lg">
-                                  <p className="text-base text-muted-foreground leading-relaxed">
-                                    <strong>Rationale:</strong> {itemValue.rationale}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    }
+                     if (itemValue.formula) {
+                       // Special rendering for formula-based items
+                       return (
+                         <Card key={itemId} className="bg-muted/30 border-l-4 border-l-financial-secondary">
+                           <CardContent className="p-4">
+                             <div className="flex items-start space-x-3">
+                               {React.createElement(icon, { className: "h-5 w-5 text-financial-secondary mt-1" })}
+                               <div className="flex-1 space-y-2">
+                                 <h4 className="font-semibold text-lg">{label}</h4>
+                                 <Badge variant="outline">{itemValue.unit}</Badge>
+                                 <div className="p-2 bg-card rounded font-mono text-sm">
+                                   {itemValue.formula}
+                                 </div>
+                                 <div className="p-3 bg-muted/50 rounded-lg">
+                                   <p className="text-base text-muted-foreground leading-relaxed">
+                                     <strong>Rationale:</strong> {itemValue.rationale}
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           </CardContent>
+                         </Card>
+                       );
+                     }
+                     
+                     if (itemValue.unit === 'sensitivity' && itemValue.range) {
+                       // Special rendering for sensitivity drivers
+                       const rangeLabels = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
+                       return (
+                         <Card key={itemId} className="bg-muted/30 border-l-4 border-l-financial-warning">
+                           <CardContent className="p-4">
+                             <div className="flex items-start space-x-3">
+                               {React.createElement(icon, { className: "h-5 w-5 text-financial-warning mt-1" })}
+                               <div className="flex-1 space-y-3">
+                                 <div className="flex items-center gap-2">
+                                   <h4 className="font-semibold text-lg">
+                                     Driver {itemValue.driverNumber}: {label}
+                                   </h4>
+                                   <Badge variant="outline">Sensitivity Analysis</Badge>
+                                 </div>
+                                 
+                                 <div className="p-3 bg-financial-warning/10 rounded-lg border border-financial-warning/20">
+                                   <h5 className="font-medium mb-2 text-sm text-muted-foreground">Sensitivity Range:</h5>
+                                   <div className="grid grid-cols-5 gap-2">
+                                     {itemValue.range.map((value: number, index: number) => (
+                                       <div key={index} className="text-center p-2 bg-card rounded border">
+                                         <div className="text-xs font-medium text-muted-foreground mb-1">
+                                           {rangeLabels[index] || `Level ${index + 1}`}
+                                         </div>
+                                         <div className="text-sm font-semibold text-financial-warning">
+                                           {typeof value === 'number' ? value.toLocaleString() : value}
+                                         </div>
+                                       </div>
+                                     ))}
+                                   </div>
+                                 </div>
+                                 
+                                 <div className="p-2 bg-card rounded font-mono text-sm">
+                                   <span className="text-muted-foreground">Path:</span> {itemValue.path}
+                                 </div>
+                                 
+                                 <div className="p-3 bg-muted/50 rounded-lg">
+                                   <p className="text-base text-muted-foreground leading-relaxed">
+                                     <strong>Rationale:</strong> {itemValue.rationale}
+                                   </p>
+                                 </div>
+                               </div>
+                             </div>
+                           </CardContent>
+                         </Card>
+                       );
+                     }
                     
                     return renderEditableDatapoint(
                       itemId,
