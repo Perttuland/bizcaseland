@@ -143,8 +143,21 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     }).format(amount);
   };
 
-  const formatValue = (value: any, unit: string) => {
+  const formatValue = (value: any, unit: string, itemKey?: string) => {
     if (typeof value === 'number') {
+      // Special formatting for avg unit price and customer acquisition cost - one decimal place
+      if (itemKey === 'avg_unit_price' || itemKey === 'cac') {
+        if (unit.includes('EUR') || unit.includes('USD')) {
+          return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: data.meta.currency || 'EUR',
+            minimumFractionDigits: 1,
+            maximumFractionDigits: 1
+          }).format(value);
+        }
+        return value.toFixed(1);
+      }
+      
       if (unit.includes('EUR') || unit.includes('USD')) {
         return formatCurrency(value);
       }
@@ -165,6 +178,9 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     const isEditing = editingItems[itemId];
     const currentValue = tempValues[itemId] || item;
     const Icon = icon;
+    
+    // Extract the itemKey from itemId (e.g., "pricing_avg_unit_price" -> "avg_unit_price")
+    const itemKey = itemId.split('_').slice(1).join('_');
 
     return (
       <Card key={itemId} className="bg-muted/30 border-l-4 border-l-financial-primary">
@@ -219,7 +235,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                   <div className="space-y-2">
                     <div className="flex items-center space-x-3">
                       <span className="text-2xl font-bold text-financial-success">
-                        {formatValue(item.value, item.unit)}
+                        {formatValue(item.value, item.unit, itemKey)}
                       </span>
                       <Badge variant="outline">{item.unit}</Badge>
                     </div>
