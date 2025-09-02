@@ -481,30 +481,31 @@ export function CashFlowStatement() {
                     data={[
                       { 
                         name: 'Sales & Marketing', 
-                        value: monthlyData.reduce((sum, m) => sum + (m.salesMarketing || 0), 0),
+                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.salesMarketing || 0), 0)),
                         color: 'hsl(var(--financial-primary))'
                       },
                       { 
                         name: 'R&D', 
-                        value: monthlyData.reduce((sum, m) => sum + (m.rd || 0), 0),
+                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.rd || 0), 0)),
                         color: 'hsl(var(--financial-success))'
                       },
                       { 
                         name: 'G&A', 
-                        value: monthlyData.reduce((sum, m) => sum + (m.ga || 0), 0),
+                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.ga || 0), 0)),
                         color: 'hsl(var(--financial-warning))'
                       },
                       { 
                         name: 'CAPEX', 
-                        value: monthlyData.reduce((sum, m) => sum + (m.capex || 0), 0),
+                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.capex || 0), 0)),
                         color: 'hsl(var(--financial-danger))'
                       }
-                    ]}
+                    ].filter(item => item.value > 0)}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
                     label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
+                    outerRadius={90}
+                    innerRadius={40}
                     fill="#8884d8"
                     dataKey="value"
                   >

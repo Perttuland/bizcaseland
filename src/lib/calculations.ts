@@ -279,8 +279,8 @@ export function calculateBreakEven(monthlyData: MonthlyData[]): number | null {
   let cumulativeCashFlow = 0;
   for (let i = 0; i < monthlyData.length; i++) {
     cumulativeCashFlow += monthlyData[i].netCashFlow;
-    if (cumulativeCashFlow > 0) {
-      return i + 1; // Return month number
+    if (cumulativeCashFlow >= 0) {
+      return i + 1; // Return month number (1-indexed)
     }
   }
   return null; // Never breaks even
