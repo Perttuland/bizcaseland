@@ -51,7 +51,6 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
       // Calculate sales volume and unit price from business data
       const baseVolume = businessData?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value || 1000;
       const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
-      console.log('Current unit price from datapoints:', unitPrice);
       const growthFactor = 1 + (i * 0.02);
       
       const salesVolume = Math.round(baseVolume * growthFactor);
