@@ -1,61 +1,18 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 interface BusinessData {
-  schema_version?: string;
-  meta: {
-    title: string;
-    description: string;
-    archetype: string;
-    currency: string;
-    periods: number;
-    frequency: string;
-  };
-  assumptions: {
-    pricing: {
-      avg_unit_price: { value: number; unit: string; rationale: string };
-      discount_pct: { value: number; unit: string; rationale: string };
-    };
-    financial: {
-      interest_rate: { value: number; unit: string; rationale: string };
-    };
-    customers: {
-      segments: Array<{
-        id: string;
-        label: string;
-        kind: string;
-        rationale: string;
-        volume: {
-          type: string;
-          pattern_type: string;
-          series?: Array<{ period: number; value: number; unit: string; rationale: string }>;
-          seasonality_index_12?: number[];
-          base_year_total?: { value: number; unit: string; rationale: string };
-          yoy_growth?: { value: number; unit: string; rationale: string };
-          fallback_formula?: string;
-        };
-      }>;
-    };
-    unit_economics: {
-      cogs_pct: { value: number; unit: string; rationale: string };
-      cac: { value: number; unit: string; rationale: string };
-    };
-    opex: Array<{
-      name: string;
-      value: { value: number; unit: string; rationale: string };
-    }>;
-  };
-  drivers: Array<{
-    key: string;
-    path: string;
-    range: number[];
-    rationale: string;
-  }>;
+  meta: any;
+  assumptions: any;
+  structure: any;
+  scenarios: any[];
+  drivers?: any[];
 }
 
 interface BusinessDataContextType {
   data: BusinessData | null;
   updateData: (newData: BusinessData) => void;
-  updateValue: (path: string, value: any) => void;
+  updateAssumption: (path: string, value: any) => void;
+  updateDriver: (driverIndex: number, updates: any) => void;
   exportData: () => string;
 }
 
@@ -68,7 +25,7 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
     setData(newData);
   }, []);
 
-  const updateValue = useCallback((path: string, value: any) => {
+  const updateAssumption = useCallback((path: string, value: any) => {
     if (!data) return;
     
     const pathParts = path.split('.');
@@ -86,6 +43,16 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
     setData(newData);
   }, [data]);
 
+  const updateDriver = useCallback((driverIndex: number, updates: any) => {
+    if (!data || !data.drivers) return;
+    
+    const newData = { ...data };
+    newData.drivers = [...data.drivers];
+    newData.drivers[driverIndex] = { ...newData.drivers[driverIndex], ...updates };
+    
+    setData(newData);
+  }, [data]);
+
   const exportData = useCallback(() => {
     return JSON.stringify(data, null, 2);
   }, [data]);
@@ -93,7 +60,8 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
   const value = {
     data,
     updateData,
-    updateValue,
+    updateAssumption,
+    updateDriver,
     exportData
   };
 
