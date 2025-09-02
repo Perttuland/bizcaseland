@@ -486,64 +486,52 @@ export function CashFlowStatement() {
           </CardContent>
         </Card>
 
-        {/* 3. Cost Structure Pie Chart */}
+        {/* 3. Net Cash Flow Bar Chart */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <PieChartIcon className="h-5 w-5 text-financial-warning" />
-              <span>Total Cost Structure</span>
+              <TrendingUp className="h-5 w-5 text-financial-success" />
+              <span>Net Cash Flow</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={[
-                      { 
-                        name: 'Sales & Marketing', 
-                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.salesMarketing || 0), 0)),
-                        color: 'hsl(var(--financial-primary))'
-                      },
-                      { 
-                        name: 'R&D', 
-                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.rd || 0), 0)),
-                        color: 'hsl(var(--financial-success))'
-                      },
-                      { 
-                        name: 'G&A', 
-                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.ga || 0), 0)),
-                        color: 'hsl(var(--financial-warning))'
-                      },
-                      { 
-                        name: 'CAPEX', 
-                        value: Math.abs(monthlyData.reduce((sum, m) => sum + (m.capex || 0), 0)),
-                        color: 'hsl(var(--financial-danger))'
-                      }
-                    ].filter(item => item.value > 0)}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={90}
-                    innerRadius={40}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {[
-                      { color: 'hsl(var(--financial-primary))' },
-                      { color: 'hsl(var(--financial-success))' },
-                      { color: 'hsl(var(--financial-warning))' },
-                      { color: 'hsl(var(--financial-danger))' }
-                    ].map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: number) => [formatCurrency(value), '']}
-                    labelFormatter={(label) => `${label}`}
+                <BarChart data={monthlyData}>
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    interval={Math.floor(monthlyData.length / 10)}
                   />
-                </PieChart>
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(value) => formatCurrency(value).replace(/\s[A-Z]{3}$/, '')}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const value = payload[0].value as number;
+                        return (
+                          <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                            <p className="font-semibold">{`Month ${label}`}</p>
+                            <p style={{ color: value >= 0 ? 'hsl(var(--financial-success))' : 'hsl(var(--financial-danger))' }}>
+                              {`Net Cash Flow: ${formatCurrency(value)}`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="netCashFlow" 
+                    fill="hsl(var(--financial-primary))"
+                    name="Net Cash Flow"
+                    radius={[2, 2, 0, 0]}
+                  />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
