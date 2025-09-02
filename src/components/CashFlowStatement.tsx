@@ -77,12 +77,14 @@ export function CashFlowStatement() {
   const rows = [
     { label: 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
     { label: '  Sales Volume', key: 'salesVolume', isSubItem: true, category: 'volume', unit: 'units' },
+    { label: '  New Customers', key: 'newCustomers', isSubItem: true, category: 'volume', unit: 'units' },
+    { label: '  Existing Customers', key: 'existingCustomers', isSubItem: true, category: 'volume', unit: 'units' },
     { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'decimal' },
     { label: 'Cost of Goods Sold', key: 'cogs', category: 'costs' },
     { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
-    { label: '  Total CAC', key: 'totalCAC', isSubItem: true, category: 'costs' },
+    { label: '  Total CAC (New Customers Only)', key: 'totalCAC', isSubItem: true, category: 'costs' },
     { label: 'Research & Development', key: 'rd', category: 'opex' },
     { label: 'General & Administrative', key: 'ga', category: 'opex' },
     { label: 'Total Operating Expenses', key: 'totalOpex', isSubtotal: true, category: 'opex' },
@@ -141,9 +143,9 @@ export function CashFlowStatement() {
         rationale: businessData?.assumptions?.unit_economics?.cac?.rationale
       },
       totalCAC: {
-        formula: `Sales Volume × CAC`,
-        components: `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatDecimal(currentMonth?.cac || 0)}`,
-        rationale: businessData?.assumptions?.unit_economics?.cac?.rationale
+        formula: `New Customers × CAC`,
+        components: `${currentMonth?.newCustomers?.toLocaleString()} new customers × ${formatDecimal(currentMonth?.cac || 0)}`,
+        rationale: `CAC only applies to new customer acquisitions. ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
       },
       ebitda: {
         formula: `Gross Profit + Total Operating Expenses`,

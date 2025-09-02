@@ -14,6 +14,8 @@ export interface MonthlyData {
   month: number;
   date: Date;
   salesVolume: number;
+  newCustomers: number;
+  existingCustomers: number;
   unitPrice: number;
   revenue: number;
   cogs: number;
@@ -80,14 +82,31 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     // Calculate total sales volume from all customer segments
     let totalSalesVolume = calculateTotalVolumeForMonth(businessData, i);
     
-    // Apply churn for recurring business models
+    // Determine business model and calculate new vs existing customers
     const businessModel = businessData?.meta?.business_model;
     const churnRate = businessData?.assumptions?.customers?.churn_pct?.value || 0;
     
-    if (businessModel === 'recurring' && churnRate > 0 && i > 0) {
-      // For recurring models, apply churn to reduce volume over time
-      const churnFactor = Math.pow(1 - churnRate, i);
-      totalSalesVolume = totalSalesVolume * churnFactor;
+    let newCustomers = 0;
+    let existingCustomers = 0;
+    
+    if (businessModel === 'recurring' || businessModel === 'subscription') {
+      // For recurring models, differentiate between new and existing customers
+      if (i === 0) {
+        // First month: all customers are new
+        newCustomers = totalSalesVolume;
+        existingCustomers = 0;
+      } else {
+        // Calculate existing customers from previous month (minus churn)
+        const previousMonth = months[i - 1];
+        existingCustomers = Math.round((previousMonth.newCustomers + previousMonth.existingCustomers) * (1 - churnRate));
+        
+        // New customers is the difference to reach total volume
+        newCustomers = Math.max(0, totalSalesVolume - existingCustomers);
+      }
+    } else {
+      // For transactional models, all volume represents new customers each month
+      newCustomers = totalSalesVolume;
+      existingCustomers = 0;
     }
     
     const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 0;
@@ -100,7 +119,10 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     
     const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 0));
     const cac = businessData?.assumptions?.unit_economics?.cac?.value || 0;
-    const totalCAC = -Math.round(salesVolume * cac);
+    
+    // CAC only applies to new customers, not existing ones
+    const totalCAC = -Math.round(newCustomers * cac);
+    
     const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 0));
     const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 0));
     const totalOpex = salesMarketing + totalCAC + rd + ga;
@@ -113,6 +135,8 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
       month: i + 1,
       date: currentDate,
       salesVolume,
+      newCustomers: Math.round(newCustomers),
+      existingCustomers: Math.round(existingCustomers),
       unitPrice,
       revenue,
       cogs,
