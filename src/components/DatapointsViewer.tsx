@@ -207,7 +207,34 @@ export function DatapointsViewer() {
                 <label className="text-sm font-medium">Volume Pattern</label>
                 <p className="text-sm text-muted-foreground">{segment.volume.pattern_type}</p>
               </div>
-              {segment.volume.series.map((series, seriesIndex) => (
+              
+              {/* Seasonal Growth Pattern Fields */}
+              {segment.volume.pattern_type === 'seasonal_growth' && (
+                <>
+                  {segment.volume.base_year_total && 
+                    renderValueField(`assumptions.customers.segments.${index}.volume.base_year_total`, segment.volume.base_year_total, 'Base Year Total')
+                  }
+                  {segment.volume.yoy_growth && 
+                    renderValueField(`assumptions.customers.segments.${index}.volume.yoy_growth`, segment.volume.yoy_growth, 'YoY Growth Rate')
+                  }
+                  {segment.volume.seasonality_index_12 && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Seasonality Index (12 months)</label>
+                      <div className="grid grid-cols-6 gap-2 text-xs">
+                        {segment.volume.seasonality_index_12.map((value, monthIndex) => (
+                          <div key={monthIndex} className="text-center">
+                            <div className="text-muted-foreground">M{monthIndex + 1}</div>
+                            <div className="font-mono">{value.toFixed(1)}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+              
+              {/* Time Series Fields */}
+              {segment.volume.series && segment.volume.series.map((series, seriesIndex) => (
                 <div key={seriesIndex} className="grid grid-cols-12 gap-4 items-start p-3 bg-muted/30 rounded-lg">
                   <div className="col-span-3">
                     <label className="text-sm font-medium">Period {series.period}</label>

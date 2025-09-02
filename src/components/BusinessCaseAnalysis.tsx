@@ -4,87 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useBusinessData } from "@/contexts/BusinessDataContext";
-
-interface MonthlyData {
-  month: number;
-  date: string;
-  customers: number;
-  revenue: number;
-  cogs: number;
-  opex: number;
-  netCashFlow: number;
-  cumulativeCashFlow: number;
-}
+import { calculateMonthlyProjection, calculateSummaryMetrics } from "@/lib/calculations";
 
 export function BusinessCaseAnalysis() {
   const { data, updateValue } = useBusinessData();
 
   const monthlyData = useMemo(() => {
     if (!data) return [];
-
-    const periods = data.meta.periods;
-    const results: MonthlyData[] = [];
-    let cumulativeCashFlow = 0;
-
-    // Get base values
-    const avgUnitPrice = data.assumptions.pricing.avg_unit_price.value;
-    const discountPct = data.assumptions.pricing.discount_pct.value;
-    const cogsPct = data.assumptions.unit_economics.cogs_pct.value;
-    const monthlyOpex = data.assumptions.opex.reduce((sum, opex) => sum + opex.value.value, 0);
-
-    // Get initial customer volume from first segment
-    const firstSegment = data.assumptions.customers.segments[0];
-    const initialVolume = firstSegment?.volume.series[0]?.value || 0;
-
-    for (let month = 1; month <= periods; month++) {
-      // Simple growth model - you can enhance this based on pattern_type
-      const customers = initialVolume * Math.pow(1.1, (month - 1) / 12); // 10% annual growth
-      
-      const grossRevenue = customers * avgUnitPrice;
-      const revenue = grossRevenue * (1 - discountPct);
-      const cogs = revenue * cogsPct;
-      const netCashFlow = revenue - cogs - monthlyOpex;
-      cumulativeCashFlow += netCashFlow;
-
-      results.push({
-        month,
-        date: new Date(2026, month - 1).toISOString().slice(0, 7),
-        customers: Math.round(customers),
-        revenue: Math.round(revenue),
-        cogs: Math.round(cogs),
-        opex: Math.round(monthlyOpex),
-        netCashFlow: Math.round(netCashFlow),
-        cumulativeCashFlow: Math.round(cumulativeCashFlow)
-      });
-    }
-
-    return results;
+    return calculateMonthlyProjection(data);
   }, [data]);
 
   const summary = useMemo(() => {
-    if (monthlyData.length === 0) return null;
-
-    const totalRevenue = monthlyData.reduce((sum, month) => sum + month.revenue, 0);
-    const totalCosts = monthlyData.reduce((sum, month) => sum + month.cogs + month.opex, 0);
-    const finalCumulativeCashFlow = monthlyData[monthlyData.length - 1]?.cumulativeCashFlow || 0;
-    
-    // Calculate NPV
-    const discountRate = data?.assumptions.financial.interest_rate.value || 0.1;
-    const monthlyRate = discountRate / 12;
-    const npv = monthlyData.reduce((sum, month) => {
-      return sum + month.netCashFlow / Math.pow(1 + monthlyRate, month.month);
-    }, 0);
-
-    // Find break-even month
-    const breakEvenMonth = monthlyData.findIndex(month => month.cumulativeCashFlow > 0);
-
-    return {
-      totalRevenue,
-      totalCosts,
-      finalCumulativeCashFlow,
-      npv,
-      breakEvenMonth: breakEvenMonth === -1 ? null : breakEvenMonth + 1
-    };
+    if (!data || monthlyData.length === 0) return null;
+    return calculateSummaryMetrics(monthlyData, data);
   }, [monthlyData, data]);
 
   const formatCurrency = (amount: number) => {

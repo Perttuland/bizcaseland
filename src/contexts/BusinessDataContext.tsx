@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 interface BusinessData {
+  schema_version?: string;
   meta: {
     title: string;
     description: string;
@@ -26,7 +27,10 @@ interface BusinessData {
         volume: {
           type: string;
           pattern_type: string;
-          series: Array<{ period: number; value: number; unit: string; rationale: string }>;
+          series?: Array<{ period: number; value: number; unit: string; rationale: string }>;
+          seasonality_index_12?: number[];
+          base_year_total?: { value: number; unit: string; rationale: string };
+          yoy_growth?: { value: number; unit: string; rationale: string };
           fallback_formula?: string;
         };
       }>;
