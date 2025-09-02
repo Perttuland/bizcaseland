@@ -33,6 +33,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     customers: true,
     economics: true,
     opex: true,
+    capex: true,
     structure: false,
     drivers: false,
   });
@@ -114,12 +115,19 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
         updatedData.assumptions.pricing[itemKey] = tempValue;
       } else if (section === 'financial' && updatedData.assumptions?.financial?.[itemKey]) {
         updatedData.assumptions.financial[itemKey] = tempValue;
+      } else if (section === 'customers' && updatedData.assumptions?.customers?.[itemKey]) {
+        updatedData.assumptions.customers[itemKey] = tempValue;
       } else if (section === 'economics' && updatedData.assumptions?.unit_economics?.[itemKey]) {
         updatedData.assumptions.unit_economics[itemKey] = tempValue;
       } else if (section === 'opex' && updatedData.assumptions?.opex) {
         const opexIndex = parseInt(itemKey.replace('opex_', ''));
         if (updatedData.assumptions.opex[opexIndex]) {
           updatedData.assumptions.opex[opexIndex].value = tempValue;
+        }
+      } else if (section === 'capex' && updatedData.assumptions?.capex) {
+        const capexIndex = parseInt(itemKey.replace('capex_', ''));
+        if (updatedData.assumptions.capex[capexIndex]?.timeline?.series?.[0]) {
+          updatedData.assumptions.capex[capexIndex].timeline.series[0] = tempValue;
         }
       }
     }
@@ -227,6 +235,12 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
       items: data.assumptions.financial ? Object.entries(data.assumptions.financial) : []
     },
     {
+      key: 'customers',
+      title: 'Customer Metrics',
+      icon: Users,
+      items: data.assumptions.customers ? Object.entries(data.assumptions.customers).filter(([key]) => key !== 'segments') : []
+    },
+    {
       key: 'economics',
       title: 'Unit Economics',
       icon: TrendingUp,
@@ -239,6 +253,15 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
       items: data.assumptions.opex ? data.assumptions.opex.map((item: any, index: number) => [
         `opex_${index}`,
         { ...item.value, name: item.name }
+      ]) : []
+    },
+    {
+      key: 'capex',
+      title: 'Capital Expenditures',
+      icon: Settings,
+      items: data.assumptions.capex ? data.assumptions.capex.map((item: any, index: number) => [
+        `capex_${index}`,
+        { ...item.timeline?.series?.[0] || { value: 0, unit: 'EUR', rationale: 'No data' }, name: item.name }
       ]) : []
     }
   ];

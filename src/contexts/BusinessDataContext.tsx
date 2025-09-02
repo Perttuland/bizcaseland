@@ -4,7 +4,8 @@ export interface BusinessData {
   meta: {
     title: string;
     description: string;
-    archetype: string;
+    business_model?: string;
+    archetype?: string;
     currency: string;
     periods: number;
     frequency: string;

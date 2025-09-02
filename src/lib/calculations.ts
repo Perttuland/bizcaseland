@@ -78,7 +78,18 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     currentDate.setMonth(startDate.getMonth() + i);
     
     // Calculate total sales volume from all customer segments
-    const totalSalesVolume = calculateTotalVolumeForMonth(businessData, i);
+    let totalSalesVolume = calculateTotalVolumeForMonth(businessData, i);
+    
+    // Apply churn for recurring business models
+    const businessModel = businessData?.meta?.business_model;
+    const churnRate = businessData?.assumptions?.customers?.churn_pct?.value || 0;
+    
+    if (businessModel === 'recurring' && churnRate > 0 && i > 0) {
+      // For recurring models, apply churn to reduce volume over time
+      const churnFactor = Math.pow(1 - churnRate, i);
+      totalSalesVolume = totalSalesVolume * churnFactor;
+    }
+    
     const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
     const discountPct = businessData?.assumptions?.pricing?.discount_pct?.value || 0;
     const effectivePrice = unitPrice * (1 - discountPct);
@@ -97,7 +108,7 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const totalOpex = salesMarketing + totalCAC + rd + ga;
     
     const ebitda = grossProfit + totalOpex;
-    const capex = -(i === 0 ? 50000 : (i % 12 === 0 ? 10000 : 0));
+    const capex = -calculateCapexForMonth(businessData, i);
     const netCashFlow = ebitda + capex;
     
     months.push({
@@ -228,6 +239,33 @@ export function calculateTimeSeriesVolume(volume: any, monthIndex: number): numb
   // Extend pattern if we run out of data
   const lastValue = series[series.length - 1]?.value || 0;
   return lastValue;
+}
+
+/**
+ * Calculate capex for a specific month
+ */
+export function calculateCapexForMonth(businessData: BusinessData, monthIndex: number): number {
+  const capexItems = businessData?.assumptions?.capex || [];
+  let totalCapex = 0;
+
+  for (const item of capexItems) {
+    const timeline = item?.timeline;
+    if (!timeline) continue;
+
+    if (timeline.type === "pattern") {
+      if (timeline.pattern_type === "seasonal_growth") {
+        totalCapex += calculateSeasonalGrowthVolume(timeline, monthIndex);
+      } else if (timeline.pattern_type === "geom_growth") {
+        totalCapex += calculateGeomGrowthVolume(timeline, monthIndex);
+      } else if (timeline.pattern_type === "linear_growth") {
+        totalCapex += calculateLinearGrowthVolume(timeline, monthIndex);
+      }
+    } else if (timeline.type === "time_series") {
+      totalCapex += calculateTimeSeriesVolume(timeline, monthIndex);
+    }
+  }
+
+  return totalCapex;
 }
 
 /**

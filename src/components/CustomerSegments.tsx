@@ -26,8 +26,24 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
     }).format(amount);
   };
 
-  const getGrowthPatternDescription = (segment: any) => {
-    if (!segment.volume) return 'No growth pattern defined';
+  const getGrowthPatternDescription = (patternTypeOrSegment: string | any) => {
+    // Handle direct pattern type string
+    if (typeof patternTypeOrSegment === 'string') {
+      switch (patternTypeOrSegment) {
+        case 'geom_growth':
+          return 'Geometric';
+        case 'seasonal_growth':
+          return 'Seasonal';
+        case 'linear_growth':
+          return 'Linear';
+        default:
+          return 'Custom';
+      }
+    }
+    
+    // Handle full segment object
+    const segment = patternTypeOrSegment;
+    if (!segment.volume) return 'No pattern';
     
     const { type, pattern_type } = segment.volume;
     
@@ -253,7 +269,7 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
                       <div className="flex items-start justify-between">
                         <div>
                           <h4 className="font-semibold text-lg">{segment.label}</h4>
-                          <Badge variant="outline" className="mt-1">{segment.kind}</Badge>
+                          <Badge variant="outline" className="mt-1">{getGrowthPatternDescription(segment.volume?.pattern_type)}</Badge>
                         </div>
                         <TooltipProvider>
                           <Tooltip delayDuration={0}>
