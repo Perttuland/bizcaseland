@@ -33,15 +33,15 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
   const [sensitivityValues, setSensitivityValues] = useState<{[key: string]: string}>({});
   
-  // Use context data if available, otherwise use prop data
+  // Always use context data if available for real-time updates
   const businessData = contextData || data;
   
   // Generate monthly data based on business assumptions
   const generateMonthlyData = () => {
     const months = [];
-    const startDate = new Date(data.meta.start_date);
+    const startDate = new Date(businessData.meta.start_date);
     
-    for (let i = 0; i < Math.min(data.meta.periods, 60); i++) {
+    for (let i = 0; i < Math.min(businessData.meta.periods, 60); i++) {
       const currentDate = new Date(startDate);
       currentDate.setMonth(startDate.getMonth() + i);
       
@@ -87,7 +87,7 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
   };
 
   const monthlyData = generateMonthlyData();
-  const currency = data.meta.currency || 'EUR';
+  const currency = businessData.meta.currency || 'EUR';
   
   // Calculate NPV using interest rate from business data
   const calculateNPV = () => {
