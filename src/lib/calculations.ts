@@ -43,16 +43,16 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   const totalCashFlow = monthlyData.reduce((sum, month) => sum + month.netCashFlow, 0);
   
   // Calculate NPV
-  const interestRate = businessData.assumptions?.financial?.interest_rate?.value || 0.10;
+  const interestRate = businessData.assumptions?.financial?.interest_rate?.value || 0;
   const npv = calculateNPV(monthlyData, interestRate);
   
   // Calculate break-even
   const breakEvenMonth = calculateBreakEven(monthlyData);
   
   // Calculate other metrics
-  const netProfit = totalRevenue * 0.26; // 26% average net margin
-  const paybackPeriod = breakEvenMonth || Math.ceil(monthlyData.length * 0.3);
-  const roa = 0.26; // 26% return on assets
+  const netProfit = totalRevenue * (businessData.assumptions?.financial?.net_margin?.value || 0);
+  const paybackPeriod = breakEvenMonth || 0;
+  const roa = businessData.assumptions?.financial?.roa?.value || 0;
 
   return {
     totalRevenue,
@@ -60,7 +60,7 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
     npv,
     paybackPeriod,
     roa,
-    breakEvenMonth: breakEvenMonth || 14,
+    breakEvenMonth: breakEvenMonth || 0,
     monthlyData
   };
 }
@@ -91,13 +91,11 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     }
     
     const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 0;
-    const discountPct = businessData?.assumptions?.pricing?.discount_pct?.value || 0;
-    const effectivePrice = unitPrice * (1 - discountPct);
     
     const salesVolume = Math.round(totalSalesVolume);
-    const revenue = Math.round(salesVolume * effectivePrice);
+    const revenue = Math.round(salesVolume * unitPrice);
     
-    const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3));
+    const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0));
     const grossProfit = revenue + cogs;
     
     const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 0));
@@ -182,7 +180,7 @@ export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number)
 
   // Fallback to series data if available
   const firstSeriesValue = volume?.series?.[0]?.value || 0;
-  return firstSeriesValue * (1 + monthIndex * 0.02); // 2% monthly growth fallback
+  return firstSeriesValue;
 }
 
 /**
@@ -212,7 +210,7 @@ export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number): 
  */
 export function calculateGeomGrowthVolume(volume: any, monthIndex: number): number {
   const startValue = volume?.series?.[0]?.value || 0;
-  const monthlyGrowthRate = volume.monthly_growth_rate?.value || 0.02;
+  const monthlyGrowthRate = volume.monthly_growth_rate?.value || 0;
   
   return startValue * Math.pow(1 + monthlyGrowthRate, monthIndex);
 }
@@ -293,12 +291,12 @@ export function calculateBreakEven(monthlyData: MonthlyData[]): number | null {
  */
 function getDefaultMetrics(): CalculatedMetrics {
   return {
-    totalRevenue: 1250000,
-    netProfit: 325000,
-    npv: 2100000,
-    paybackPeriod: 18,
-    roa: 0.26,
-    breakEvenMonth: 14,
+    totalRevenue: 0,
+    netProfit: 0,
+    npv: 0,
+    paybackPeriod: 0,
+    roa: 0,
+    breakEvenMonth: 0,
     monthlyData: []
   };
 }
