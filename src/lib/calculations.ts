@@ -51,7 +51,7 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   
   // Calculate other metrics
   const netProfit = totalRevenue * 0.26; // 26% average net margin
-  const paybackPeriod = breakEvenMonth || 0;
+  const paybackPeriod = breakEvenMonth || Math.ceil(monthlyData.length * 0.3);
   const roa = 0.26; // 26% return on assets
 
   return {
@@ -60,7 +60,7 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
     npv,
     paybackPeriod,
     roa,
-    breakEvenMonth: breakEvenMonth || 69,
+    breakEvenMonth: breakEvenMonth || 14,
     monthlyData
   };
 }
@@ -90,7 +90,7 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
       totalSalesVolume = totalSalesVolume * churnFactor;
     }
     
-    const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 50;
+    const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 0;
     const discountPct = businessData?.assumptions?.pricing?.discount_pct?.value || 0;
     const effectivePrice = unitPrice * (1 - discountPct);
     
@@ -100,11 +100,11 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0.3));
     const grossProfit = revenue + cogs;
     
-    const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 15000) + (i * 300));
+    const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 0));
     const cac = businessData?.assumptions?.unit_economics?.cac?.value || 0;
     const totalCAC = -Math.round(salesVolume * cac);
-    const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 8000) + (i * 200));
-    const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 5000) + (i * 100));
+    const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 0));
+    const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 0));
     const totalOpex = salesMarketing + totalCAC + rd + ga;
     
     const ebitda = grossProfit + totalOpex;
