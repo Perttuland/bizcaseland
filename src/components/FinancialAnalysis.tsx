@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { calculateBusinessMetrics, formatCurrency, formatPercent } from '@/lib/calculations';
+import { CustomerSegments } from './CustomerSegments';
 
 export function FinancialAnalysis() {
   const { data: businessData } = useBusinessData();
@@ -222,6 +223,9 @@ export function FinancialAnalysis() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Customer Segments & Volume Projections */}
+      <CustomerSegments data={businessData} />
 
       {/* Scenarios */}
       {businessData.scenarios && businessData.scenarios.length > 0 && (

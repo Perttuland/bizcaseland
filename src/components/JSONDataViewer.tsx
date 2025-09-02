@@ -9,7 +9,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ChevronDown, ChevronRight, Edit3, Save, X, DollarSign, TrendingUp, Users, Settings, Download, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
-import { CustomerSegments } from './CustomerSegments';
 
 interface DatapointsViewerProps {
   data: BusinessData;
@@ -467,8 +466,6 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
         </CardHeader>
       </Card>
 
-      {/* Customer Segments & Volume Overview - First section */}
-      <CustomerSegments data={data} />
 
       {/* All Regular Datapoints in Grid */}
       {allDatapoints.length > 0 && (
