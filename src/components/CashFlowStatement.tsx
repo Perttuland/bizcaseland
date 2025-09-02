@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle } from 'lucide-react';
 import { useBusinessData } from '@/contexts/BusinessDataContext';
 
@@ -428,6 +429,150 @@ export function CashFlowStatement({ data }: CashFlowStatementProps) {
               ) : (
                 <AlertTriangle className="h-6 w-6 text-white" />
               )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue and Net Cash Flow Line Chart */}
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5 text-financial-primary" />
+              <span>Revenue & Net Cash Flow</span>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Monthly trends comparison
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                            <p className="font-semibold">{`Month ${label}`}</p>
+                            {payload.map((entry, index) => (
+                              <p key={index} style={{ color: entry.color }}>
+                                {`${entry.name}: ${formatCurrency(entry.value as number)}`}
+                              </p>
+                            ))}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="hsl(var(--financial-success))" 
+                    strokeWidth={3}
+                    dot={false}
+                    name="Revenue"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="netCashFlow" 
+                    stroke="hsl(var(--financial-primary))" 
+                    strokeWidth={3}
+                    dot={false}
+                    name="Net Cash Flow"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cost Structure Bar Chart */}
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <DollarSign className="h-5 w-5 text-financial-warning" />
+              <span>Cost Structure (Month 12)</span>
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Breakdown of major cost components
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={[
+                  {
+                    name: 'Sales & Marketing',
+                    value: Math.abs(monthlyData[11]?.salesMarketing || 0),
+                    color: 'hsl(var(--financial-danger))'
+                  },
+                  {
+                    name: 'R&D',
+                    value: Math.abs(monthlyData[11]?.rd || 0),
+                    color: 'hsl(var(--financial-warning))'
+                  },
+                  {
+                    name: 'G&A',
+                    value: Math.abs(monthlyData[11]?.ga || 0),
+                    color: 'hsl(var(--financial-secondary))'
+                  },
+                  {
+                    name: 'COGS',
+                    value: Math.abs(monthlyData[11]?.cogs || 0),
+                    color: 'hsl(var(--financial-primary))'
+                  }
+                ]}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis 
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
+                    tickFormatter={(value) => formatCurrency(value)}
+                  />
+                  <Tooltip 
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                            <p className="font-semibold">{label}</p>
+                            <p style={{ color: payload[0].color }}>
+                              {`Cost: ${formatCurrency(payload[0].value as number)}`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="hsl(var(--financial-danger))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>

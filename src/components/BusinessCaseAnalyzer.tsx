@@ -180,19 +180,17 @@ export function BusinessCaseAnalyzer() {
                   Data Input
                 </Button>
                 <Button
-                  variant={activeTab === 'analysis' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('analysis')}
-                  className="w-full justify-start"
-                  disabled={!jsonData}
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
+                  disabled={true}
                 >
                   <Calculator className="h-4 w-4 mr-2" />
                   Financial Analysis
                 </Button>
                 <Button
-                  variant={activeTab === 'charts' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('charts')}
-                  className="w-full justify-start"
-                  disabled={!jsonData}
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
+                  disabled={true}
                 >
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Charts & Metrics
@@ -212,8 +210,8 @@ export function BusinessCaseAnalyzer() {
                   className="w-full justify-start"
                   disabled={!jsonData}
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Cash Flow P&L
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Business case analysis
                 </Button>
               </CardContent>
             </Card>
