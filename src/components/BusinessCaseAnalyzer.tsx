@@ -6,10 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { JSONTemplate } from './JSONTemplate';
-import { FinancialAnalysis } from './FinancialAnalysis';
-import { DataVisualization } from './DataVisualization';
-import { DatapointsViewer } from './JSONDataViewer';
-import { CashFlowStatement } from './CashFlowStatement';
+import { DatapointsViewer } from './DatapointsViewer';
+import { BusinessCaseAnalysis } from './BusinessCaseAnalysis';
+import { useBusinessData } from '@/contexts/BusinessDataContext';
 
 interface BusinessData {
   meta: {
@@ -27,17 +26,17 @@ interface BusinessData {
 }
 
 export function BusinessCaseAnalyzer() {
-  const [jsonData, setJsonData] = useState<BusinessData | null>(null);
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'data' | 'analysis'>('input');
   const { toast } = useToast();
+  const { data: contextData, updateData } = useBusinessData();
 
   const handleJsonPaste = (value: string) => {
     setInputJson(value);
     if (!value.trim()) {
       setIsValidJson(null);
-      setJsonData(null);
+      updateData(null);
       return;
     }
 
@@ -45,14 +44,14 @@ export function BusinessCaseAnalyzer() {
       const parsed = JSON.parse(value);
       if (parsed.meta && parsed.assumptions) {
         setIsValidJson(true);
-        setJsonData(parsed);
+        updateData(parsed);
         toast({
           title: "JSON Validated",
           description: "Business case data loaded successfully!",
         });
       } else {
         setIsValidJson(false);
-        setJsonData(null);
+        updateData(null);
         toast({
           title: "Invalid Format",
           description: "JSON must contain 'meta' and 'assumptions' fields.",
@@ -61,7 +60,7 @@ export function BusinessCaseAnalyzer() {
       }
     } catch (error) {
       setIsValidJson(false);
-      setJsonData(null);
+      updateData(null);
       toast({
         title: "Invalid JSON",
         description: "Please check your JSON syntax.",
@@ -180,38 +179,22 @@ export function BusinessCaseAnalyzer() {
                   Data Input
                 </Button>
                 <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
-                  disabled={true}
-                >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Financial Analysis
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground cursor-not-allowed"
-                  disabled={true}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Charts & Metrics
-                </Button>
-                <Button
                   variant={activeTab === 'data' ? 'default' : 'ghost'}
                   onClick={() => setActiveTab('data')}
                   className="w-full justify-start"
-                  disabled={!jsonData}
+                  disabled={!contextData}
                 >
                   <Edit3 className="h-4 w-4 mr-2" />
                   Datapoints & Assumptions
                 </Button>
                 <Button
-                  variant={activeTab === 'cashflow' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('cashflow')}
+                  variant={activeTab === 'analysis' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('analysis')}
                   className="w-full justify-start"
-                  disabled={!jsonData}
+                  disabled={!contextData}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
-                  Business case analysis
+                  Business Case Analysis
                 </Button>
               </CardContent>
             </Card>
@@ -243,31 +226,19 @@ export function BusinessCaseAnalyzer() {
               </Card>
             )}
 
-            {activeTab === 'analysis' && jsonData && (
+            {activeTab === 'data' && contextData && (
               <div className="animate-fade-in">
-                <FinancialAnalysis data={jsonData} />
+                <DatapointsViewer data={contextData} />
               </div>
             )}
 
-            {activeTab === 'charts' && jsonData && (
+            {activeTab === 'analysis' && contextData && (
               <div className="animate-fade-in">
-                <DataVisualization data={jsonData} />
+                <BusinessCaseAnalysis data={contextData} />
               </div>
             )}
 
-            {activeTab === 'data' && jsonData && (
-              <div className="animate-fade-in">
-                <DatapointsViewer data={jsonData} />
-              </div>
-            )}
-
-            {activeTab === 'cashflow' && jsonData && (
-              <div className="animate-fade-in">
-                <CashFlowStatement data={jsonData} />
-              </div>
-            )}
-
-            {!jsonData && activeTab !== 'input' && (
+            {!contextData && activeTab !== 'input' && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
                   <div className="text-center space-y-3">
