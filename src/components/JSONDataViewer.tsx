@@ -52,13 +52,25 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
   };
 
   const startEditing = (itemId: string, currentValue: EditableItem) => {
-    setEditingItems(prev => ({ ...prev, [itemId]: true }));
+    console.log('startEditing called:', { itemId, currentValue });
+    setEditingItems(prev => {
+      console.log('editingItems before:', prev);
+      const newState = { ...prev, [itemId]: true };
+      console.log('editingItems after:', newState);
+      return newState;
+    });
     // Deep clone for complex objects like sensitivity drivers
     const clonedValue = JSON.parse(JSON.stringify(currentValue));
-    setTempValues(prev => ({ ...prev, [itemId]: clonedValue }));
+    setTempValues(prev => {
+      console.log('tempValues before:', prev);
+      const newState = { ...prev, [itemId]: clonedValue };
+      console.log('tempValues after:', newState);
+      return newState;
+    });
   };
 
   const cancelEditing = (itemId: string) => {
+    console.log('cancelEditing called:', itemId);
     setEditingItems(prev => ({ ...prev, [itemId]: false }));
     setTempValues(prev => {
       const newValues = { ...prev };
@@ -68,6 +80,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
   };
 
   const saveEdit = (itemId: string) => {
+    console.log('saveEdit called:', { itemId, tempValue: tempValues[itemId] });
     const tempValue = tempValues[itemId];
     const updatedData = { ...data };
     
