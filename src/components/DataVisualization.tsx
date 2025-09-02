@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { TrendingUp, BarChart3, Users, DollarSign, PieChart, Activity } from 'lucide-react';
+import { useBusinessData } from '@/contexts/BusinessDataContext';
 
 interface BusinessData {
   meta: {
@@ -23,16 +24,56 @@ interface DataVisualizationProps {
 }
 
 export function DataVisualization({ data }: DataVisualizationProps) {
-  // Mock data for charts - in real implementation, this would be calculated from the business data
-  const monthlyData = Array.from({ length: 60 }, (_, i) => ({
-    month: i + 1,
-    period: `M${i + 1}`,
-    revenue: Math.floor(5000 + i * 2000 + Math.random() * 1000),
-    customers: Math.floor(50 + i * 15 + Math.random() * 10),
-    cashFlow: Math.floor(-10000 + i * 1500 + Math.random() * 500),
-    ebitda: Math.floor(-5000 + i * 1200 + Math.random() * 400),
-    cumulativeCashFlow: Math.floor(-50000 + i * 2000)
-  }));
+  const { data: contextData } = useBusinessData();
+  
+  // Use context data if available, otherwise use prop data
+  const businessData = contextData || data;
+  
+  // Generate data from business assumptions
+  const monthlyData = useMemo(() => {
+    if (!businessData.assumptions) {
+      return Array.from({ length: 60 }, (_, i) => ({
+        month: i + 1,
+        period: `M${i + 1}`,
+        revenue: Math.floor(5000 + i * 2000 + Math.random() * 1000),
+        customers: Math.floor(50 + i * 15 + Math.random() * 10),
+        cashFlow: Math.floor(-10000 + i * 1500 + Math.random() * 500),
+        ebitda: Math.floor(-5000 + i * 1200 + Math.random() * 400),
+        cumulativeCashFlow: Math.floor(-50000 + i * 2000)
+      }));
+    }
+    
+    const pricing = businessData.assumptions.pricing || {};
+    const unitEconomics = businessData.assumptions.unit_economics || {};
+    
+    const baseRevenue = pricing.monthly_revenue?.value || 50000;
+    const growthRate = unitEconomics.growth_rate?.value || 0.02;
+    const customerGrowthRate = 0.15; // 15% monthly customer growth
+    
+    let cumulativeCashFlow = -50000; // Initial investment
+    
+    return Array.from({ length: businessData.meta.periods || 60 }, (_, i) => {
+      const growthFactor = Math.pow(1 + growthRate, i);
+      const seasonality = 1 + Math.sin((i / 12) * 2 * Math.PI) * 0.1;
+      
+      const revenue = Math.floor(baseRevenue * growthFactor * seasonality);
+      const customers = Math.floor(50 + i * customerGrowthRate * 15);
+      const cashFlow = Math.floor(revenue * 0.3 - 15000); // 30% cash flow margin minus fixed costs
+      const ebitda = Math.floor(revenue * 0.25); // 25% EBITDA margin
+      
+      cumulativeCashFlow += cashFlow;
+      
+      return {
+        month: i + 1,
+        period: `M${i + 1}`,
+        revenue,
+        customers,
+        cashFlow,
+        ebitda,
+        cumulativeCashFlow: Math.floor(cumulativeCashFlow)
+      };
+    });
+  }, [businessData]);
 
   const yearlyData = Array.from({ length: 5 }, (_, i) => ({
     year: `Year ${i + 1}`,
@@ -45,7 +86,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: data.meta.currency || 'EUR',
+      currency: businessData.meta.currency || 'EUR',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
@@ -78,7 +119,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-white/80">Total Revenue</p>
-                <p className="text-xl font-bold text-white">{formatCurrency(1250000)}</p>
+                <p className="text-xl font-bold text-white">{formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0))}</p>
               </div>
               <DollarSign className="h-6 w-6 text-white" />
             </div>
@@ -90,7 +131,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-white/80">Total Customers</p>
-                <p className="text-xl font-bold text-white">2,840</p>
+                <p className="text-xl font-bold text-white">{monthlyData[monthlyData.length - 1]?.customers.toLocaleString()}</p>
               </div>
               <Users className="h-6 w-6 text-white" />
             </div>
@@ -114,7 +155,7 @@ export function DataVisualization({ data }: DataVisualizationProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Final Net Present Value</p>
-                <p className="text-xl font-bold text-financial-primary">{formatCurrency(2100000)}</p>
+                <p className="text-xl font-bold text-financial-primary">{formatCurrency(monthlyData[monthlyData.length - 1]?.cumulativeCashFlow || 0)}</p>
               </div>
               <TrendingUp className="h-6 w-6 text-financial-primary" />
             </div>

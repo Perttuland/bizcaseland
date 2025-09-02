@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronDown, ChevronRight, Edit3, Save, X, DollarSign, TrendingUp, Users, Settings } from 'lucide-react';
+import { ChevronDown, ChevronRight, Edit3, Save, X, DollarSign, TrendingUp, Users, Settings, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useBusinessData } from '@/contexts/BusinessDataContext';
 
 interface BusinessData {
   meta: any;
@@ -25,9 +26,12 @@ interface EditableItem {
   value: any;
   unit: string;
   rationale: string;
+  range?: number[];
+  path?: string;
 }
 
 export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) {
+  const { updateData, updateDriver, exportData } = useBusinessData();
   const [editingItems, setEditingItems] = useState<Record<string, boolean>>({});
   const [tempValues, setTempValues] = useState<Record<string, EditableItem>>({});
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
@@ -62,6 +66,23 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
   };
 
   const saveEdit = (itemId: string) => {
+    const tempValue = tempValues[itemId];
+    if (tempValue && itemId.startsWith('drivers_driver_')) {
+      const driverIndex = parseInt(itemId.split('_')[2]) - 1;
+      updateDriver(driverIndex, {
+        key: tempValue.value,
+        range: tempValue.range || data.drivers?.[driverIndex]?.range,
+        rationale: tempValue.rationale
+      });
+    }
+    
+    // Update the data object and notify parent
+    const updatedData = { ...data };
+    if (onDataUpdate) {
+      onDataUpdate(updatedData);
+    }
+    updateData(updatedData);
+    
     setEditingItems(prev => ({ ...prev, [itemId]: false }));
     toast({
       title: "Datapoint Updated",
@@ -214,7 +235,6 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     }
   ];
 
-  // Get all financial assumptions from the structure section
   const getStructureDatapoints = () => {
     const structureItems: any[] = [];
     
@@ -249,19 +269,18 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
     return structureItems;
   };
 
-  // Get driver data points
   const getDriverDatapoints = () => {
     if (!data.drivers) return [];
     
     return data.drivers.map((driver: any, index: number) => [
-      `driver_${index + 1}`, // Start numbering from 1
+      `driver_${index + 1}`,
       {
         value: driver.key,
         unit: 'sensitivity',
         rationale: driver.rationale,
         path: driver.path,
         range: driver.range,
-        driverNumber: index + 1 // Add driver number for display
+        driverNumber: index + 1
       }
     ]);
   };
@@ -358,7 +377,7 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                       .replace(/cogs/gi, 'Cost of Goods Sold')
                       .replace(/opex/gi, 'Operating Expenses')
                       .replace(/capex/gi, 'Capital Expenditures')
-                      .replace(/ebitda/gi, 'Earnings Before Interest, Taxes, Depreciation & Amortization')
+                      .replace(/ebitda/gi, 'EBITDA')
                       .replace(/ebit/gi, 'Earnings Before Interest & Taxes')
                       .replace(/roi/gi, 'Return on Investment')
                       .replace(/roas/gi, 'Return on Ad Spend')
@@ -418,46 +437,134 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
                      }
                      
                      if (itemValue.unit === 'sensitivity' && itemValue.range) {
-                       // Special rendering for sensitivity drivers
+                       // Special rendering for sensitivity drivers with edit capability
                        const rangeLabels = ['Low', 'Mid-Low', 'Mid', 'Mid-High', 'High'];
+                       const isEditing = editingItems[itemId];
+                       const currentValue = tempValues[itemId] || itemValue;
+                       
                        return (
                          <Card key={itemId} className="bg-muted/30 border-l-4 border-l-financial-warning">
                            <CardContent className="p-4">
-                             <div className="flex items-start space-x-3">
-                               {React.createElement(icon, { className: "h-5 w-5 text-financial-warning mt-1" })}
-                               <div className="flex-1 space-y-3">
-                                 <div className="flex items-center gap-2">
-                                   <h4 className="font-semibold text-lg">
-                                     Driver {itemValue.driverNumber}: {label}
-                                   </h4>
-                                   <Badge variant="outline">Sensitivity Analysis</Badge>
-                                 </div>
-                                 
-                                 <div className="p-3 bg-financial-warning/10 rounded-lg border border-financial-warning/20">
-                                   <h5 className="font-medium mb-2 text-sm text-muted-foreground">Sensitivity Range:</h5>
-                                   <div className="grid grid-cols-5 gap-2">
-                                     {itemValue.range.map((value: number, index: number) => (
-                                       <div key={index} className="text-center p-2 bg-card rounded border">
-                                         <div className="text-xs font-medium text-muted-foreground mb-1">
-                                           {rangeLabels[index] || `Level ${index + 1}`}
+                             <div className="flex items-start justify-between">
+                               <div className="flex items-start space-x-3 flex-1">
+                                 {React.createElement(icon, { className: "h-5 w-5 text-financial-warning mt-1" })}
+                                 <div className="flex-1 space-y-3">
+                                   <div className="flex items-center gap-2">
+                                     <h4 className="font-semibold text-lg">Drive {itemValue.driverNumber}: {isEditing ? currentValue.value : itemValue.value}</h4>
+                                     <Badge variant="outline">Sensitivity Analysis</Badge>
+                                   </div>
+                                   
+                                   {isEditing ? (
+                                     <div className="space-y-3">
+                                       <div className="grid grid-cols-2 gap-3">
+                                         <div>
+                                           <label className="text-sm font-medium text-muted-foreground">Driver Key</label>
+                                           <Input
+                                             value={currentValue.value}
+                                             onChange={(e) => setTempValues(prev => ({
+                                               ...prev,
+                                               [itemId]: { ...prev[itemId], value: e.target.value }
+                                             }))}
+                                             className="mt-1"
+                                           />
                                          </div>
-                                         <div className="text-sm font-semibold text-financial-warning">
-                                           {typeof value === 'number' ? value.toLocaleString() : value}
+                                         <div>
+                                           <label className="text-sm font-medium text-muted-foreground">Path</label>
+                                           <Input
+                                             value={currentValue.path || ''}
+                                             onChange={(e) => setTempValues(prev => ({
+                                               ...prev,
+                                               [itemId]: { ...prev[itemId], path: e.target.value }
+                                             }))}
+                                             className="mt-1"
+                                             disabled
+                                           />
                                          </div>
                                        </div>
-                                     ))}
-                                   </div>
+                                       <div>
+                                         <label className="text-sm font-medium text-muted-foreground">Sensitivity Range (Low, Mid-Low, Mid, Mid-High, High)</label>
+                                         <div className="grid grid-cols-5 gap-2 mt-1">
+                                           {rangeLabels.map((label, idx) => (
+                                             <div key={idx}>
+                                               <label className="text-xs text-muted-foreground">{label}</label>
+                                               <Input
+                                                 type="number"
+                                                 step="0.01"
+                                                 value={currentValue.range?.[idx] || 0}
+                                                 onChange={(e) => {
+                                                   const newRange = [...(currentValue.range || [])];
+                                                   newRange[idx] = parseFloat(e.target.value) || 0;
+                                                   setTempValues(prev => ({
+                                                     ...prev,
+                                                     [itemId]: { ...prev[itemId], range: newRange }
+                                                   }));
+                                                 }}
+                                                 className="mt-1 text-xs"
+                                               />
+                                             </div>
+                                           ))}
+                                         </div>
+                                       </div>
+                                       <div>
+                                         <label className="text-sm font-medium text-muted-foreground">Rationale</label>
+                                         <Textarea
+                                           value={currentValue.rationale}
+                                           onChange={(e) => setTempValues(prev => ({
+                                             ...prev,
+                                             [itemId]: { ...prev[itemId], rationale: e.target.value }
+                                           }))}
+                                           className="mt-1"
+                                           rows={3}
+                                         />
+                                       </div>
+                                     </div>
+                                   ) : (
+                                     <>
+                                       <div className="p-3 bg-financial-warning/10 rounded-lg border border-financial-warning/20">
+                                         <h5 className="font-medium mb-2 text-sm text-muted-foreground">Sensitivity Range:</h5>
+                                         <div className="grid grid-cols-5 gap-2">
+                                           {itemValue.range.map((value: number, index: number) => (
+                                             <div key={index} className="text-center p-2 bg-card rounded border">
+                                               <div className="text-xs font-medium text-muted-foreground mb-1">
+                                                 {rangeLabels[index] || `Level ${index + 1}`}
+                                               </div>
+                                               <div className="text-sm font-semibold text-financial-warning">
+                                                 {typeof value === 'number' ? value.toLocaleString() : value}
+                                               </div>
+                                             </div>
+                                           ))}
+                                         </div>
+                                       </div>
+                                       
+                                       <div className="p-2 bg-card rounded font-mono text-sm">
+                                         <span className="text-muted-foreground">Path:</span> {itemValue.path}
+                                       </div>
+                                       
+                                       <div className="p-3 bg-muted/50 rounded-lg">
+                                         <p className="text-base text-muted-foreground leading-relaxed">
+                                           <strong>Rationale:</strong> {itemValue.rationale}
+                                         </p>
+                                       </div>
+                                     </>
+                                   )}
                                  </div>
-                                 
-                                 <div className="p-2 bg-card rounded font-mono text-sm">
-                                   <span className="text-muted-foreground">Path:</span> {itemValue.path}
-                                 </div>
-                                 
-                                 <div className="p-3 bg-muted/50 rounded-lg">
-                                   <p className="text-base text-muted-foreground leading-relaxed">
-                                     <strong>Rationale:</strong> {itemValue.rationale}
-                                   </p>
-                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center space-x-2 ml-4">
+                                 {isEditing ? (
+                                   <>
+                                     <Button size="sm" onClick={() => saveEdit(itemId)}>
+                                       <Save className="h-4 w-4" />
+                                     </Button>
+                                     <Button size="sm" variant="outline" onClick={() => cancelEditing(itemId)}>
+                                       <X className="h-4 w-4" />
+                                     </Button>
+                                   </>
+                                 ) : (
+                                   <Button size="sm" variant="outline" onClick={() => startEditing(itemId, itemValue)}>
+                                     <Edit3 className="h-4 w-4" />
+                                   </Button>
+                                 )}
                                </div>
                              </div>
                            </CardContent>
@@ -583,6 +690,34 @@ export function DatapointsViewer({ data, onDataUpdate }: DatapointsViewerProps) 
           </Collapsible>
         </Card>
       )}
+
+      {/* Export JSON Button */}
+      <Card className="bg-gradient-card shadow-card">
+        <CardContent className="p-4">
+          <Button 
+            onClick={() => {
+              const dataStr = exportData();
+              const blob = new Blob([dataStr], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = 'business-data.json';
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+              toast({
+                title: "Data Exported",
+                description: "JSON file has been downloaded successfully.",
+              });
+            }}
+            className="w-full"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export as JSON
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
