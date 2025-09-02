@@ -67,7 +67,6 @@ export function BusinessCaseAnalyzer() {
       const parsed = JSON.parse(inputJson);
       updateData(parsed);
       setHasUploadedData(true);
-      setActiveTab('data');
       toast({
         title: "Data Refreshed",
         description: "Business case data updated from JSON!",
