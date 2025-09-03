@@ -77,7 +77,7 @@ export const JSONTemplate = `{
       },
       "seasonal_growth": {
         "base_year_total": { "value": 0, "unit": "units|accounts", "rationale": "TODO-expected total for base year" },
-        "seasonality_index_12": { "value": [0,0,0,0,0,0,0,0,0,0,0,0], "unit": "ratio", "rationale": "TODO-12 monthly multipliers that sum to ~1.0" },
+        "seasonality_index_12": { "value": [0,0,0,0,0,0,0,0,0,0,0,0], "unit": "ratio", "rationale": "TODO-12 monthly multipliers that sum to ~12.0 (average 1.0)" },
         "yoy_growth": { "value": 0.0, "unit": "ratio_per_year", "rationale": "TODO-year-over-year growth applied to totals" }
       },
       "linear_growth": {

@@ -67,6 +67,9 @@ export function BusinessCaseAnalyzer() {
     try {
       const parsed = JSON.parse(inputJson);
       updateData(parsed);
+      
+  // Notify other components that data was refreshed from JSON
+  window.dispatchEvent(new Event('datarefreshed'));
       setHasUploadedData(true);
       
       // Navigate to business case analysis tab when data is first uploaded
@@ -228,45 +231,68 @@ export function BusinessCaseAnalyzer() {
                     Data Input
                   </Button>
                 )}
-                <Button
-                  variant={activeTab === 'data' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('data')}
-                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+
+                {/* Move Assumptions (formerly Data Points) to the top of the tools list */}
+                <Button 
+                  variant={activeTab === 'data' ? 'default' : 'ghost'} 
+                  onClick={() => {
+                    setActiveTab('data');
+                    window.dispatchEvent(new Event('tabchange'));
+                  }}
+                  disabled={!hasUploadedData}
+                  className="flex items-center gap-2"
                 >
-                  <Edit3 className="h-4 w-4 mr-2" />
-                  Datapoints & Assumptions
+                  <Download className="h-4 w-4" />
+                  Assumptions
                 </Button>
+
                 <Button
-                  variant={activeTab === 'cashflow' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('cashflow')}
-                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                  variant={activeTab === 'cashflow' ? 'default' : 'ghost'} 
+                  onClick={() => {
+                    setActiveTab('cashflow');
+                    window.dispatchEvent(new Event('tabchange'));
+                  }}
+                  disabled={!hasUploadedData}
+                  className="flex items-center gap-2"
                 >
-                  <Calculator className="h-4 w-4 mr-2" />
-                  Business case analysis
+                  <Calculator className="h-4 w-4" />
+                  Cash Flow Statement
                 </Button>
-                <Button
-                  variant={activeTab === 'analysis' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('analysis')}
-                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                <Button 
+                  variant={activeTab === 'analysis' ? 'default' : 'ghost'} 
+                  onClick={() => {
+                    setActiveTab('analysis');
+                    window.dispatchEvent(new Event('tabchange'));
+                  }}
+                  disabled={!hasUploadedData}
+                  className="flex items-center gap-2"
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
+                  <TrendingUp className="h-4 w-4" />
                   Financial Analysis
                 </Button>
-                <Button
-                  variant={activeTab === 'charts' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('charts')}
-                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                <Button 
+                  variant={activeTab === 'charts' ? 'default' : 'ghost'} 
+                  onClick={() => {
+                    setActiveTab('charts');
+                    window.dispatchEvent(new Event('tabchange'));
+                  }}
+                  disabled={!hasUploadedData}
+                  className="flex items-center gap-2"
                 >
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  Charts & Visualizations
+                  <BarChart3 className="h-4 w-4" />
+                  Data Visualization
                 </Button>
-                <Button
-                  variant={activeTab === 'sensitivity' ? 'default' : 'ghost'}
-                  onClick={() => setActiveTab('sensitivity')}
-                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                <Button 
+                  variant={activeTab === 'sensitivity' ? 'default' : 'ghost'} 
+                  onClick={() => {
+                    setActiveTab('sensitivity');
+                    window.dispatchEvent(new Event('tabchange'));
+                  }}
+                  disabled={!hasUploadedData}
+                  className="flex items-center gap-2"
                 >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Sensitivity Analysis
+                  <Edit3 className="h-4 w-4" />
+                  Scenario Analysis
                 </Button>
               </CardContent>
             </Card>

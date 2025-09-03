@@ -1,24 +1,86 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 
 export interface BusinessData {
+  schema_version?: string;
   meta: {
     title: string;
     description: string;
-    business_model?: string;
+    business_model?: 'recurring' | 'unit_sales';
     archetype?: string;
     currency: string;
     periods: number;
     frequency: string;
   };
-  assumptions: any;
-  drivers?: any[];
+  assumptions: {
+    pricing?: {
+      avg_unit_price?: { value: number; unit: string; rationale: string };
+    };
+    financial?: {
+      interest_rate?: { value: number; unit: string; rationale: string };
+    };
+    customers?: {
+      churn_pct?: { value: number; unit: string; rationale: string };
+      segments?: Array<{
+        id: string;
+        label: string;
+        rationale: string;
+        volume?: {
+          type: 'pattern' | 'time_series';
+          pattern_type?: 'geom_growth' | 'seasonal_growth' | 'linear_growth';
+          series?: Array<{ period: number; value: number; unit: string; rationale: string }>;
+          base_year_total?: { value: number; unit: string; rationale: string };
+          seasonality_index_12?: number[];
+          yoy_growth?: { value: number; unit: string; rationale: string };
+          monthly_growth_rate?: { value: number; unit: string; rationale: string };
+          monthly_flat_increase?: { value: number; unit: string; rationale: string };
+        };
+      }>;
+    };
+    unit_economics?: {
+      cogs_pct?: { value: number; unit: string; rationale: string };
+      cac?: { value: number; unit: string; rationale: string };
+    };
+    opex?: Array<{
+      name: string;
+      value: { value: number; unit: string; rationale: string };
+    }>;
+    capex?: Array<{
+      name: string;
+      timeline?: {
+        type: 'pattern' | 'time_series';
+        pattern_type?: 'geom_growth' | 'seasonal_growth' | 'linear_growth';
+        series?: Array<{ period: number; value: number; unit: string; rationale: string }>;
+      };
+    }>;
+    growth_settings?: {
+      geom_growth?: {
+        start?: { value: number; unit: string; rationale: string };
+        monthly_growth?: { value: number; unit: string; rationale: string };
+      };
+      seasonal_growth?: {
+        base_year_total?: { value: number; unit: string; rationale: string };
+        seasonality_index_12?: { value: number[]; unit: string; rationale: string };
+        yoy_growth?: { value: number; unit: string; rationale: string };
+      };
+      linear_growth?: {
+        start?: { value: number; unit: string; rationale: string };
+        monthly_flat_increase?: { value: number; unit: string; rationale: string };
+      };
+    };
+  };
+  drivers?: Array<{
+    key: string;
+    path: string;
+    range: number[];
+    rationale: string;
+  }>;
   scenarios?: any[];
   structure?: any;
 }
 
 interface BusinessDataContextType {
   data: BusinessData | null;
-  updateData: (newData: BusinessData) => void;
+  updateData: (newData: BusinessData | null) => void;
   updateAssumption: (path: string, value: any) => void;
   updateDriver: (driverIndex: number, updates: any) => void;
   exportData: () => string;
@@ -29,7 +91,7 @@ const BusinessDataContext = createContext<BusinessDataContextType | undefined>(u
 export function BusinessDataProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<BusinessData | null>(null);
 
-  const updateData = useCallback((newData: BusinessData) => {
+  const updateData = useCallback((newData: BusinessData | null) => {
     setData(newData);
   }, []);
 

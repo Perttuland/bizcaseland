@@ -14,6 +14,7 @@ export function CashFlowStatement() {
   const { data: businessData, updateAssumption } = useBusinessData();
   const { toast } = useToast();
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
+  const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
   const [sensitivityValues, setSensitivityValues] = useState<{[key: string]: string}>({});
   
   if (!businessData) {
@@ -187,7 +188,7 @@ export function CashFlowStatement() {
         </Badge>
         
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 pr-32">
+          <CardTitle className="flex items-center space-x-2 pr-24">
             <Calendar className="h-5 w-5" />
             <span>{businessData.meta?.title || 'Profit & Loss Statement'}</span>
           </CardTitle>
@@ -205,16 +206,17 @@ export function CashFlowStatement() {
       <Card className="bg-gradient-card shadow-card">
         <CardContent className="p-0">
           <div className="overflow-x-auto max-w-full">
-            <div className="min-w-max" style={{ width: `${200 + (monthlyData.length * 100)}px` }}>
+            {/* reduce total width per month from 100px -> 80px to be more compact */}
+            <div className="min-w-max" style={{ width: `${180 + (monthlyData.length * 80)}px` }}>
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-border">
-                    <th className="sticky left-0 bg-gradient-card z-10 px-4 py-3 text-left font-semibold min-w-[200px]">
+                    <th className="sticky left-0 bg-gradient-card z-10 px-3 py-2 text-left font-semibold min-w-[160px]">
                       Line Item
                     </th>
                      {monthlyData.map((month) => (
-                       <th key={month.month} className="px-3 py-3 text-center font-medium min-w-[100px] border-l border-border">
-                         <span className="text-sm font-medium">{month.month}</span>
+                       <th key={month.month} className="px-2 py-2 text-center font-medium min-w-[80px] border-l border-border">
+                         <span className="text-xs font-medium">{month.month}</span>
                        </th>
                      ))}
                   </tr>
@@ -224,7 +226,7 @@ export function CashFlowStatement() {
                     if (row.category === 'spacer') {
                       return (
                         <tr key={index}>
-                          <td colSpan={25} className="h-4"></td>
+                          <td colSpan={25} className="h-3"></td>
                         </tr>
                       );
                     }
@@ -236,11 +238,14 @@ export function CashFlowStatement() {
                        row.isSubItem && 'bg-muted/10 text-sm',
                      ].filter(Boolean).join(' ');
 
+                    // Check if this row is in the bottom half for tooltip positioning
+                    const isBottomHalf = index > rows.length / 2;
+
                     return (
                       <tr key={index} className={rowClasses}>
-                        <td className="sticky left-0 bg-gradient-card z-10 px-4 py-2 font-medium border-r border-border">
+                        <td className="sticky left-0 bg-gradient-card z-10 px-3 py-1 font-medium border-r border-border">
                           <div className="flex items-center space-x-2">
-                            <span>{row.label}</span>
+                            <span className="text-sm">{row.label}</span>
                             {row.category === 'revenue' && <TrendingUp className="h-3 w-3 text-financial-success" />}
                             {row.category === 'costs' && <TrendingDown className="h-3 w-3 text-financial-danger" />}
                             {row.category === 'profit' && <DollarSign className="h-3 w-3 text-financial-primary" />}
@@ -253,23 +258,23 @@ export function CashFlowStatement() {
                           return (
                             <td 
                               key={month.month} 
-                              className="px-3 py-2 text-center border-l border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
+                              className="px-2 py-1 text-center border-l border-border relative cursor-pointer hover:bg-muted/30 transition-colors"
                               onMouseEnter={() => setHoveredCell({row: row.key, month: month.month})}
                               onMouseLeave={() => setHoveredCell(null)}
                             >
                              {typeof value === 'number' ? (
-                                 <span className={`font-mono text-sm ${getValueColor(value)}`}>
+                                 <span className={`font-mono text-xs ${getValueColor(value)}`}>
                                    {row.unit === 'units' ? value.toLocaleString() : 
                                     row.unit === 'decimal' ? formatDecimal(value) : 
                                     formatCurrency(value)}
                                  </span>
                                ) : (
-                                 <span className="text-muted-foreground">-</span>
+                                 <span className="text-muted-foreground text-xs">-</span>
                                )}
-                              
-                               {/* Tooltip */}
+                               
+                               {/* Tooltip - position above for bottom half, below for top half */}
                                {hoveredCell?.row === row.key && hoveredCell?.month === month.month && assumptions && (
-                                 <div className="absolute z-[100] bg-card border border-border rounded-lg p-3 shadow-elevation min-w-[250px] top-full left-1/2 transform -translate-x-1/2 mt-1">
+                                 <div className={`absolute z-[100] bg-card border border-border rounded-lg p-3 shadow-elevation min-w-[250px] left-1/2 transform -translate-x-1/2 ${isBottomHalf ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                                    <div className="text-sm space-y-2">
                                      <div className="font-semibold text-foreground">{row.label} - Month {month.month}</div>
                                      {assumptions.formula && (
@@ -306,63 +311,49 @@ export function CashFlowStatement() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-success shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/80">Total Revenue</p>
-                <p className="text-xl font-bold text-white">
-                  {formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0), currency)}
-                </p>
-              </div>
-              <TrendingUp className="h-6 w-6 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <Card className={`shadow-card ${monthlyData.reduce((s, m) => s + m.revenue, 0) >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+          <CardContent className="p-3">
+            <div className="text-center">
+              <p className="text-sm text-white/80 mb-1">Total Revenue</p>
+              <p className="text-xl font-extrabold text-white">
+                {formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0), currency)}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-primary shadow-card">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/80">Net Present Value</p>
-                <p className="text-xl font-bold text-white">
-                  {formatCurrency(calculatedMetrics.npv, currency)}
-                </p>
-              </div>
-              <DollarSign className="h-6 w-6 text-white" />
+        <Card className={`shadow-card ${calculatedMetrics.npv >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+          <CardContent className="p-3">
+            <div className="text-center">
+              <p className="text-sm text-white/80 mb-1">Net Present Value</p>
+              <p className="text-xl font-extrabold text-white">
+                {formatCurrency(calculatedMetrics.npv, currency)}
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card shadow-card border-financial-warning border-2">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Net Cash Flow</p>
-                <p className="text-xl font-bold text-financial-warning">
-                  {formatCurrency(monthlyData.reduce((sum, m) => sum + m.netCashFlow, 0))}
-                </p>
-              </div>
-              <Calendar className="h-6 w-6 text-financial-warning" />
+        <Card className={`shadow-card ${calculatedMetrics.netProfit >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
+          <CardContent className="p-3">
+            <div className="text-center">
+              <p className="text-sm text-white/80 mb-1">Net Profit</p>
+              <p className="text-xl font-extrabold text-white">
+                {formatCurrency(calculatedMetrics.netProfit, currency)}
+              </p>
             </div>
           </CardContent>
         </Card>
 
         <Card className={`shadow-card ${calculatedMetrics.breakEvenMonth ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/80">Break-even Point</p>
-                <p className="text-xl font-bold text-white">
-                  {calculatedMetrics.breakEvenMonth ? `Month ${calculatedMetrics.breakEvenMonth}` : '-'}
-                </p>
-              </div>
-              {calculatedMetrics.breakEvenMonth ? (
-                <Target className="h-6 w-6 text-white" />
-              ) : (
-                <AlertTriangle className="h-6 w-6 text-white" />
-              )}
+          <CardContent className="p-3">
+            <div className="text-center">
+              <p className="text-sm text-white/80 mb-1">Break-even Point</p>
+              <p className="text-xl font-extrabold text-white">
+                {calculatedMetrics.breakEvenMonth > 0
+                  ? `Month ${calculatedMetrics.breakEvenMonth}`
+                  : 'Not Achieved'}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -379,7 +370,7 @@ export function CashFlowStatement() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
-            <div className="h-80 w-full">
+            <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -443,7 +434,7 @@ export function CashFlowStatement() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
-            <div className="h-80 w-full">
+            <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -495,9 +486,10 @@ export function CashFlowStatement() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
-            <div className="h-80 w-full">
+            <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="month" 
                     stroke="hsl(var(--muted-foreground))"
@@ -507,7 +499,7 @@ export function CashFlowStatement() {
                   <YAxis 
                     stroke="hsl(var(--muted-foreground))"
                     fontSize={12}
-                    tickFormatter={(value) => formatCurrency(value).replace(/\s[A-Z]{3}$/, '')}
+                    tickFormatter={(value) => formatCurrency(value)}
                   />
                   <Tooltip 
                     content={({ active, payload, label }) => {
@@ -551,16 +543,32 @@ export function CashFlowStatement() {
             </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {businessData.drivers.map((driver) => (
-                <div key={driver.key} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-medium capitalize">{driver.key}</h4>
-                    <Badge variant="outline" className="text-xs">
-                      {driver.path.split('.').pop()}
-                    </Badge>
+            <div className="space-y-4">
+              {businessData.drivers.map((driver, driverIndex) => (
+                <div key={driver.key} className="grid grid-cols-6 gap-3 items-center">
+                  {/* Title on the left */}
+                  <div className="col-span-1 relative">
+                    <h4 
+                      className="font-medium capitalize cursor-help"
+                      onMouseEnter={() => setHoveredDriver(driver.key)}
+                      onMouseLeave={() => setHoveredDriver(null)}
+                    >
+                      {driver.key}
+                    </h4>
+                    
+                    {/* Tooltip for rationale - always appears above */}
+                    {hoveredDriver === driver.key && driver.rationale && (
+                      <div className="absolute z-[100] bg-card border border-border rounded-lg p-3 shadow-elevation min-w-[250px] bottom-full left-0 mb-1">
+                        <div className="text-sm">
+                          <div className="font-semibold text-foreground mb-1">{driver.key}</div>
+                          <div className="text-xs text-muted-foreground">{driver.rationale}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="grid grid-cols-5 gap-2">
+                  
+                  {/* Values on the right - 5 columns */}
+                  <div className="col-span-5 grid grid-cols-5 gap-2">
                     {driver.range.map((value, index) => (
                       <Button
                         key={index}
@@ -573,7 +581,6 @@ export function CashFlowStatement() {
                       </Button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground">{driver.rationale}</p>
                 </div>
               ))}
             </div>

@@ -4,6 +4,7 @@ export interface CalculatedMetrics {
   totalRevenue: number;
   netProfit: number;
   npv: number;
+  irr: number;
   paybackPeriod: number;
   totalInvestmentRequired: number;
   breakEvenMonth: number;
@@ -48,12 +49,15 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   const interestRate = businessData.assumptions?.financial?.interest_rate?.value || 0;
   const npv = calculateNPV(monthlyData, interestRate);
   
+  // Calculate IRR
+  const irr = calculateIRR(monthlyData);
+  
   // Calculate break-even
   const breakEvenMonth = calculateBreakEven(monthlyData);
   
   // Calculate other metrics
   const netProfit = monthlyData.reduce((sum, month) => sum + month.netCashFlow, 0);
-  const paybackPeriod = breakEvenMonth || 0;
+  const paybackPeriod = calculatePaybackPeriod(monthlyData);
   
   // Calculate Total Investment Required: sum of Capex + sum of negative net cash flows until break even
   const totalCapex = monthlyData.reduce((sum, month) => sum + month.capex, 0);
@@ -67,6 +71,7 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
     totalRevenue,
     netProfit,
     npv,
+    irr,
     paybackPeriod,
     totalInvestmentRequired,
     breakEvenMonth: breakEvenMonth || 0,
@@ -180,6 +185,82 @@ export function calculateNPV(monthlyData: MonthlyData[], interestRate: number): 
 }
 
 /**
+ * Calculate Internal Rate of Return using iterative approach
+ */
+export function calculateIRR(monthlyData: MonthlyData[], initialGuess: number = 0.1): number {
+  if (!monthlyData || monthlyData.length === 0) return -999; // Invalid value
+  
+  const cashFlows = monthlyData.map(month => month.netCashFlow);
+  
+  // Check if all cash flows are the same (no IRR possible)
+  const allSame = cashFlows.every(cf => Math.abs(cf - cashFlows[0]) < 0.01);
+  if (allSame) return -999; // Invalid value
+  
+  // Check if all cash flows are positive (no IRR needed)
+  const allPositive = cashFlows.every(cf => cf >= 0);
+  if (allPositive) return -999; // Invalid value
+  
+  // Check if all cash flows are negative (no IRR possible)
+  const allNegative = cashFlows.every(cf => cf <= 0);
+  if (allNegative) return -999; // Invalid value
+  
+  // Simple iterative method to find IRR
+  let rate = initialGuess;
+  let iteration = 0;
+  const maxIterations = 100;
+  const tolerance = 0.0001;
+  
+  while (iteration < maxIterations) {
+    const npvAtRate = cashFlows.reduce((npv, cashFlow, index) => {
+      const discountFactor = Math.pow(1 + rate / 12, -(index + 1));
+      return npv + (cashFlow * discountFactor);
+    }, 0);
+    
+    if (Math.abs(npvAtRate) < tolerance) {
+      // Return bounded result: if outside -100% to 100%, return invalid
+      if (rate < -1 || rate > 1) {
+        return -999; // Invalid value for display
+      }
+      return rate;
+    }
+    
+    // Derivative for Newton-Raphson method
+    const npvDerivative = cashFlows.reduce((derivative, cashFlow, index) => {
+      const period = index + 1;
+      const discountFactor = Math.pow(1 + rate / 12, -(period + 1));
+      return derivative - (cashFlow * period * discountFactor) / (12 * (1 + rate / 12));
+    }, 0);
+    
+    if (Math.abs(npvDerivative) < tolerance) {
+      break; // Avoid division by zero
+    }
+    
+    const newRate = rate - npvAtRate / npvDerivative;
+    
+    // Prevent extreme rate changes and bound the search
+    if (Math.abs(newRate - rate) > 0.5) {
+      rate = rate + Math.sign(newRate - rate) * 0.1; // Limited step size
+    } else {
+      rate = newRate;
+    }
+    
+    // If rate goes outside reasonable bounds, return invalid
+    if (rate < -2 || rate > 5) {
+      return -999; // Invalid value for display
+    }
+    
+    iteration++;
+  }
+  
+  // If no convergence or result outside bounds, return invalid
+  if (rate < -1 || rate > 1) {
+    return -999; // Invalid value for display
+  }
+  
+  return rate;
+}
+
+/**
  * Calculate total volume for a specific month from all customer segments
  */
 export function calculateTotalVolumeForMonth(businessData: BusinessData, monthIndex: number): number {
@@ -202,12 +283,23 @@ export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number,
   if (!volume) return 0;
 
   if (volume.type === "pattern") {
+    // Check which pattern type is configured (only one should be used)
     if (volume.pattern_type === "seasonal_growth") {
       return calculateSeasonalGrowthVolume(volume, monthIndex, businessData);
     } else if (volume.pattern_type === "geom_growth") {
       return calculateGeomGrowthVolume(volume, monthIndex, businessData);
     } else if (volume.pattern_type === "linear_growth") {
       return calculateLinearGrowthVolume(volume, monthIndex, businessData);
+    } else {
+      // If no pattern_type specified, try to auto-detect from growth_settings
+      const growthSettings = businessData?.assumptions?.growth_settings;
+      if (growthSettings?.seasonal_growth?.base_year_total?.value > 0) {
+        return calculateSeasonalGrowthVolume(volume, monthIndex, businessData);
+      } else if (growthSettings?.geom_growth?.start?.value > 0) {
+        return calculateGeomGrowthVolume(volume, monthIndex, businessData);
+      } else if (growthSettings?.linear_growth?.start?.value > 0) {
+        return calculateLinearGrowthVolume(volume, monthIndex, businessData);
+      }
     }
   } else if (volume.type === "time_series") {
     return calculateTimeSeriesVolume(volume, monthIndex);
@@ -242,6 +334,17 @@ export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number, b
   baseYearTotal = baseYearTotal || 0;
   seasonalityIndices = seasonalityIndices || [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
   yoyGrowth = yoyGrowth || 0;
+
+  // Ensure we have 12 seasonality values
+  if (seasonalityIndices.length !== 12) {
+    seasonalityIndices = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+  }
+
+  // Normalize seasonality indices to sum to 12 (monthly multipliers should average to 1)
+  const currentSum = seasonalityIndices.reduce((sum: number, val: number) => sum + val, 0);
+  if (currentSum > 0) {
+    seasonalityIndices = seasonalityIndices.map((val: number) => (val * 12) / currentSum);
+  }
 
   // Calculate which year and month we're in
   const yearIndex = Math.floor(monthIndex / 12);
@@ -351,17 +454,33 @@ export function calculateCapexForMonth(businessData: BusinessData, monthIndex: n
 }
 
 /**
- * Calculate break-even point (first month with positive cumulative cash flow)
+ * Calculate break-even point (first month with positive net cash flow)
  */
-export function calculateBreakEven(monthlyData: MonthlyData[]): number | null {
-  let cumulativeCashFlow = 0;
+export function calculateBreakEven(monthlyData: MonthlyData[]): number {
   for (let i = 0; i < monthlyData.length; i++) {
-    cumulativeCashFlow += monthlyData[i].netCashFlow;
-    if (cumulativeCashFlow >= 0) {
-      return i + 1; // Return month number (1-indexed)
+    if (monthlyData[i].netCashFlow > 0) {
+      return i + 1; // Return the month where net cash flow is positive
     }
   }
-  return null; // Never breaks even
+
+  return 0; // Return 0 if break-even is never reached
+}
+
+/**
+ * Calculate payback period (time taken to recover the initial investment)
+ */
+export function calculatePaybackPeriod(monthlyData: MonthlyData[]): number {
+  let cumulativeCashFlow = 0;
+
+  for (let i = 0; i < monthlyData.length; i++) {
+    cumulativeCashFlow += monthlyData[i].netCashFlow;
+
+    if (cumulativeCashFlow >= 0) {
+      return i + 1; // Return the month where cumulative cash flow becomes positive
+    }
+  }
+
+  return 0; // Return 0 if payback period is never reached
 }
 
 /**
@@ -372,6 +491,7 @@ function getDefaultMetrics(): CalculatedMetrics {
     totalRevenue: 0,
     netProfit: 0,
     npv: 0,
+    irr: 0,
     paybackPeriod: 0,
     totalInvestmentRequired: 0,
     breakEvenMonth: 0,

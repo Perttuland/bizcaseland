@@ -1,19 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  ReferenceLine
-} from 'recharts';
 import { TrendingUp, TrendingDown, BarChart3, Play, AlertCircle } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { calculateBusinessMetrics, formatCurrency, formatPercent } from '@/lib/calculations';
@@ -27,6 +14,7 @@ interface SensitivityResult {
     totalRevenue: number;
     netProfit: number;
     npv: number;
+    irr: number;
     paybackPeriod: number;
     impact: number;
   }[];
@@ -138,50 +126,45 @@ export function SensitivityAnalysis() {
     );
   }
 
-  const runSensitivityAnalysis = async () => {
+  const runSensitivityAnalysis = useCallback(async () => {
     setIsRunning(true);
     const analysisResults: SensitivityResult[] = [];
-    
+
     try {
       // Get baseline metrics
       const baselineMetrics = calculateBusinessMetrics(businessData);
-      
+
       for (const driver of drivers) {
         const baseValue = getNestedValue(businessData, driver.path);
         const scenarios = [];
-        
+
         for (const testValue of driver.range) {
           try {
             // Create modified business data with the test value
             const modifiedData = setNestedValue(businessData, driver.path, testValue);
-            
-            // Debug logging to verify the modification worked
-            const verifyValue = getNestedValue(modifiedData, driver.path);
-            if (Math.abs(verifyValue - testValue) > 0.01) {
-              console.warn(`Value modification failed for ${driver.path}: expected ${testValue}, got ${verifyValue}`);
-            }
-            
+
             // Calculate metrics with modified data
             const metrics = calculateBusinessMetrics(modifiedData);
-            
-            // Calculate impact percentage compared to baseline
-            const revenueImpact = baselineMetrics.totalRevenue > 0 
-              ? ((metrics.totalRevenue - baselineMetrics.totalRevenue) / baselineMetrics.totalRevenue) * 100
+
+            // Calculate impact percentage compared to baseline using NPV
+            const npvImpact = (baselineMetrics.npv !== 0)
+              ? ((metrics.npv - baselineMetrics.npv) / Math.abs(baselineMetrics.npv)) * 100
               : 0;
-            
+
             scenarios.push({
               value: testValue,
               totalRevenue: metrics.totalRevenue,
               netProfit: metrics.netProfit,
               npv: metrics.npv,
+              irr: metrics.irr,
               paybackPeriod: metrics.paybackPeriod,
-              impact: revenueImpact
+              impact: npvImpact
             });
           } catch (error) {
             console.error(`Error calculating metrics for ${driver.key} with value ${testValue}:`, error);
           }
         }
-        
+
         analysisResults.push({
           driver: driver.key,
           driverLabel: driver.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
@@ -189,14 +172,23 @@ export function SensitivityAnalysis() {
           scenarios
         });
       }
-      
+
       setResults(analysisResults);
     } catch (error) {
       console.error('Error running sensitivity analysis:', error);
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [businessData, drivers]);
+
+  // Run analysis on mount and when tab changes
+  useEffect(() => {
+    runSensitivityAnalysis();
+
+    const onTabChange = () => runSensitivityAnalysis();
+    window.addEventListener('tabchange', onTabChange);
+    return () => window.removeEventListener('tabchange', onTabChange);
+  }, [runSensitivityAnalysis]);
 
   const getImpactColor = (impact: number) => {
     if (impact > 10) return 'text-financial-success';
@@ -214,33 +206,21 @@ export function SensitivityAnalysis() {
       {/* Header */}
       <Card className="bg-gradient-card shadow-card">
         <CardHeader>
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Sensitivity Analysis
+                Scenario analysis
               </CardTitle>
               <p className="text-muted-foreground mt-1">
-                Test how changes to key drivers impact your business metrics
+                See how given drivers impact your business metrics
               </p>
             </div>
-            <Button 
-              onClick={runSensitivityAnalysis} 
-              disabled={isRunning}
-              className="bg-financial-primary hover:bg-financial-primary/90"
-            >
-              {isRunning ? (
-                <>
-                  <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                  Running...
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2" />
-                  Run Analysis
-                </>
+            <div>
+              {isRunning && (
+                <span className="text-xs text-muted-foreground">Running analysis…</span>
               )}
-            </Button>
+            </div>
           </div>
         </CardHeader>
         
@@ -277,52 +257,21 @@ export function SensitivityAnalysis() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={result.scenarios}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="value" />
-                        <YAxis />
-                        <Tooltip 
-                          formatter={(value: number, name: string) => {
-                            if (name === 'totalRevenue') return [formatCurrency(value, businessData.meta.currency), 'Total Revenue'];
-                            if (name === 'npv') return [formatCurrency(value, businessData.meta.currency), 'NPV'];
-                            return [value, name];
-                          }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="totalRevenue" 
-                          stroke="hsl(var(--financial-primary))" 
-                          strokeWidth={2}
-                          name="totalRevenue"
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="npv" 
-                          stroke="hsl(var(--financial-warning))" 
-                          strokeWidth={2}
-                          name="npv"
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                  
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
                           <th className="text-left p-2">Value</th>
-                          <th className="text-right p-2">Revenue</th>
+                          <th className="text-right p-2">Payback Time</th>
                           <th className="text-right p-2">NPV</th>
-                          <th className="text-right p-2">Impact</th>
+                          <th className="text-right p-2">NPV Impact</th>
                         </tr>
                       </thead>
                       <tbody>
                         {result.scenarios.map((scenario, scenarioIndex) => (
                           <tr key={scenarioIndex} className="border-b">
                             <td className="p-2 font-mono">{scenario.value}</td>
-                            <td className="text-right p-2">{formatCurrency(scenario.totalRevenue, businessData.meta.currency)}</td>
+                            <td className="text-right p-2">{scenario.paybackPeriod > 0 ? scenario.paybackPeriod : "N/A"}</td>
                             <td className="text-right p-2">{formatCurrency(scenario.npv, businessData.meta.currency)}</td>
                             <td className={`text-right p-2 flex items-center justify-end gap-1 ${getImpactColor(scenario.impact)}`}>
                               {getImpactIcon(scenario.impact)}
