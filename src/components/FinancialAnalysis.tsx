@@ -1,13 +1,84 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle, RotateCcw } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { calculateBusinessMetrics, formatCurrency, formatPercent } from '@/lib/calculations';
 import { CustomerSegments } from './CustomerSegments';
 
+// Helper functions for driver manipulation
+function setNestedValue(obj: any, path: string, value: number): any {
+  const newObj = JSON.parse(JSON.stringify(obj));
+  const pathParts = path.split('.');
+  let current = newObj;
+  
+  for (let i = 0; i < pathParts.length - 1; i++) {
+    const part = pathParts[i];
+    if (part.includes('[') && part.includes(']')) {
+      const arrayName = part.split('[')[0];
+      const index = parseInt(part.split('[')[1].split(']')[0]);
+      if (!current[arrayName]) {
+        current[arrayName] = [];
+      }
+      while (current[arrayName].length <= index) {
+        current[arrayName].push({});
+      }
+      current = current[arrayName][index];
+    } else {
+      if (!current[part]) {
+        current[part] = {};
+      }
+      current = current[part];
+    }
+  }
+  
+  const lastPart = pathParts[pathParts.length - 1];
+  if (lastPart.includes('[') && lastPart.includes(']')) {
+    const arrayName = lastPart.split('[')[0];
+    const index = parseInt(lastPart.split('[')[1].split(']')[0]);
+    if (!current[arrayName]) {
+      current[arrayName] = [];
+    }
+    while (current[arrayName].length <= index) {
+      current[arrayName].push({});
+    }
+    current[arrayName][index] = value;
+  } else {
+    current[lastPart] = value;
+  }
+  
+  return newObj;
+}
+
+function getNestedValue(obj: any, path: string): number {
+  const pathParts = path.split('.');
+  let current = obj;
+  
+  for (const part of pathParts) {
+    if (part.includes('[') && part.includes(']')) {
+      const arrayName = part.split('[')[0];
+      const index = parseInt(part.split('[')[1].split(']')[0]);
+      if (!current[arrayName] || !current[arrayName][index]) {
+        return 0;
+      }
+      current = current[arrayName][index];
+    } else {
+      if (!current || current[part] === undefined) {
+        return 0;
+      }
+      current = current[part];
+    }
+  }
+  
+  return typeof current === 'number' ? current : (current?.value || 0);
+}
+
 export function FinancialAnalysis() {
-  const { data: businessData } = useBusinessData();
+  const { data: businessData, updateData } = useBusinessData();
+  
+  const [driverValues, setDriverValues] = useState<{[key: string]: number}>({});
   
   if (!businessData) {
     return (
@@ -23,10 +94,52 @@ export function FinancialAnalysis() {
     );
   }
   
-  // Calculate metrics from business data using centralized calculations
+  // Get drivers and initialize values if needed
+  const drivers = businessData.drivers || [];
+  
+  // Create modified business data with current driver values
+  const modifiedBusinessData = useMemo(() => {
+    let modified = businessData;
+    
+    for (const driver of drivers) {
+      const currentValue = driverValues[driver.key];
+      if (currentValue !== undefined) {
+        modified = setNestedValue(modified, driver.path, currentValue);
+      }
+    }
+    
+    return modified;
+  }, [businessData, driverValues]);
+  
+  // Calculate metrics from modified business data using centralized calculations
   const calculatedMetrics = useMemo(() => {
-    return calculateBusinessMetrics(businessData);
-  }, [businessData]);
+    return calculateBusinessMetrics(modifiedBusinessData);
+  }, [modifiedBusinessData]);
+
+  // Update the global data when driver values change
+  React.useEffect(() => {
+    if (Object.keys(driverValues).length > 0) {
+      updateData(modifiedBusinessData);
+    }
+  }, [modifiedBusinessData, updateData]);
+
+  const handleDriverChange = (driverKey: string, value: number) => {
+    setDriverValues(prev => ({
+      ...prev,
+      [driverKey]: value
+    }));
+  };
+
+  const resetDrivers = () => {
+    setDriverValues({});
+    updateData(businessData);
+  };
+
+  const getDriverCurrentValue = (driver: any) => {
+    return driverValues[driver.key] !== undefined 
+      ? driverValues[driver.key] 
+      : getNestedValue(businessData, driver.path);
+  };
 
   const getArchetypeColor = (archetype: string) => {
     const colors = {
@@ -147,8 +260,108 @@ export function FinancialAnalysis() {
       </Card>
 
 
+
+      {/* Interactive Sensitivity Drivers */}
+      {drivers.length > 0 && (
+        <Card className="bg-gradient-card shadow-card">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Sensitivity Drivers</CardTitle>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetDrivers}
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Reset
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Adjust key drivers to see real-time impact on your business case
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {drivers.map((driver, index) => {
+                const currentValue = getDriverCurrentValue(driver);
+                const minValue = Math.min(...driver.range);
+                const maxValue = Math.max(...driver.range);
+                const baseValue = getNestedValue(businessData, driver.path);
+                const isModified = driverValues[driver.key] !== undefined;
+                
+                return (
+                  <div key={index} className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-sm">
+                          {driver.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">{driver.rationale}</p>
+                      </div>
+                      {isModified && (
+                        <Badge variant="outline" className="text-xs bg-financial-primary text-financial-primary-foreground">
+                          Modified
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Current Value:</span>
+                        <span className="font-mono font-semibold">
+                          {businessData.meta.currency && driver.path.includes('price') 
+                            ? formatCurrency(currentValue, businessData.meta.currency)
+                            : currentValue.toLocaleString()}
+                        </span>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Slider
+                          value={[currentValue]}
+                          onValueChange={(values) => handleDriverChange(driver.key, values[0])}
+                          min={minValue}
+                          max={maxValue}
+                          step={(maxValue - minValue) / 100}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{minValue.toLocaleString()}</span>
+                          <span className="text-center">
+                            Base: {businessData.meta.currency && driver.path.includes('price') 
+                              ? formatCurrency(baseValue, businessData.meta.currency)
+                              : baseValue.toLocaleString()}
+                          </span>
+                          <span>{maxValue.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-5 gap-1">
+                        {driver.range.map((value, i) => (
+                          <Button
+                            key={i}
+                            variant={currentValue === value ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleDriverChange(driver.key, value)}
+                            className="text-xs h-8"
+                          >
+                            {businessData.meta.currency && driver.path.includes('price') 
+                              ? formatCurrency(value, businessData.meta.currency).replace(/[€$£]/g, '').trim()
+                              : value.toLocaleString()}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Customer Segments & Volume Projections */}
-      <CustomerSegments data={businessData} />
+      <CustomerSegments data={modifiedBusinessData} />
 
       {/* Scenarios */}
       {businessData.scenarios && businessData.scenarios.length > 0 && (
@@ -162,7 +375,7 @@ export function FinancialAnalysis() {
                 <div key={index} className="p-4 bg-muted/50 rounded-lg text-center">
                   <h4 className="font-semibold mb-2">{scenario.name}</h4>
                   <div className="text-2xl font-bold text-financial-primary mb-1">
-                    {formatCurrency(calculatedMetrics.totalRevenue * (1 + index * 0.1 - 0.1), businessData.meta.currency)}
+                    {formatCurrency(calculatedMetrics.totalRevenue * (1 + index * 0.1 - 0.1), modifiedBusinessData.meta.currency)}
                   </div>
                   <p className="text-xs text-muted-foreground">Projected Revenue</p>
                 </div>
