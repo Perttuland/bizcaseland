@@ -40,12 +40,22 @@ function setNestedValue(obj: any, path: string, value: number): any {
   
   for (let i = 0; i < pathParts.length - 1; i++) {
     const part = pathParts[i];
-    // Handle array indices like "opex[2]"
+    // Handle array indices like "opex[2]" or "series[1]"
     if (part.includes('[') && part.includes(']')) {
       const arrayName = part.split('[')[0];
       const index = parseInt(part.split('[')[1].split(']')[0]);
+      if (!current[arrayName]) {
+        current[arrayName] = [];
+      }
+      // Ensure the array has enough elements
+      while (current[arrayName].length <= index) {
+        current[arrayName].push({});
+      }
       current = current[arrayName][index];
     } else {
+      if (!current[part]) {
+        current[part] = {};
+      }
       current = current[part];
     }
   }
@@ -54,6 +64,13 @@ function setNestedValue(obj: any, path: string, value: number): any {
   if (lastPart.includes('[') && lastPart.includes(']')) {
     const arrayName = lastPart.split('[')[0];
     const index = parseInt(lastPart.split('[')[1].split(']')[0]);
+    if (!current[arrayName]) {
+      current[arrayName] = [];
+    }
+    // Ensure the array has enough elements
+    while (current[arrayName].length <= index) {
+      current[arrayName].push({});
+    }
     current[arrayName][index] = value;
   } else {
     current[lastPart] = value;
@@ -71,13 +88,19 @@ function getNestedValue(obj: any, path: string): number {
     if (part.includes('[') && part.includes(']')) {
       const arrayName = part.split('[')[0];
       const index = parseInt(part.split('[')[1].split(']')[0]);
+      if (!current[arrayName] || !current[arrayName][index]) {
+        return 0;
+      }
       current = current[arrayName][index];
     } else {
+      if (!current || current[part] === undefined) {
+        return 0;
+      }
       current = current[part];
     }
   }
   
-  return current;
+  return typeof current === 'number' ? current : (current?.value || 0);
 }
 
 export function SensitivityAnalysis() {
@@ -128,23 +151,35 @@ export function SensitivityAnalysis() {
         const scenarios = [];
         
         for (const testValue of driver.range) {
-          // Create modified business data with the test value
-          const modifiedData = setNestedValue(businessData, driver.path, testValue);
-          
-          // Calculate metrics with modified data
-          const metrics = calculateBusinessMetrics(modifiedData);
-          
-          // Calculate impact percentage compared to baseline
-          const revenueImpact = ((metrics.totalRevenue - baselineMetrics.totalRevenue) / baselineMetrics.totalRevenue) * 100;
-          
-          scenarios.push({
-            value: testValue,
-            totalRevenue: metrics.totalRevenue,
-            netProfit: metrics.netProfit,
-            npv: metrics.npv,
-            paybackPeriod: metrics.paybackPeriod,
-            impact: revenueImpact
-          });
+          try {
+            // Create modified business data with the test value
+            const modifiedData = setNestedValue(businessData, driver.path, testValue);
+            
+            // Debug logging to verify the modification worked
+            const verifyValue = getNestedValue(modifiedData, driver.path);
+            if (Math.abs(verifyValue - testValue) > 0.01) {
+              console.warn(`Value modification failed for ${driver.path}: expected ${testValue}, got ${verifyValue}`);
+            }
+            
+            // Calculate metrics with modified data
+            const metrics = calculateBusinessMetrics(modifiedData);
+            
+            // Calculate impact percentage compared to baseline
+            const revenueImpact = baselineMetrics.totalRevenue > 0 
+              ? ((metrics.totalRevenue - baselineMetrics.totalRevenue) / baselineMetrics.totalRevenue) * 100
+              : 0;
+            
+            scenarios.push({
+              value: testValue,
+              totalRevenue: metrics.totalRevenue,
+              netProfit: metrics.netProfit,
+              npv: metrics.npv,
+              paybackPeriod: metrics.paybackPeriod,
+              impact: revenueImpact
+            });
+          } catch (error) {
+            console.error(`Error calculating metrics for ${driver.key} with value ${testValue}:`, error);
+          }
         }
         
         analysisResults.push({
