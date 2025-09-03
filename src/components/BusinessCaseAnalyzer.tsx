@@ -67,6 +67,12 @@ export function BusinessCaseAnalyzer() {
       const parsed = JSON.parse(inputJson);
       updateData(parsed);
       setHasUploadedData(true);
+      
+      // Navigate to business case analysis tab when data is first uploaded
+      if (!hasUploadedData) {
+        setActiveTab('cashflow');
+      }
+      
       toast({
         title: "Data Refreshed",
         description: "Business case data updated from JSON!",
@@ -199,7 +205,7 @@ export function BusinessCaseAnalyzer() {
                     className="w-full"
                   >
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh Data from JSON
+                    {hasUploadedData ? 'Refresh Data from JSON' : 'Go'}
                   </Button>
                 </div>
               </CardContent>
