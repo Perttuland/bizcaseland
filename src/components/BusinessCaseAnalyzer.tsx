@@ -275,10 +275,10 @@ export function BusinessCaseAnalyzer() {
                     <div className="p-4 bg-muted rounded-lg">
                       <h3 className="font-semibold mb-2">How to Use This Tool:</h3>
                       <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
-                        <li>Copy the JSON template using the button above</li>
+                        <li>Copy the JSON template</li>
                         <li>Use any AI tool (GPT, Claude, etc.) to fill in the template with your business case data</li>
-                        <li>Paste the completed JSON back into the textarea</li>
-                        <li>The tool will validate and analyze your business case automatically</li>
+                        <li>Paste the completed JSON</li>
+                        <li>The tool will help you analyze the business case</li>
                       </ol>
                     </div>
                     <pre className="bg-card border rounded-lg p-4 text-xs overflow-auto max-h-96">
