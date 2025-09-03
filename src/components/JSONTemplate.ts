@@ -1,7 +1,7 @@
 export const JSONTemplate = `{
   "schema_version": "0.62",
   "instructions": {
-    "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and export Excel.",
+    "purpose": "Populate this JSON with early-stage business case data and rationales. The webapp will expand patterns into 60 months, calculate results, visualize them, and enable analysis.",
     "rules": [
       "Replace TODOs with actual values.",
       "Every numeric datum must have value, unit, and rationale.",
