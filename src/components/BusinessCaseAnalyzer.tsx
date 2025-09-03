@@ -10,13 +10,14 @@ import { FinancialAnalysis } from './FinancialAnalysis';
 import { DataVisualization } from './DataVisualization';
 import { DatapointsViewer } from './JSONDataViewer';
 import { CashFlowStatement } from './CashFlowStatement';
+import { SensitivityAnalysis } from './SensitivityAnalysis';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
 export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData } = useBusinessData();
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow' | 'sensitivity'>('input');
   const [hasUploadedData, setHasUploadedData] = useState(false);
   const { toast } = useToast();
 
@@ -259,6 +260,14 @@ export function BusinessCaseAnalyzer() {
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Charts & Visualizations
                 </Button>
+                <Button
+                  variant={activeTab === 'sensitivity' ? 'default' : 'ghost'}
+                  onClick={() => setActiveTab('sensitivity')}
+                  className={`w-full justify-start ${!jsonData ? 'text-muted-foreground' : ''}`}
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Sensitivity Analysis
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -311,6 +320,12 @@ export function BusinessCaseAnalyzer() {
             {activeTab === 'charts' && jsonData && (
               <div className="animate-fade-in">
                 <DataVisualization data={jsonData} />
+              </div>
+            )}
+
+            {activeTab === 'sensitivity' && jsonData && (
+              <div className="animate-fade-in">
+                <SensitivityAnalysis />
               </div>
             )}
 
