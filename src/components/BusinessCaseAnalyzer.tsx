@@ -151,10 +151,11 @@ export function BusinessCaseAnalyzer() {
                 <p className="text-sm text-muted-foreground">Professional financial analysis and validation tool</p>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <Badge variant="outline" className="bg-financial-primary text-financial-primary-foreground">
-                v0.2
+                v0.3
               </Badge>
+              <div className="text-sm text-muted-foreground">perttu.landstrom@solita.fi</div>
             </div>
           </div>
         </div>
