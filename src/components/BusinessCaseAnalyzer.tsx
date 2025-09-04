@@ -320,6 +320,15 @@ export function BusinessCaseAnalyzer() {
                         <li>The tool will help you analyze the business case</li>
                       </ol>
                     </div>
+
+                    {/* Prominent copy button for first-time users */}
+                    <div className="mt-4">
+                      <Button onClick={copyTemplate} variant="default" className="w-full text-lg font-semibold py-3 flex items-center justify-center gap-3">
+                        <Copy className="h-5 w-5" />
+                        Copy JSON Template
+                      </Button>
+                    </div>
+
                     <pre className="bg-card border rounded-lg p-4 text-xs overflow-auto max-h-96">
                       <code>{JSONTemplate}</code>
                     </pre>
