@@ -7,7 +7,7 @@ import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calcula
 import { useToast } from '@/hooks/use-toast';
 import { JSONTemplate } from './JSONTemplate';
 import { FinancialAnalysis } from './FinancialAnalysis';
-import { DataVisualization } from './DataVisualization';
+// import { DataVisualization } from './DataVisualization';
 import { DatapointsViewer } from './JSONDataViewer';
 import { CashFlowStatement } from './CashFlowStatement';
 import { SensitivityAnalysis } from './SensitivityAnalysis';
@@ -271,6 +271,8 @@ export function BusinessCaseAnalyzer() {
                   <TrendingUp className="h-4 w-4" />
                   Financial Analysis
                 </Button>
+                {/* Data Visualization tab commented out while placeholder */}
+                { /*
                 <Button 
                   variant={activeTab === 'charts' ? 'default' : 'ghost'} 
                   onClick={() => {
@@ -283,6 +285,7 @@ export function BusinessCaseAnalyzer() {
                   <BarChart3 className="h-4 w-4" />
                   Data Visualization
                 </Button>
+                */ }
                 <Button 
                   variant={activeTab === 'sensitivity' ? 'default' : 'ghost'} 
                   onClick={() => {
@@ -344,11 +347,14 @@ export function BusinessCaseAnalyzer() {
               </div>
             )}
 
+            {/* Data Visualization rendering commented out while placeholder */}
+            { /*
             {activeTab === 'charts' && jsonData && (
               <div className="animate-fade-in">
                 <DataVisualization data={jsonData} />
               </div>
             )}
+            */ }
 
             {activeTab === 'sensitivity' && jsonData && (
               <div className="animate-fade-in">
@@ -368,6 +374,8 @@ export function BusinessCaseAnalyzer() {
               </Card>
             )}
 
+            {/* Charts placeholder UI commented out while feature is disabled */}
+            { /*
             {activeTab === 'charts' && !jsonData && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
@@ -379,6 +387,7 @@ export function BusinessCaseAnalyzer() {
                 </CardContent>
               </Card>
             )}
+            */ }
 
             {!jsonData && (activeTab !== 'input' || hasUploadedData) && activeTab !== 'analysis' && activeTab !== 'charts' && (
               <Card className="bg-gradient-card shadow-card">
