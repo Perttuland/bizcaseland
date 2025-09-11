@@ -20,75 +20,17 @@ interface SensitivityResult {
   }[];
 }
 
-// Helper function to set nested value in object
+import { setNestedValue as safeSetNestedValue, getNestedValue as safeGetNestedValue } from '@/lib/utils/nested-operations';
+
+// Helper function to set nested value in object - using safe implementation
 function setNestedValue(obj: any, path: string, value: number): any {
-  const newObj = JSON.parse(JSON.stringify(obj));
-  const pathParts = path.split('.');
-  let current = newObj;
-  
-  for (let i = 0; i < pathParts.length - 1; i++) {
-    const part = pathParts[i];
-    // Handle array indices like "opex[2]" or "series[1]"
-    if (part.includes('[') && part.includes(']')) {
-      const arrayName = part.split('[')[0];
-      const index = parseInt(part.split('[')[1].split(']')[0]);
-      if (!current[arrayName]) {
-        current[arrayName] = [];
-      }
-      // Ensure the array has enough elements
-      while (current[arrayName].length <= index) {
-        current[arrayName].push({});
-      }
-      current = current[arrayName][index];
-    } else {
-      if (!current[part]) {
-        current[part] = {};
-      }
-      current = current[part];
-    }
-  }
-  
-  const lastPart = pathParts[pathParts.length - 1];
-  if (lastPart.includes('[') && lastPart.includes(']')) {
-    const arrayName = lastPart.split('[')[0];
-    const index = parseInt(lastPart.split('[')[1].split(']')[0]);
-    if (!current[arrayName]) {
-      current[arrayName] = [];
-    }
-    // Ensure the array has enough elements
-    while (current[arrayName].length <= index) {
-      current[arrayName].push({});
-    }
-    current[arrayName][index] = value;
-  } else {
-    current[lastPart] = value;
-  }
-  
-  return newObj;
+  return safeSetNestedValue(obj, path, value);
 }
 
-// Helper function to get nested value from object
+// Helper function to get nested value from object - using safe implementation
 function getNestedValue(obj: any, path: string): number {
-  const pathParts = path.split('.');
-  let current = obj;
-  
-  for (const part of pathParts) {
-    if (part.includes('[') && part.includes(']')) {
-      const arrayName = part.split('[')[0];
-      const index = parseInt(part.split('[')[1].split(']')[0]);
-      if (!current[arrayName] || !current[arrayName][index]) {
-        return 0;
-      }
-      current = current[arrayName][index];
-    } else {
-      if (!current || current[part] === undefined) {
-        return 0;
-      }
-      current = current[part];
-    }
-  }
-  
-  return typeof current === 'number' ? current : (current?.value || 0);
+  const result = safeGetNestedValue(obj, path);
+  return typeof result === 'number' ? result : (result?.value || 0);
 }
 
 export function SensitivityAnalysis() {

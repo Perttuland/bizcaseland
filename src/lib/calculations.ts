@@ -30,6 +30,11 @@ export interface MonthlyData {
   ebitda: number;
   capex: number;
   netCashFlow: number;
+  // Cost savings specific fields
+  baselineCosts?: number;
+  costSavings?: number;
+  efficiencyGains?: number;
+  totalBenefits?: number;
 }
 
 /**
@@ -91,41 +96,63 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const currentDate = new Date(startDate);
     currentDate.setMonth(startDate.getMonth() + i);
     
-    // Calculate total sales volume from all customer segments
-    let totalSalesVolume = calculateTotalVolumeForMonth(businessData, i);
+    // Calculate total sales volume from all customer segments using dynamic calculations
+    let totalSalesVolume = calculateDynamicTotalVolumeForMonth(businessData, i);
     
-    // Determine business model and calculate new vs existing customers
+    // Determine business model and calculate revenue/benefits
     const businessModel = businessData?.meta?.business_model;
     const churnRate = businessData?.assumptions?.customers?.churn_pct?.value || 0;
     
     let newCustomers = 0;
     let existingCustomers = 0;
+    let revenue = 0;
+    let baselineCosts = 0;
+    let costSavings = 0;
+    let efficiencyGains = 0;
+    let totalBenefits = 0;
     
-    if (businessModel === 'recurring') {
-      // For recurring models, differentiate between new and existing customers
-      if (i === 0) {
-        // First month: all customers are new
-        newCustomers = totalSalesVolume;
-        existingCustomers = 0;
-      } else {
-        // Calculate existing customers from previous month (minus churn)
-        const previousMonth = months[i - 1];
-        existingCustomers = Math.round((previousMonth.newCustomers + previousMonth.existingCustomers) * (1 - churnRate));
-        
-        // New customers is the difference to reach total volume
-        newCustomers = Math.max(0, totalSalesVolume - existingCustomers);
-      }
-    } else {
-      // For transactional/unit sales models, all volume represents new transactions each month
-      // We don't track customers separately - each unit sale is independent
-      newCustomers = totalSalesVolume; // This represents units sold, not customers
+    if (businessModel === 'cost_savings') {
+      // For cost savings models, calculate savings and efficiency gains instead of revenue
+      baselineCosts = calculateBaselineCostsForMonth(businessData, i);
+      costSavings = calculateCostSavingsForMonth(businessData, i);
+      efficiencyGains = calculateEfficiencyGainsForMonth(businessData, i);
+      totalBenefits = calculateTotalBenefitsForMonth(businessData, i);
+      
+      // For cost savings, use total benefits as "revenue"
+      revenue = Math.round(totalBenefits);
+      
+      // Set sales volume to 1 for simplicity (not really applicable to cost savings)
+      totalSalesVolume = 1;
+      newCustomers = 0;
       existingCustomers = 0;
+    } else {
+      // Existing logic for recurring and unit sales models
+      if (businessModel === 'recurring') {
+        // For recurring models, differentiate between new and existing customers
+        if (i === 0) {
+          // First month: all customers are new
+          newCustomers = totalSalesVolume;
+          existingCustomers = 0;
+        } else {
+          // Calculate existing customers from previous month (minus churn)
+          const previousMonth = months[i - 1];
+          existingCustomers = Math.round((previousMonth.newCustomers + previousMonth.existingCustomers) * (1 - churnRate));
+          
+          // New customers is the difference to reach total volume
+          newCustomers = Math.max(0, totalSalesVolume - existingCustomers);
+        }
+      } else {
+        // For transactional/unit sales models, all volume represents new transactions each month
+        // We don't track customers separately - each unit sale is independent
+        newCustomers = totalSalesVolume; // This represents units sold, not customers
+        existingCustomers = 0;
+      }
+      
+      const unitPrice = calculateDynamicUnitPrice(businessData, i);
+      revenue = Math.round(totalSalesVolume * unitPrice);
     }
     
-    const unitPrice = businessData?.assumptions?.pricing?.avg_unit_price?.value || 0;
-    
     const salesVolume = Math.round(totalSalesVolume);
-    const revenue = Math.round(salesVolume * unitPrice);
     
     const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0));
     const grossProfit = revenue + cogs;
@@ -147,13 +174,13 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const capex = -calculateCapexForMonth(businessData, i);
     const netCashFlow = ebitda + capex;
     
-    months.push({
+    const monthData: MonthlyData = {
       month: i + 1,
       date: currentDate,
       salesVolume,
       newCustomers: Math.round(newCustomers),
       existingCustomers: Math.round(existingCustomers),
-      unitPrice,
+      unitPrice: businessModel === 'cost_savings' ? 0 : calculateDynamicUnitPrice(businessData, i),
       revenue,
       cogs,
       grossProfit,
@@ -166,7 +193,17 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
       ebitda,
       capex,
       netCashFlow,
-    });
+    };
+    
+    // Add cost savings specific fields if applicable
+    if (businessModel === 'cost_savings') {
+      monthData.baselineCosts = Math.round(baselineCosts);
+      monthData.costSavings = Math.round(costSavings);
+      monthData.efficiencyGains = Math.round(efficiencyGains);
+      monthData.totalBenefits = Math.round(totalBenefits);
+    }
+    
+    months.push(monthData);
   }
   
   return months;
@@ -184,31 +221,43 @@ export function calculateNPV(monthlyData: MonthlyData[], interestRate: number): 
   }, 0);
 }
 
+// Constants for better error handling
+export const IRR_ERROR_CODES = {
+  NO_DATA: -999,
+  ALL_SAME: -998,
+  ALL_POSITIVE: -997,
+  ALL_NEGATIVE: -996,
+  NO_CONVERGENCE: -995,
+  EXTREME_RATE: -994
+} as const;
+
 /**
  * Calculate Internal Rate of Return using iterative approach
+ * Returns the monthly IRR as a decimal (e.g., 0.05 = 5% monthly)
+ * Returns negative error codes for invalid scenarios
  */
 export function calculateIRR(monthlyData: MonthlyData[], initialGuess: number = 0.1): number {
-  if (!monthlyData || monthlyData.length === 0) return -999; // Invalid value
+  if (!monthlyData || monthlyData.length === 0) return IRR_ERROR_CODES.NO_DATA;
   
   const cashFlows = monthlyData.map(month => month.netCashFlow);
   
   // Check if all cash flows are the same (no IRR possible)
   const allSame = cashFlows.every(cf => Math.abs(cf - cashFlows[0]) < 0.01);
-  if (allSame) return -999; // Invalid value
+  if (allSame) return IRR_ERROR_CODES.ALL_SAME;
   
-  // Check if all cash flows are positive (no IRR needed)
+  // Check if all cash flows are positive (no IRR needed - infinite return)
   const allPositive = cashFlows.every(cf => cf >= 0);
-  if (allPositive) return -999; // Invalid value
+  if (allPositive) return IRR_ERROR_CODES.ALL_POSITIVE;
   
   // Check if all cash flows are negative (no IRR possible)
   const allNegative = cashFlows.every(cf => cf <= 0);
-  if (allNegative) return -999; // Invalid value
+  if (allNegative) return IRR_ERROR_CODES.ALL_NEGATIVE;
   
-  // Simple iterative method to find IRR
+  // Newton-Raphson method to find IRR
   let rate = initialGuess;
   let iteration = 0;
-  const maxIterations = 100;
-  const tolerance = 0.0001;
+  const maxIterations = 1000; // Increased for better convergence
+  const tolerance = 0.000001; // Tighter tolerance
   
   while (iteration < maxIterations) {
     const npvAtRate = cashFlows.reduce((npv, cashFlow, index) => {
@@ -217,9 +266,10 @@ export function calculateIRR(monthlyData: MonthlyData[], initialGuess: number = 
     }, 0);
     
     if (Math.abs(npvAtRate) < tolerance) {
-      // Return bounded result: if outside -100% to 100%, return invalid
-      if (rate < -1 || rate > 1) {
-        return -999; // Invalid value for display
+      // Check for extreme rates (outside -99% to 10,000% annually)
+      const annualRate = Math.pow(1 + rate / 12, 12) - 1;
+      if (annualRate < -0.99 || annualRate > 100) {
+        return IRR_ERROR_CODES.EXTREME_RATE;
       }
       return rate;
     }
@@ -237,27 +287,22 @@ export function calculateIRR(monthlyData: MonthlyData[], initialGuess: number = 
     
     const newRate = rate - npvAtRate / npvDerivative;
     
-    // Prevent extreme rate changes and bound the search
-    if (Math.abs(newRate - rate) > 0.5) {
-      rate = rate + Math.sign(newRate - rate) * 0.1; // Limited step size
+    // Prevent extreme rate changes but allow wider search
+    if (Math.abs(newRate - rate) > 1.0) {
+      rate = rate + Math.sign(newRate - rate) * 0.5; // Larger but controlled step
     } else {
       rate = newRate;
     }
     
-    // If rate goes outside reasonable bounds, return invalid
-    if (rate < -2 || rate > 5) {
-      return -999; // Invalid value for display
+    // Wider bounds during search (monthly rates from -50% to +500%)
+    if (rate < -0.5 || rate > 5.0) {
+      return IRR_ERROR_CODES.EXTREME_RATE;
     }
     
     iteration++;
   }
   
-  // If no convergence or result outside bounds, return invalid
-  if (rate < -1 || rate > 1) {
-    return -999; // Invalid value for display
-  }
-  
-  return rate;
+  return IRR_ERROR_CODES.NO_CONVERGENCE;
 }
 
 /**
@@ -421,6 +466,497 @@ export function calculateTimeSeriesVolume(volume: any, monthIndex: number): numb
 }
 
 /**
+ * Calculate dynamic unit price for a specific month considering yearly adjustments and overrides
+ */
+export function calculateDynamicUnitPrice(businessData: BusinessData, monthIndex: number): number {
+  const basePricing = businessData?.assumptions?.pricing;
+  const basePrice = basePricing?.avg_unit_price?.value || 0;
+  
+  // Check for period-specific override first
+  const overrides = basePricing?.yearly_adjustments?.price_overrides || [];
+  const periodOverride = overrides.find(override => override.period === monthIndex + 1);
+  if (periodOverride) {
+    return periodOverride.price;
+  }
+  
+  // Apply yearly adjustment factor
+  const yearIndex = Math.floor(monthIndex / 12);
+  const yearlyFactors = basePricing?.yearly_adjustments?.pricing_factors || [];
+  const yearFactor = yearlyFactors.find(factor => factor.year === yearIndex + 1);
+  
+  if (yearFactor) {
+    return Math.round((basePrice * yearFactor.factor) * 100) / 100; // Round to 2 decimal places
+  }
+  
+  return basePrice;
+}
+
+/**
+ * Calculate dynamic volume for a segment considering yearly adjustments and overrides
+ */
+export function calculateDynamicSegmentVolume(segment: any, monthIndex: number, businessData?: BusinessData): number {
+  // Check for period-specific override first
+  const overrides = segment?.volume?.yearly_adjustments?.volume_overrides || [];
+  const periodOverride = overrides.find((override: any) => override.period === monthIndex + 1);
+  if (periodOverride) {
+    return periodOverride.volume;
+  }
+  
+  // Calculate base volume using existing pattern logic
+  let baseVolume = calculateSegmentVolumeForMonth(segment, monthIndex, businessData);
+  
+  // Apply yearly adjustment factor
+  const yearIndex = Math.floor(monthIndex / 12);
+  const yearlyFactors = segment?.volume?.yearly_adjustments?.volume_factors || [];
+  const yearFactor = yearlyFactors.find((factor: any) => factor.year === yearIndex + 1);
+  
+  if (yearFactor) {
+    baseVolume *= yearFactor.factor;
+  }
+  
+  return baseVolume;
+}
+
+/**
+ * Calculate total volume for a specific month considering dynamic adjustments
+ */
+export function calculateDynamicTotalVolumeForMonth(businessData: BusinessData, monthIndex: number): number {
+  const segments = businessData?.assumptions?.customers?.segments || [];
+  let totalVolume = 0;
+
+  for (const segment of segments) {
+    const volume = calculateDynamicSegmentVolume(segment, monthIndex, businessData);
+    totalVolume += volume;
+  }
+
+  return totalVolume;
+}
+
+/**
+ * Get pricing trajectory for visualization and planning
+ */
+export function getPricingTrajectory(businessData: BusinessData, periods: number): Array<{ period: number; price: number; source: 'base' | 'yearly' | 'override' }> {
+  const trajectory = [];
+  
+  for (let i = 0; i < periods; i++) {
+    const price = calculateDynamicUnitPrice(businessData, i);
+    const basePricing = businessData?.assumptions?.pricing;
+    const basePrice = basePricing?.avg_unit_price?.value || 0;
+    
+    // Determine source of pricing
+    const overrides = basePricing?.yearly_adjustments?.price_overrides || [];
+    const hasOverride = overrides.some(override => override.period === i + 1);
+    
+    if (hasOverride) {
+      trajectory.push({ period: i + 1, price, source: 'override' });
+    } else if (price !== basePrice) {
+      trajectory.push({ period: i + 1, price, source: 'yearly' });
+    } else {
+      trajectory.push({ period: i + 1, price, source: 'base' });
+    }
+  }
+  
+  return trajectory;
+}
+
+/**
+ * Get volume trajectory for a segment
+ */
+export function getVolumeTrajectory(segment: any, periods: number, businessData?: BusinessData): Array<{ period: number; volume: number; source: 'pattern' | 'yearly' | 'override' }> {
+  const trajectory = [];
+  
+  for (let i = 0; i < periods; i++) {
+    const volume = calculateDynamicSegmentVolume(segment, i, businessData);
+    const baseVolume = calculateSegmentVolumeForMonth(segment, i, businessData);
+    
+    // Determine source
+    const overrides = segment?.volume?.yearly_adjustments?.volume_overrides || [];
+    const hasOverride = overrides.some((override: any) => override.period === i + 1);
+    
+    if (hasOverride) {
+      trajectory.push({ period: i + 1, volume, source: 'override' });
+    } else if (Math.abs(volume - baseVolume) > 0.01) {
+      trajectory.push({ period: i + 1, volume, source: 'yearly' });
+    } else {
+      trajectory.push({ period: i + 1, volume, source: 'pattern' });
+    }
+  }
+  
+  return trajectory;
+}
+
+/**
+ * Calculate Total Addressable Market (TAM) for a specific year
+ */
+export function calculateTAM(businessData: BusinessData, year: number): number {
+  const tam = businessData?.assumptions?.market_analysis?.total_addressable_market;
+  if (!tam) return 0;
+  
+  const baseValue = tam.base_value?.value || 0;
+  const growthRate = tam.growth_rate?.value || 0;
+  const baseYear = tam.year || 2024;
+  
+  const yearsFromBase = year - baseYear;
+  return baseValue * Math.pow(1 + growthRate, yearsFromBase);
+}
+
+/**
+ * Calculate Serviceable Addressable Market (SAM) for a specific year
+ */
+export function calculateSAM(businessData: BusinessData, year: number): number {
+  const sam = businessData?.assumptions?.market_analysis?.serviceable_addressable_market;
+  if (!sam) return 0;
+  
+  const tamValue = calculateTAM(businessData, year);
+  const samPercentage = (sam.percentage_of_tam?.value || 0) / 100;
+  
+  return tamValue * samPercentage;
+}
+
+/**
+ * Calculate Serviceable Obtainable Market (SOM) for a specific year
+ */
+export function calculateSOM(businessData: BusinessData, year: number): number {
+  const som = businessData?.assumptions?.market_analysis?.serviceable_obtainable_market;
+  if (!som) return 0;
+  
+  const samValue = calculateSAM(businessData, year);
+  const somPercentage = (som.percentage_of_sam?.value || 0) / 100;
+  
+  return samValue * somPercentage;
+}
+
+/**
+ * Calculate market share for a specific time period
+ */
+export function calculateMarketShare(businessData: BusinessData, monthIndex: number): number {
+  const marketShare = businessData?.assumptions?.market_analysis?.market_share;
+  if (!marketShare) return 0;
+  
+  const currentShare = (marketShare.current_share?.value || 0) / 100;
+  const targetShare = (marketShare.target_share?.value || 0) / 100;
+  const targetTimeframe = marketShare.target_timeframe?.value || 5; // years
+  const strategy = marketShare.penetration_strategy || 'linear';
+  
+  const yearsPassed = monthIndex / 12;
+  const progressRatio = Math.min(yearsPassed / targetTimeframe, 1);
+  
+  let penetrationFactor: number;
+  
+  switch (strategy) {
+    case 'linear':
+      penetrationFactor = progressRatio;
+      break;
+    case 'exponential':
+      // Faster growth early, slowing down later
+      penetrationFactor = 1 - Math.exp(-3 * progressRatio);
+      break;
+    case 's_curve':
+      // S-curve: slow start, rapid middle, slow end
+      penetrationFactor = 1 / (1 + Math.exp(-10 * (progressRatio - 0.5)));
+      break;
+    default:
+      penetrationFactor = progressRatio;
+  }
+  
+  return currentShare + (targetShare - currentShare) * penetrationFactor;
+}
+
+/**
+ * Calculate market-based volume for a specific month
+ */
+export function calculateMarketBasedVolume(businessData: BusinessData, monthIndex: number): number {
+  const year = Math.floor(monthIndex / 12) + 2024; // Assuming 2024 as base year
+  const marketShare = calculateMarketShare(businessData, monthIndex);
+  const som = calculateSOM(businessData, year);
+  
+  const avgCustomerValue = businessData?.assumptions?.market_analysis?.avg_customer_value?.annual_value?.value;
+  if (!avgCustomerValue || avgCustomerValue === 0) return 0;
+  
+  // Calculate monthly volume from annual market size
+  const annualMarketVolume = (som * marketShare) / avgCustomerValue;
+  return annualMarketVolume / 12; // Convert to monthly
+}
+
+/**
+ * Get market analysis metrics for a specific time period
+ */
+export function getMarketMetrics(businessData: BusinessData, monthIndex: number): {
+  year: number;
+  tam: number;
+  sam: number;
+  som: number;
+  marketShare: number;
+  marketBasedVolume: number;
+  competitivePosition: {
+    ourShare: number;
+    competitorShares: Array<{ name: string; share: number; positioning: string }>;
+    marketConcentration: number;
+  };
+} {
+  const year = Math.floor(monthIndex / 12) + 2024;
+  const tam = calculateTAM(businessData, year);
+  const sam = calculateSAM(businessData, year);
+  const som = calculateSOM(businessData, year);
+  const marketShare = calculateMarketShare(businessData, monthIndex);
+  const marketBasedVolume = calculateMarketBasedVolume(businessData, monthIndex);
+  
+  // Competitive analysis
+  const competitors = businessData?.assumptions?.market_analysis?.competitive_landscape || [];
+  const competitorShares = competitors.map(comp => ({
+    name: comp.competitor_name,
+    share: (comp.market_share?.value || 0) / 100,
+    positioning: comp.positioning
+  }));
+  
+  // Calculate market concentration (Herfindahl Index)
+  const allShares = [marketShare, ...competitorShares.map(c => c.share)];
+  const marketConcentration = allShares.reduce((sum, share) => sum + Math.pow(share, 2), 0);
+  
+  return {
+    year,
+    tam,
+    sam,
+    som,
+    marketShare,
+    marketBasedVolume,
+    competitivePosition: {
+      ourShare: marketShare,
+      competitorShares,
+      marketConcentration
+    }
+  };
+}
+
+/**
+ * Calculate market penetration rate over time
+ */
+export function getMarketPenetrationTrajectory(businessData: BusinessData, periods: number): Array<{
+  period: number;
+  year: number;
+  tam: number;
+  sam: number;
+  som: number;
+  marketShare: number;
+  marketBasedVolume: number;
+  marketValue: number;
+}> {
+  const trajectory = [];
+  
+  for (let i = 0; i < periods; i++) {
+    const year = Math.floor(i / 12) + 2024;
+    const tam = calculateTAM(businessData, year);
+    const sam = calculateSAM(businessData, year);
+    const som = calculateSOM(businessData, year);
+    const marketShare = calculateMarketShare(businessData, i);
+    const marketBasedVolume = calculateMarketBasedVolume(businessData, i);
+    const marketValue = som * marketShare;
+    
+    trajectory.push({
+      period: i + 1,
+      year,
+      tam,
+      sam,
+      som,
+      marketShare,
+      marketBasedVolume,
+      marketValue
+    });
+  }
+  
+  return trajectory;
+}
+
+/**
+ * Validate market analysis assumptions for consistency
+ */
+export function validateMarketAssumptions(businessData: BusinessData): {
+  isValid: boolean;
+  warnings: string[];
+  errors: string[];
+} {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  const marketAnalysis = businessData?.assumptions?.market_analysis;
+  
+  if (!marketAnalysis) {
+    return { isValid: true, warnings: [], errors: [] };
+  }
+  
+  // Check TAM configuration
+  const tam = marketAnalysis.total_addressable_market;
+  if (tam && tam.base_value?.value <= 0) {
+    errors.push('TAM base value must be greater than zero');
+  }
+  
+  // Check SAM percentage
+  const sam = marketAnalysis.serviceable_addressable_market;
+  if (sam) {
+    const samPct = sam.percentage_of_tam?.value || 0;
+    if (samPct <= 0 || samPct > 100) {
+      errors.push('SAM percentage must be between 0 and 100');
+    }
+  }
+  
+  // Check SOM percentage
+  const som = marketAnalysis.serviceable_obtainable_market;
+  if (som) {
+    const somPct = som.percentage_of_sam?.value || 0;
+    if (somPct <= 0 || somPct > 100) {
+      errors.push('SOM percentage must be between 0 and 100');
+    }
+  }
+  
+  // Check market share assumptions
+  const marketShare = marketAnalysis.market_share;
+  if (marketShare) {
+    const current = marketShare.current_share?.value || 0;
+    const target = marketShare.target_share?.value || 0;
+    
+    if (current < 0 || current > 100) {
+      errors.push('Current market share must be between 0 and 100');
+    }
+    if (target < 0 || target > 100) {
+      errors.push('Target market share must be between 0 and 100');
+    }
+    if (target < current) {
+      warnings.push('Target market share is lower than current share - considering market decline?');
+    }
+    if (target > 50) {
+      warnings.push('Target market share above 50% may face regulatory scrutiny');
+    }
+  }
+  
+  // Check competitive landscape consistency
+  const competitors = marketAnalysis.competitive_landscape || [];
+  const totalCompetitorShare = competitors.reduce((sum, comp) => sum + (comp.market_share?.value || 0), 0);
+  const ourShare = marketShare?.current_share?.value || 0;
+  
+  if (totalCompetitorShare + ourShare > 100) {
+    errors.push('Total market share (ours + competitors) exceeds 100%');
+  }
+  
+  if (totalCompetitorShare + ourShare < 80) {
+    warnings.push('Identified market players account for less than 80% of market - consider adding more competitors or "Others" category');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    warnings,
+    errors
+  };
+}
+
+/**
+ * Implementation factor based on timeline
+ */
+export function calculateImplementationFactor(
+  monthIndex: number,
+  timeline?: { start_month: number; ramp_up_months: number; full_implementation_month: number }
+): number {
+  if (!timeline) return 1; // Default to full implementation if no timeline specified
+  
+  const { start_month, ramp_up_months, full_implementation_month } = timeline;
+  
+  // Convert to 0-based indexing (monthIndex starts at 0)
+  const month = monthIndex + 1;
+  
+  if (month < start_month) {
+    return 0; // Not started yet - implementation starts ON start_month
+  }
+  
+  if (month >= full_implementation_month) {
+    return 1; // Fully implemented
+  }
+  
+  // Calculate ramp-up factor
+  const monthsIntoImplementation = month - start_month + 1; // Implementation starts ON start_month
+  const totalRampUpMonths = ramp_up_months;
+  
+  return Math.min(1, monthsIntoImplementation / Math.max(1, totalRampUpMonths));
+}
+
+/**
+ * Calculate baseline costs for a specific month (before any savings)
+ */
+export function calculateBaselineCostsForMonth(businessData: BusinessData, monthIndex: number): number {
+  if (businessData?.meta?.business_model !== 'cost_savings') {
+    return 0;
+  }
+  
+  const baselineCosts = businessData?.assumptions?.cost_savings?.baseline_costs || [];
+  let totalBaselineCosts = 0;
+  
+  for (const cost of baselineCosts) {
+    const monthlyCost = cost.current_monthly_cost?.value || 0;
+    totalBaselineCosts += monthlyCost;
+  }
+  
+  return totalBaselineCosts;
+}
+
+/**
+ * Calculate cost savings for a specific month
+ */
+export function calculateCostSavingsForMonth(businessData: BusinessData, monthIndex: number): number {
+  if (businessData?.meta?.business_model !== 'cost_savings') {
+    return 0;
+  }
+  
+  const baselineCosts = businessData?.assumptions?.cost_savings?.baseline_costs || [];
+  let totalSavings = 0;
+  
+  for (const cost of baselineCosts) {
+    const monthlyCost = cost.current_monthly_cost?.value || 0;
+    const savingsRate = (cost.savings_potential_pct?.value || 0) / 100; // Convert percentage to decimal
+    const implementationFactor = calculateImplementationFactor(monthIndex, cost.implementation_timeline);
+    
+    const monthlyMaxSavings = monthlyCost * savingsRate;
+    const actualSavings = monthlyMaxSavings * implementationFactor;
+    
+    totalSavings += actualSavings;
+  }
+  
+  return totalSavings;
+}
+
+/**
+ * Calculate efficiency gains for a specific month
+ */
+export function calculateEfficiencyGainsForMonth(businessData: BusinessData, monthIndex: number): number {
+  if (businessData?.meta?.business_model !== 'cost_savings') {
+    return 0;
+  }
+  
+  const efficiencyGains = businessData?.assumptions?.cost_savings?.efficiency_gains || [];
+  let totalGains = 0;
+  
+  for (const gain of efficiencyGains) {
+    const baselineValue = gain.baseline_value?.value || 0;
+    const improvedValue = gain.improved_value?.value || 0;
+    const valuePerUnit = gain.value_per_unit?.value || 0;
+    const implementationFactor = calculateImplementationFactor(monthIndex, gain.implementation_timeline);
+    
+    // Calculate the improvement amount (absolute difference)
+    const improvementAmount = Math.abs(improvedValue - baselineValue) * implementationFactor;
+    const monetaryValue = improvementAmount * valuePerUnit;
+    
+    totalGains += monetaryValue;
+  }
+  
+  return totalGains;
+}
+
+/**
+ * Calculate total benefits (cost savings + efficiency gains) for a specific month
+ */
+export function calculateTotalBenefitsForMonth(businessData: BusinessData, monthIndex: number): number {
+  const costSavings = calculateCostSavingsForMonth(businessData, monthIndex);
+  const efficiencyGains = calculateEfficiencyGainsForMonth(businessData, monthIndex);
+  return costSavings + efficiencyGains;
+}
+
+/**
  * Calculate capex for a specific month based on period-specific investments
  */
 export function calculateCapexForMonth(businessData: BusinessData, monthIndex: number): number {
@@ -516,4 +1052,33 @@ export function formatCurrency(amount: number, currency: string = 'EUR'): string
  */
 export function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
+}
+
+/**
+ * Check if IRR result is an error code
+ */
+export function isIRRError(irr: number): boolean {
+  return irr < 0 && Object.values(IRR_ERROR_CODES).includes(irr as any);
+}
+
+/**
+ * Get human-readable error message for IRR error codes
+ */
+export function getIRRErrorMessage(irr: number): string {
+  switch (irr) {
+    case IRR_ERROR_CODES.NO_DATA:
+      return 'No data available for IRR calculation';
+    case IRR_ERROR_CODES.ALL_SAME:
+      return 'All cash flows are identical - IRR cannot be calculated';
+    case IRR_ERROR_CODES.ALL_POSITIVE:
+      return 'All cash flows are positive - infinite return';
+    case IRR_ERROR_CODES.ALL_NEGATIVE:
+      return 'All cash flows are negative - no return possible';
+    case IRR_ERROR_CODES.NO_CONVERGENCE:
+      return 'IRR calculation did not converge';
+    case IRR_ERROR_CODES.EXTREME_RATE:
+      return 'IRR calculation resulted in extreme rate';
+    default:
+      return 'Unknown IRR error';
+  }
 }

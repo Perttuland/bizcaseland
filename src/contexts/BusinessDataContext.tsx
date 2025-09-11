@@ -1,11 +1,13 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { setNestedValue } from '@/lib/utils/nested-operations';
+import { safeJSONStringify } from '@/lib/utils/json-validation';
 
 export interface BusinessData {
   schema_version?: string;
   meta: {
     title: string;
     description: string;
-    business_model?: 'recurring' | 'unit_sales';
+    business_model?: 'recurring' | 'unit_sales' | 'cost_savings';
     archetype?: string;
     currency: string;
     periods: number;
@@ -14,6 +16,10 @@ export interface BusinessData {
   assumptions: {
     pricing?: {
       avg_unit_price?: { value: number; unit: string; rationale: string };
+      yearly_adjustments?: {
+        pricing_factors?: Array<{ year: number; factor: number; rationale: string }>;
+        price_overrides?: Array<{ period: number; price: number; rationale: string }>;
+      };
     };
     financial?: {
       interest_rate?: { value: number; unit: string; rationale: string };
@@ -33,6 +39,10 @@ export interface BusinessData {
           yoy_growth?: { value: number; unit: string; rationale: string };
           monthly_growth_rate?: { value: number; unit: string; rationale: string };
           monthly_flat_increase?: { value: number; unit: string; rationale: string };
+          yearly_adjustments?: {
+            volume_factors?: Array<{ year: number; factor: number; rationale: string }>;
+            volume_overrides?: Array<{ period: number; volume: number; rationale: string }>;
+          };
         };
       }>;
     };
@@ -67,6 +77,69 @@ export interface BusinessData {
         monthly_flat_increase?: { value: number; unit: string; rationale: string };
       };
     };
+    cost_savings?: {
+      baseline_costs?: Array<{
+        id: string;
+        label: string;
+        category: 'operational' | 'administrative' | 'technology' | 'other';
+        current_monthly_cost: { value: number; unit: string; rationale: string };
+        savings_potential_pct: { value: number; unit: string; rationale: string };
+        implementation_timeline?: {
+          start_month: number;
+          ramp_up_months: number;
+          full_implementation_month: number;
+        };
+      }>;
+      efficiency_gains?: Array<{
+        id: string;
+        label: string;
+        metric: string; // e.g., "hours saved", "transactions processed", "error reduction"
+        baseline_value: { value: number; unit: string; rationale: string };
+        improved_value: { value: number; unit: string; rationale: string };
+        value_per_unit: { value: number; unit: string; rationale: string }; // monetary value per unit of improvement
+        implementation_timeline?: {
+          start_month: number;
+          ramp_up_months: number;
+          full_implementation_month: number;
+        };
+      }>;
+    };
+    market_analysis?: {
+      total_addressable_market?: {
+        base_value: { value: number; unit: string; rationale: string };
+        growth_rate: { value: number; unit: string; rationale: string };
+        currency: string;
+        year: number; // Base year for TAM calculation
+      };
+      serviceable_addressable_market?: {
+        percentage_of_tam: { value: number; unit: string; rationale: string };
+      };
+      serviceable_obtainable_market?: {
+        percentage_of_sam: { value: number; unit: string; rationale: string };
+      };
+      market_share?: {
+        current_share: { value: number; unit: string; rationale: string };
+        target_share: { value: number; unit: string; rationale: string };
+        target_timeframe: { value: number; unit: string; rationale: string }; // years to reach target
+        penetration_strategy: 'linear' | 'exponential' | 's_curve';
+      };
+      competitive_landscape?: Array<{
+        competitor_name: string;
+        market_share: { value: number; unit: string; rationale: string };
+        positioning: string;
+      }>;
+      market_segments?: Array<{
+        id: string;
+        name: string;
+        size_percentage: { value: number; unit: string; rationale: string };
+        growth_rate: { value: number; unit: string; rationale: string };
+        target_share: { value: number; unit: string; rationale: string };
+      }>;
+      avg_customer_value?: {
+        annual_value: { value: number; unit: string; rationale: string };
+        lifetime_value: { value: number; unit: string; rationale: string };
+      };
+    };
   };
   drivers?: Array<{
     key: string;
@@ -96,35 +169,49 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
   }, []);
 
   const updateAssumption = useCallback((path: string, value: any) => {
-    if (!data) return;
-    
-    const pathParts = path.split('.');
-    const newData = JSON.parse(JSON.stringify(data));
-    
-    let current = newData;
-    for (let i = 0; i < pathParts.length - 1; i++) {
-      if (!current[pathParts[i]]) {
-        current[pathParts[i]] = {};
-      }
-      current = current[pathParts[i]];
+    if (!data) {
+      console.warn('updateAssumption called with no data');
+      return;
     }
-    current[pathParts[pathParts.length - 1]] = value;
     
-    setData(newData);
+    try {
+      const newData = setNestedValue(data, path, value);
+      setData(newData);
+    } catch (error) {
+      console.error('Failed to update assumption:', error);
+      // Don't update state if there's an error
+    }
   }, [data]);
 
   const updateDriver = useCallback((driverIndex: number, updates: any) => {
-    if (!data || !data.drivers) return;
+    if (!data || !data.drivers) {
+      console.warn('updateDriver called with no data or drivers');
+      return;
+    }
     
-    const newData = { ...data };
-    newData.drivers = [...data.drivers];
-    newData.drivers[driverIndex] = { ...newData.drivers[driverIndex], ...updates };
+    if (driverIndex < 0 || driverIndex >= data.drivers.length) {
+      console.error(`Invalid driver index: ${driverIndex}. Valid range: 0-${data.drivers.length - 1}`);
+      return;
+    }
     
-    setData(newData);
+    try {
+      const newData = { ...data };
+      newData.drivers = [...data.drivers];
+      newData.drivers[driverIndex] = { ...newData.drivers[driverIndex], ...updates };
+      
+      setData(newData);
+    } catch (error) {
+      console.error('Failed to update driver:', error);
+    }
   }, [data]);
 
   const exportData = useCallback(() => {
-    return JSON.stringify(data, null, 2);
+    const result = safeJSONStringify(data);
+    if (!result.success) {
+      console.error('Failed to export data:', result.error);
+      return '{}';
+    }
+    return result.data || '{}';
   }, [data]);
 
   const value = {

@@ -6,73 +6,10 @@ import { Slider } from '@/components/ui/slider';
 import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle, BarChart3 } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { calculateBusinessMetrics, formatCurrency, formatPercent, calculateBreakEven } from '@/lib/calculations';
+import { setNestedValue, getNestedValue } from '@/lib/utils/nested-operations';
 
-// Helper functions for driver manipulation
-function setNestedValue(obj: any, path: string, value: number): any {
-  const newObj = JSON.parse(JSON.stringify(obj));
-  const pathParts = path.split('.');
-  let current = newObj;
-  
-  for (let i = 0; i < pathParts.length - 1; i++) {
-    const part = pathParts[i];
-    if (part.includes('[') && part.includes(']')) {
-      const arrayName = part.split('[')[0];
-      const index = parseInt(part.split('[')[1].split(']')[0]);
-      if (!current[arrayName]) {
-        current[arrayName] = [];
-      }
-      while (current[arrayName].length <= index) {
-        current[arrayName].push({});
-      }
-      current = current[arrayName][index];
-    } else {
-      if (!current[part]) {
-        current[part] = {};
-      }
-      current = current[part];
-    }
-  }
-  
-  const lastPart = pathParts[pathParts.length - 1];
-  if (lastPart.includes('[') && lastPart.includes(']')) {
-    const arrayName = lastPart.split('[')[0];
-    const index = parseInt(lastPart.split('[')[1].split(']')[0]);
-    if (!current[arrayName]) {
-      current[arrayName] = [];
-    }
-    while (current[arrayName].length <= index) {
-      current[arrayName].push({});
-    }
-    current[arrayName][index] = value;
-  } else {
-    current[lastPart] = value;
-  }
-  
-  return newObj;
-}
-
-function getNestedValue(obj: any, path: string): number {
-  const pathParts = path.split('.');
-  let current = obj;
-  
-  for (const part of pathParts) {
-    if (part.includes('[') && part.includes(']')) {
-      const arrayName = part.split('[')[0];
-      const index = parseInt(part.split('[')[1].split(']')[0]);
-      if (!current[arrayName] || !current[arrayName][index]) {
-        return 0;
-      }
-      current = current[arrayName][index];
-    } else {
-      if (!current || current[part] === undefined) {
-        return 0;
-      }
-      current = current[part];
-    }
-  }
-  
-  return typeof current === 'number' ? current : (current?.value || 0);
-}
+// Helper functions for driver manipulation - now using safe utilities
+// Note: The imported getNestedValue and setNestedValue from utils should be used instead
 
 export function FinancialAnalysis() {
   const { data: businessData, updateData } = useBusinessData();
@@ -178,7 +115,8 @@ export function FinancialAnalysis() {
       <Card className="bg-gradient-card shadow-elevation relative">
         {/* Business Model Badge in top-right corner */}
         <Badge variant="outline" className="absolute top-4 right-4 bg-financial-primary text-financial-primary-foreground">
-          {businessData.meta.business_model === 'recurring' ? 'Recurring Revenue' : 'Unit Sales'}
+          {businessData.meta.business_model === 'recurring' ? 'Recurring Revenue' : 
+           businessData.meta.business_model === 'unit_sales' ? 'Unit Sales' : 'Cost Savings'}
         </Badge>
         
         <CardHeader>
@@ -201,7 +139,9 @@ export function FinancialAnalysis() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-financial-success-foreground/80">Total Revenue (5Y)</p>
+                <p className="text-sm text-financial-success-foreground/80">
+                  {businessData.meta.business_model === 'cost_savings' ? 'Total Benefits (5Y)' : 'Total Revenue (5Y)'}
+                </p>
                 <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.totalRevenue, businessData.meta.currency)}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-white" />

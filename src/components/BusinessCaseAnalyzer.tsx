@@ -3,21 +3,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3, RefreshCw } from 'lucide-react';
+import { Copy, Upload, AlertCircle, CheckCircle2, BarChart3, TrendingUp, Calculator, Download, Edit3, RefreshCw, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { safeJSONParse, validateBusinessData } from '@/lib/utils/json-validation';
 import { JSONTemplate } from './JSONTemplate';
 import { FinancialAnalysis } from './FinancialAnalysis';
 // import { DataVisualization } from './DataVisualization';
 import { DatapointsViewer } from './JSONDataViewer';
 import { CashFlowStatement } from './CashFlowStatement';
 import { SensitivityAnalysis } from './SensitivityAnalysis';
+import { MarketAnalysis } from './MarketAnalysis';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
 export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData } = useBusinessData();
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow' | 'sensitivity'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow' | 'sensitivity' | 'market'>('input');
   const [hasUploadedData, setHasUploadedData] = useState(false);
   const { toast } = useToast();
 
@@ -32,25 +34,42 @@ export function BusinessCaseAnalyzer() {
       return;
     }
 
-    try {
-      const parsed = JSON.parse(value);
-      if (parsed.meta && parsed.assumptions) {
-        setIsValidJson(true);
-      } else {
-        setIsValidJson(false);
-        toast({
-          title: "Invalid Format",
-          description: "JSON must contain 'meta' and 'assumptions' fields.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    // Use secure JSON parsing
+    const parseResult = safeJSONParse(value);
+    
+    if (!parseResult.success) {
       setIsValidJson(false);
       toast({
         title: "Invalid JSON",
-        description: "Please check your JSON syntax.",
+        description: parseResult.error || "Failed to parse JSON",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Validate business data structure
+    const businessDataValidation = validateBusinessData(parseResult.data);
+    
+    if (!businessDataValidation.success) {
+      setIsValidJson(false);
+      toast({
+        title: "Invalid Format",
+        description: businessDataValidation.error || "Invalid business data format",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsValidJson(true);
+    
+    // Show warnings if any
+    if (businessDataValidation.warnings && businessDataValidation.warnings.length > 0) {
+      toast({
+        title: "Data Warnings",
+        description: `${businessDataValidation.warnings.length} validation warnings found. Check console for details.`,
+        variant: "default",
+      });
+      console.warn('Business data validation warnings:', businessDataValidation.warnings);
     }
   };
 
@@ -64,9 +83,30 @@ export function BusinessCaseAnalyzer() {
       return;
     }
 
+    const parseResult = safeJSONParse(inputJson);
+    
+    if (!parseResult.success) {
+      toast({
+        title: "Parse Failed",
+        description: parseResult.error || "Failed to parse JSON data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const businessDataValidation = validateBusinessData(parseResult.data);
+    
+    if (!businessDataValidation.success) {
+      toast({
+        title: "Validation Failed",
+        description: businessDataValidation.error || "Invalid business data format.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      const parsed = JSON.parse(inputJson);
-      updateData(parsed);
+      updateData(businessDataValidation.data!);
       
   // Notify other components that data was refreshed from JSON
   window.dispatchEvent(new Event('datarefreshed'));
@@ -155,7 +195,7 @@ export function BusinessCaseAnalyzer() {
               <Badge variant="outline" className="bg-financial-primary text-financial-primary-foreground">
                 v0.3
               </Badge>
-              <div className="text-sm text-muted-foreground">perttu.landstrom@solita.fi</div>
+              <div className="text-sm text-muted-foreground">Business Case Analyzer v1.0</div>
             </div>
           </div>
         </div>
@@ -298,6 +338,18 @@ export function BusinessCaseAnalyzer() {
                   <Edit3 className="h-4 w-4" />
                   Scenario Analysis
                 </Button>
+                <Button 
+                  variant={activeTab === 'market' ? 'default' : 'ghost'} 
+                  onClick={() => {
+                    setActiveTab('market');
+                    window.dispatchEvent(new Event('tabchange'));
+                  }}
+                  disabled={!hasUploadedData}
+                  className="flex items-center gap-2"
+                >
+                  <Target className="h-4 w-4" />
+                  Market Analysis
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -371,6 +423,12 @@ export function BusinessCaseAnalyzer() {
               </div>
             )}
 
+            {activeTab === 'market' && jsonData && (
+              <div className="animate-fade-in">
+                <MarketAnalysis />
+              </div>
+            )}
+
             {activeTab === 'analysis' && !jsonData && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
@@ -398,7 +456,7 @@ export function BusinessCaseAnalyzer() {
             )}
             */ }
 
-            {!jsonData && (activeTab !== 'input' || hasUploadedData) && activeTab !== 'analysis' && activeTab !== 'charts' && (
+            {!jsonData && (activeTab !== 'input' || hasUploadedData) && activeTab !== 'analysis' && activeTab !== 'charts' && activeTab !== 'market' && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
                   <div className="text-center space-y-3">

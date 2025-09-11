@@ -75,19 +75,28 @@ export function CashFlowStatement() {
     return 'text-muted-foreground';
   };
 
-  // Determine if we're using a recurring revenue model
+  // Determine business model type
   const isRecurringModel = businessData?.meta?.business_model === 'recurring';
+  const isCostSavingsModel = businessData?.meta?.business_model === 'cost_savings';
 
   const rows = [
-    { label: 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
-    { label: '  Sales Volume', key: 'salesVolume', isSubItem: true, category: 'volume', unit: 'units' },
-    ...(isRecurringModel ? [
-      { label: '  New Customers', key: 'newCustomers', isSubItem: true, category: 'volume', unit: 'units' },
-      { label: '  Existing Customers', key: 'existingCustomers', isSubItem: true, category: 'volume', unit: 'units' }
-    ] : []),
-    { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'decimal' },
-    { label: 'Cost of Goods Sold', key: 'cogs', category: 'costs' },
-    { label: 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
+    { label: isCostSavingsModel ? 'Total Benefits' : 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
+    ...(isCostSavingsModel ? [
+      { label: '  Baseline Costs', key: 'baselineCosts', isSubItem: true, category: 'volume', unit: 'currency' },
+      { label: '  Cost Savings', key: 'costSavings', isSubItem: true, category: 'volume', unit: 'currency' },
+      { label: '  Efficiency Gains', key: 'efficiencyGains', isSubItem: true, category: 'volume', unit: 'currency' }
+    ] : [
+      { label: '  Sales Volume', key: 'salesVolume', isSubItem: true, category: 'volume', unit: 'units' },
+      ...(isRecurringModel ? [
+        { label: '  New Customers', key: 'newCustomers', isSubItem: true, category: 'volume', unit: 'units' },
+        { label: '  Existing Customers', key: 'existingCustomers', isSubItem: true, category: 'volume', unit: 'units' }
+      ] : []),
+      { label: '  Unit Price', key: 'unitPrice', isSubItem: true, category: 'price', unit: 'decimal' }
+    ]),
+    ...(isCostSavingsModel ? [] : [
+      { label: 'Cost of Goods Sold', key: 'cogs', category: 'costs' }
+    ]),
+    { label: isCostSavingsModel ? 'Net Benefits' : 'Gross Profit', key: 'grossProfit', isSubtotal: true, category: 'profit' },
     { label: '', key: 'spacer1', category: 'spacer' },
     { label: 'Sales & Marketing', key: 'salesMarketing', category: 'opex' },
     { 
@@ -266,7 +275,8 @@ export function CashFlowStatement() {
                                  <span className={`font-mono text-xs ${getValueColor(value)}`}>
                                    {row.unit === 'units' ? value.toLocaleString() : 
                                     row.unit === 'decimal' ? formatDecimal(value) : 
-                                    formatCurrency(value)}
+                                    row.unit === 'currency' ? formatCurrency(value, currency) :
+                                    formatCurrency(value, currency)}
                                  </span>
                                ) : (
                                  <span className="text-muted-foreground text-xs">-</span>
