@@ -69,7 +69,10 @@ export function CashFlowStatement() {
     });
   };
 
-  const getValueColor = (value: number) => {
+  const getValueColor = (value: number, rowKey?: string) => {
+    // Baseline costs should always be grey (they represent current state, not gains/losses)
+    if (rowKey === 'baselineCosts') return 'text-muted-foreground';
+    
     if (value > 0) return 'text-financial-success';
     if (value < 0) return 'text-financial-danger';
     return 'text-muted-foreground';
@@ -79,7 +82,7 @@ export function CashFlowStatement() {
   const isRecurringModel = businessData?.meta?.business_model === 'recurring';
   const isCostSavingsModel = businessData?.meta?.business_model === 'cost_savings';
 
-  const rows = [
+  const allRows = [
     { label: isCostSavingsModel ? 'Total Benefits' : 'Revenue', key: 'revenue', isTotal: true, category: 'revenue' },
     ...(isCostSavingsModel ? [
       { label: '  Baseline Costs', key: 'baselineCosts', isSubItem: true, category: 'volume', unit: 'currency' },
@@ -112,8 +115,21 @@ export function CashFlowStatement() {
     { label: 'EBITDA', key: 'ebitda', isTotal: true, category: 'profit' },
     { label: 'CAPEX', key: 'capex', category: 'capex' },
     { label: '', key: 'spacer3', category: 'spacer' },
-    { label: 'Net Cash Flow', key: 'netCashFlow', isTotal: true, category: 'cash' },
+    { label: isCostSavingsModel ? 'Net Benefit' : 'Net Cash Flow', key: 'netCashFlow', isTotal: true, category: 'cash' },
   ];
+
+  // Filter out rows that have no data across all months
+  const shouldShowRow = (row: any) => {
+    if (row.category === 'spacer') return true; // Always show spacers
+    
+    // Check if any month has non-zero data for this row
+    return monthlyData.some(month => {
+      const value = month[row.key as keyof typeof month] as number;
+      return typeof value === 'number' && Math.abs(value) > 0.01;
+    });
+  };
+
+  const rows = allRows.filter(shouldShowRow);
 
   const getAssumptions = (rowKey: string, month: number) => {
     if (!businessData.assumptions) return null;
@@ -122,9 +138,39 @@ export function CashFlowStatement() {
     
     const assumptions = {
       revenue: {
-        formula: `Sales Volume × Unit Price`,
-        components: `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatCurrency(currentMonth?.unitPrice || 0)}`,
-        rationale: businessData.assumptions.pricing?.avg_unit_price?.rationale
+        formula: isCostSavingsModel ? `Cost Savings + Efficiency Gains` : `Sales Volume × Unit Price`,
+        components: isCostSavingsModel 
+          ? `${formatCurrency(currentMonth?.costSavings || 0)} + ${formatCurrency(currentMonth?.efficiencyGains || 0)}`
+          : `${currentMonth?.salesVolume?.toLocaleString()} units × ${formatCurrency(currentMonth?.unitPrice || 0)}`,
+        rationale: isCostSavingsModel 
+          ? 'Total monetary benefits from cost reduction and efficiency improvements'
+          : businessData.assumptions.pricing?.avg_unit_price?.rationale
+      },
+      baselineCosts: {
+        formula: `Sum of monthly baseline costs before automation`,
+        components: businessData?.assumptions?.cost_savings?.baseline_costs?.map(cost => 
+          `${cost.label}: ${formatCurrency(cost.current_monthly_cost?.value || 0)}`
+        ).join(', ') || '',
+        rationale: 'Current operational costs that will be reduced through automation and process improvements'
+      },
+      costSavings: {
+        formula: `Baseline Cost × Savings Rate × Implementation Factor`,
+        components: businessData?.assumptions?.cost_savings?.baseline_costs?.map(cost => {
+          const baseAmount = cost.current_monthly_cost?.value || 0;
+          const savingsRate = (cost.savings_potential_pct?.value || 0) / 100;
+          return `${cost.label}: ${formatCurrency(baseAmount)} × ${(savingsRate * 100).toFixed(0)}%`;
+        }).join(', ') || '',
+        rationale: 'Direct cost reductions achieved through process automation and efficiency improvements'
+      },
+      efficiencyGains: {
+        formula: `(Baseline Hours - Improved Hours) × Value per Hour × Implementation Factor`,
+        components: businessData?.assumptions?.cost_savings?.efficiency_gains?.map(gain => {
+          const baseline = gain.baseline_value?.value || 0;
+          const improved = gain.improved_value?.value || 0;
+          const valuePerHour = gain.value_per_unit?.value || 0;
+          return `${gain.label}: (${baseline} - ${improved}) hours × ${formatCurrency(valuePerHour)}/hour`;
+        }).join(', ') || '',
+        rationale: 'Monetary value of time savings and productivity improvements from automation'
       },
       salesVolume: {
         formula: `Base Volume × Growth Factor`,
@@ -172,7 +218,7 @@ export function CashFlowStatement() {
           : 'Applied to all unit sales in transactional models.'} ${businessData?.assumptions?.unit_economics?.cac?.rationale || ''}`
       },
       ebitda: {
-        formula: `Gross Profit + Total Operating Expenses`,
+        formula: isCostSavingsModel ? `Total Benefits + Total Operating Expenses` : `Gross Profit + Total Operating Expenses`,
         rationale: businessData?.meta?.description
       },
       capex: {
@@ -193,7 +239,7 @@ export function CashFlowStatement() {
       <Card className="bg-gradient-card shadow-card relative">
         {/* Business Model Badge in top-right corner */}
         <Badge variant="outline" className="absolute top-4 right-4 bg-financial-primary text-financial-primary-foreground">
-          {isRecurringModel ? 'Recurring Revenue' : 'Unit Sales'}
+          {isCostSavingsModel ? 'Cost Savings' : isRecurringModel ? 'Recurring Revenue' : 'Unit Sales'}
         </Badge>
         
         <CardHeader>
@@ -272,7 +318,7 @@ export function CashFlowStatement() {
                               onMouseLeave={() => setHoveredCell(null)}
                             >
                              {typeof value === 'number' ? (
-                                 <span className={`font-mono text-xs ${getValueColor(value)}`}>
+                                 <span className={`font-mono text-xs ${getValueColor(value, row.key)}`}>
                                    {row.unit === 'units' ? value.toLocaleString() : 
                                     row.unit === 'decimal' ? formatDecimal(value) : 
                                     row.unit === 'currency' ? formatCurrency(value, currency) :
@@ -325,7 +371,7 @@ export function CashFlowStatement() {
         <Card className={`shadow-card ${monthlyData.reduce((s, m) => s + m.revenue, 0) >= 0 ? 'bg-gradient-success' : 'bg-gradient-danger'}`}>
           <CardContent className="p-3">
             <div className="text-center">
-              <p className="text-sm text-white/80 mb-1">Total Revenue</p>
+              <p className="text-sm text-white/80 mb-1">{isCostSavingsModel ? 'Total Benefits' : 'Total Revenue'}</p>
               <p className="text-xl font-extrabold text-white">
                 {formatCurrency(monthlyData.reduce((sum, m) => sum + m.revenue, 0), currency)}
               </p>
@@ -371,12 +417,12 @@ export function CashFlowStatement() {
 
       {/* Three Charts Side by Side */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 1. Revenue & Operating Expense */}
+        {/* 1. Benefits & Operating Expense */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-financial-primary" />
-              <span>Revenue & Operating Expense</span>
+              <span>{isCostSavingsModel ? 'Benefits & Operating Expense' : 'Revenue & Operating Expense'}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
@@ -418,7 +464,7 @@ export function CashFlowStatement() {
                     stroke="hsl(var(--financial-primary))" 
                     strokeWidth={3}
                     dot={false}
-                    name="Revenue"
+                    name={isCostSavingsModel ? "Total Benefits" : "Revenue"}
                   />
                   <Line 
                     type="monotone" 
@@ -435,53 +481,104 @@ export function CashFlowStatement() {
           </CardContent>
         </Card>
 
-        {/* 2. Sales Volume */}
+        {/* 2. Cost Savings Breakdown or Sales Volume */}
         <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <BarChart3 className="h-5 w-5 text-financial-success" />
-              <span>Sales Volume</span>
+              <span>{isCostSavingsModel ? 'Cost Savings & Efficiency Gains' : 'Sales Volume'}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
             <div className="h-48 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={monthlyData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                    interval={Math.floor(monthlyData.length / 10)}
-                  />
-                  <YAxis 
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <Tooltip 
-                    content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        return (
-                          <div className="bg-card border border-border rounded-lg p-3 shadow-md">
-                            <p className="font-semibold">{`Month ${label}`}</p>
-                            <p style={{ color: payload[0].color }}>
-                              {`Sales Volume: ${(payload[0].value as number).toLocaleString()} units`}
-                            </p>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="salesVolume" 
-                    stroke="hsl(var(--financial-success))" 
-                    strokeWidth={3}
-                    dot={false}
-                    name="Sales Volume"
-                  />
-                </LineChart>
+                {isCostSavingsModel ? (
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      interval={Math.floor(monthlyData.length / 10)}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      tickFormatter={(value) => formatCurrency(value)}
+                    />
+                    <Tooltip 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                              <p className="font-semibold">{`Month ${label}`}</p>
+                              {payload.map((entry, index) => (
+                                <p key={index} style={{ color: entry.color }}>
+                                  {`${entry.name}: ${formatCurrency(entry.value as number)}`}
+                                </p>
+                              ))}
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="costSavings" 
+                      stroke="hsl(var(--financial-success))" 
+                      strokeWidth={3}
+                      dot={false}
+                      name="Cost Savings"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="efficiencyGains" 
+                      stroke="hsl(var(--financial-primary))" 
+                      strokeWidth={2}
+                      dot={false}
+                      strokeDasharray="3 3"
+                      name="Efficiency Gains"
+                    />
+                  </LineChart>
+                ) : (
+                  <LineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="month" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                      interval={Math.floor(monthlyData.length / 10)}
+                    />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <Tooltip 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          return (
+                            <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                              <p className="font-semibold">{`Month ${label}`}</p>
+                              <p style={{ color: payload[0].color }}>
+                                {`Sales Volume: ${(payload[0].value as number).toLocaleString()} units`}
+                              </p>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="salesVolume" 
+                      stroke="hsl(var(--financial-success))" 
+                      strokeWidth={3}
+                      dot={false}
+                      name="Sales Volume"
+                    />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </div>
           </CardContent>
@@ -492,7 +589,7 @@ export function CashFlowStatement() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-financial-success" />
-              <span>Net Cash Flow</span>
+              <span>{isCostSavingsModel ? 'Net Benefit' : 'Net Cash Flow'}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
@@ -530,7 +627,7 @@ export function CashFlowStatement() {
                   <Bar 
                     dataKey="netCashFlow" 
                     fill="hsl(var(--financial-primary))"
-                    name="Net Cash Flow"
+                    name={isCostSavingsModel ? "Net Benefit" : "Net Cash Flow"}
                     radius={[2, 2, 0, 0]}
                   />
                 </BarChart>

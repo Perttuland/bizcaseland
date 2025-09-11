@@ -8,7 +8,9 @@ export const JSONTemplate = `{
       "Default horizon is 5 years (60 months). Provide at least Year 1 detail OR a pattern; the engine expands the rest.",
       "Choose ONE business model: recurring, unit_sales, or cost_savings.",
       "If a field does not apply, set unit='n/a' and explain in rationale.",
-      "Only one growth model (geom_growth, seasonal_growth, or linear_growth) should be selected and populated per case."
+      "CRITICAL: Only one growth model (geom_growth, seasonal_growth, or linear_growth) should be selected and populated per case.",
+      "GROWTH PATTERN PRECEDENCE: If segment-level volume.pattern_type is specified, it takes precedence over global growth_settings. Use growth_settings ONLY when all segments share the same pattern.",
+      "For consistency, either use segment-level patterns for all segments OR use global growth_settings - do not mix both approaches."
     ],
     "business_models": {
       "recurring": "Subscription-based revenue (SaaS, memberships, etc.)",
@@ -16,17 +18,27 @@ export const JSONTemplate = `{
       "cost_savings": "Investment that generates savings and efficiency gains"
     },
     "growth_patterns": {
-      "geom_growth": "start + monthly_growth rate; engine applies for all periods.",
-      "seasonal_growth": "Provide seasonality_index_12 and base_year_total (engine repeats pattern yearly with optional yoy_growth).",
-      "linear_growth": "start + monthly_flat_increase; engine applies for all periods."
+      "geom_growth": "Exponential growth: start + monthly_growth rate; engine applies compounding for all periods.",
+      "seasonal_growth": "Seasonal pattern: Provide seasonality_index_12 (12 monthly multipliers) and base_year_total (engine repeats pattern yearly with optional yoy_growth).",
+      "linear_growth": "Linear growth: start + monthly_flat_increase; engine adds constant amount each period."
+    },
+    "pattern_location_guidance": {
+      "segment_level": "Define volume.pattern_type and related parameters within each customer segment for segment-specific growth patterns.",
+      "global_level": "Use growth_settings when ALL segments follow the same pattern. Values here serve as fallback when segment-level patterns are not specified.",
+      "precedence": "Segment-level patterns override global growth_settings. Choose one approach consistently."
     },
     "advanced_features": {
       "flexible_pricing": "Use yearly_adjustments.pricing_factors for price changes over time, or price_overrides for specific periods.",
       "flexible_volume": "Use yearly_adjustments.volume_factors for volume changes over time, or volume_overrides for specific periods.",
-      "market_analysis": "Define TAM, SAM, SOM and competitive landscape for market-driven analysis.",
       "cost_savings": "For cost_savings business model, define baseline_costs and efficiency_gains instead of revenue."
     },
-    "drivers_guidance": "Drivers are optional. You can create drivers for ANY numeric field as long as driver.path resolves to a '.value' in this JSON (e.g., 'assumptions.pricing.avg_unit_price.value'). Market share can be a powerful driver."
+    "drivers_guidance": "Drivers are optional sensitivity analysis tools. You can create drivers for ANY numeric field as long as driver.path resolves to a '.value' in this JSON (e.g., 'assumptions.pricing.avg_unit_price.value'). Common driver paths: pricing, COGS%, CAC, growth rates, OPEX items. Verify paths exist before adding drivers.",
+    "validation_checklist": [
+      "Verify all driver.path values resolve to existing '.value' fields in the JSON",
+      "Ensure only one growth pattern is populated (others should have value: 0 or empty arrays)",
+      "Check that business_model matches the data provided (recurring needs churn_pct, cost_savings needs baseline_costs)",
+      "Confirm all required rationale fields are meaningful and specific"
+    ]
   },
   "meta": {
     "title": "TODO-Short title",
@@ -63,7 +75,7 @@ export const JSONTemplate = `{
             "type": "pattern|time_series",
             "pattern_type": "geom_growth|seasonal_growth|linear_growth",
             "series": [
-              { "period": 1, "value": 0, "unit": "units|accounts", "rationale": "TODO" }
+              { "period": 1, "value": 0, "unit": "units|accounts", "rationale": "TODO-Starting volume or time series data point" }
             ],
             "yearly_adjustments": {
               "volume_factors": [
@@ -130,59 +142,20 @@ export const JSONTemplate = `{
         }
       ]
     },
-    "market_analysis": {
-      "total_addressable_market": {
-        "base_value": { "value": 0.0, "unit": "EUR", "rationale": "TODO-total market size in base year" },
-        "growth_rate": { "value": 0.0, "unit": "percentage_per_year", "rationale": "TODO-annual market growth rate" },
-        "currency": "EUR",
-        "year": 2024
-      },
-      "serviceable_addressable_market": {
-        "percentage_of_tam": { "value": 0.0, "unit": "percentage", "rationale": "TODO-addressable portion of total market" }
-      },
-      "serviceable_obtainable_market": {
-        "percentage_of_sam": { "value": 0.0, "unit": "percentage", "rationale": "TODO-realistic obtainable portion" }
-      },
-      "market_share": {
-        "current_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-current market position" },
-        "target_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-target market share" },
-        "target_timeframe": { "value": 5, "unit": "years", "rationale": "TODO-timeframe to reach target" },
-        "penetration_strategy": "linear|exponential|s_curve"
-      },
-      "competitive_landscape": [
-        {
-          "competitor_name": "TODO-Competitor name",
-          "market_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-competitor market position" },
-          "positioning": "TODO-competitor positioning strategy"
-        }
-      ],
-      "market_segments": [
-        {
-          "id": "segment_1",
-          "name": "TODO-Market segment name",
-          "size_percentage": { "value": 0.0, "unit": "percentage", "rationale": "TODO-segment size as % of TAM" },
-          "growth_rate": { "value": 0.0, "unit": "percentage_per_year", "rationale": "TODO-segment specific growth rate" },
-          "target_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-target share in this segment" }
-        }
-      ],
-      "avg_customer_value": {
-        "annual_value": { "value": 0.0, "unit": "EUR_per_customer_per_year", "rationale": "TODO-average annual customer value" },
-        "lifetime_value": { "value": 0.0, "unit": "EUR_per_customer", "rationale": "TODO-customer lifetime value" }
-      }
-    },
     "growth_settings": {
+      "_instructions": "GLOBAL FALLBACK: Use these settings only when ALL customer segments follow the same growth pattern. Segment-level patterns take precedence over these global settings.",
       "geom_growth": {
-        "start": { "value": 0, "unit": "units|accounts", "rationale": "TODO-starting level at period 1" },
-        "monthly_growth": { "value": 0.0, "unit": "ratio_per_month", "rationale": "TODO-monthly compounded growth rate" }
+        "start": { "value": 0, "unit": "units|accounts", "rationale": "TODO-Global starting level for exponential growth pattern" },
+        "monthly_growth": { "value": 0.0, "unit": "ratio_per_month", "rationale": "TODO-Global monthly compound growth rate (e.g., 0.05 = 5% monthly)" }
       },
       "seasonal_growth": {
-        "base_year_total": { "value": 0, "unit": "units|accounts", "rationale": "TODO-expected total for base year" },
-        "seasonality_index_12": { "value": [0,0,0,0,0,0,0,0,0,0,0,0], "unit": "ratio", "rationale": "TODO-12 monthly multipliers that sum to ~12.0 (average 1.0)" },
-        "yoy_growth": { "value": 0.0, "unit": "ratio_per_year", "rationale": "TODO-year-over-year growth applied to totals" }
+        "base_year_total": { "value": 0, "unit": "units|accounts", "rationale": "TODO-Global expected total for base year" },
+        "seasonality_index_12": { "value": [0,0,0,0,0,0,0,0,0,0,0,0], "unit": "ratio", "rationale": "TODO-Global 12 monthly multipliers that sum to ~12.0 (average 1.0)" },
+        "yoy_growth": { "value": 0.0, "unit": "ratio_per_year", "rationale": "TODO-Global year-over-year growth applied to totals" }
       },
       "linear_growth": {
-        "start": { "value": 0, "unit": "units|accounts", "rationale": "TODO-starting level at period 1" },
-        "monthly_flat_increase": { "value": 0, "unit": "units|accounts_per_month", "rationale": "TODO-fixed monthly increment" }
+        "start": { "value": 0, "unit": "units|accounts", "rationale": "TODO-Global starting level for linear growth pattern" },
+        "monthly_flat_increase": { "value": 0, "unit": "units|accounts_per_month", "rationale": "TODO-Global fixed monthly increment" }
       }
     }
   },
@@ -191,31 +164,37 @@ export const JSONTemplate = `{
       "key": "price",
       "path": "assumptions.pricing.avg_unit_price.value",
       "range": [0, 0, 0, 0, 0],
-      "rationale": "TODO-Price sensitivity analysis"
+      "rationale": "TODO-Price sensitivity analysis across different pricing levels"
     },
     {
-      "key": "market_share_target",
-      "path": "assumptions.market_analysis.market_share.target_share.value",
+      "key": "monthly_growth",
+      "path": "assumptions.growth_settings.geom_growth.monthly_growth.value",
       "range": [0, 0, 0, 0, 0],
-      "rationale": "TODO-Market share impact on volume and revenue"
+      "rationale": "TODO-Growth rate sensitivity for exponential growth scenarios"
     },
     {
-      "key": "cost_savings_pct",
-      "path": "assumptions.cost_savings.baseline_costs[0].savings_potential_pct.value",
+      "key": "monthly_increase",
+      "path": "assumptions.growth_settings.linear_growth.monthly_flat_increase.value",
       "range": [0, 0, 0, 0, 0],
-      "rationale": "TODO-Sensitivity of cost savings percentage"
-    },
-    {
-      "key": "tam_growth",
-      "path": "assumptions.market_analysis.total_addressable_market.growth_rate.value",
-      "range": [0, 0, 0, 0, 0],
-      "rationale": "TODO-Market growth rate impact"
+      "rationale": "TODO-Linear growth rate sensitivity analysis"
     },
     {
       "key": "cac",
       "path": "assumptions.unit_economics.cac.value",
       "range": [0, 0, 0, 0, 0],
       "rationale": "TODO-Customer acquisition cost sensitivity"
+    },
+    {
+      "key": "cogs_pct",
+      "path": "assumptions.unit_economics.cogs_pct.value",
+      "range": [0, 0, 0, 0, 0],
+      "rationale": "TODO-Cost of goods sold percentage sensitivity"
+    },
+    {
+      "key": "sales_marketing_opex",
+      "path": "assumptions.opex[0].value.value",
+      "range": [0, 0, 0, 0, 0],
+      "rationale": "TODO-Sales & Marketing operational expense sensitivity"
     }
   ]
 }`;

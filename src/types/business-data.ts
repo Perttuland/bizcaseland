@@ -306,7 +306,7 @@ export interface StrictCalculatedMetrics {
   readonly npv: number;
   readonly irr: number;
   readonly paybackPeriod: number;
-  readonly totalInvestmentRequired: number;
+  readonly totalInvestmentRequired: number; // Total amount needed to fund the business until break-even
   readonly breakEvenMonth: number;
   readonly monthlyData: ReadonlyArray<StrictMonthlyData>;
 }

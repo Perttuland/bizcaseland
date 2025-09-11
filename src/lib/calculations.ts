@@ -6,7 +6,7 @@ export interface CalculatedMetrics {
   npv: number;
   irr: number;
   paybackPeriod: number;
-  totalInvestmentRequired: number;
+  totalInvestmentRequired: number; // Total amount needed to fund the business until break-even
   breakEvenMonth: number;
   monthlyData: MonthlyData[];
 }
@@ -64,13 +64,19 @@ export function calculateBusinessMetrics(businessData: BusinessData | null): Cal
   const netProfit = monthlyData.reduce((sum, month) => sum + month.netCashFlow, 0);
   const paybackPeriod = calculatePaybackPeriod(monthlyData);
   
-  // Calculate Total Investment Required: sum of Capex + sum of negative net cash flows until break even
-  const totalCapex = monthlyData.reduce((sum, month) => sum + month.capex, 0);
-  const breakEvenIndex = breakEvenMonth ? breakEvenMonth - 1 : monthlyData.length;
-  const negativeNetCashFlowsUntilBreakeven = monthlyData
-    .slice(0, breakEvenIndex)
-    .reduce((sum, month) => sum + Math.min(0, month.netCashFlow), 0);
-  const totalInvestmentRequired = totalCapex + Math.abs(negativeNetCashFlowsUntilBreakeven);
+  // Calculate Total Investment Required: maximum cumulative negative cash flow
+  // This represents the total amount of money needed to fund the business until it becomes self-sustaining
+  let cumulativeCashFlow = 0;
+  let maxNegativeCumulativeCashFlow = 0;
+  
+  for (const month of monthlyData) {
+    cumulativeCashFlow += month.netCashFlow;
+    if (cumulativeCashFlow < maxNegativeCumulativeCashFlow) {
+      maxNegativeCumulativeCashFlow = cumulativeCashFlow;
+    }
+  }
+  
+  const totalInvestmentRequired = Math.abs(maxNegativeCumulativeCashFlow);
 
   return {
     totalRevenue,
@@ -585,267 +591,7 @@ export function getVolumeTrajectory(segment: any, periods: number, businessData?
   return trajectory;
 }
 
-/**
- * Calculate Total Addressable Market (TAM) for a specific year
- */
-export function calculateTAM(businessData: BusinessData, year: number): number {
-  const tam = businessData?.assumptions?.market_analysis?.total_addressable_market;
-  if (!tam) return 0;
-  
-  const baseValue = tam.base_value?.value || 0;
-  const growthRate = tam.growth_rate?.value || 0;
-  const baseYear = tam.year || 2024;
-  
-  const yearsFromBase = year - baseYear;
-  return baseValue * Math.pow(1 + growthRate, yearsFromBase);
-}
 
-/**
- * Calculate Serviceable Addressable Market (SAM) for a specific year
- */
-export function calculateSAM(businessData: BusinessData, year: number): number {
-  const sam = businessData?.assumptions?.market_analysis?.serviceable_addressable_market;
-  if (!sam) return 0;
-  
-  const tamValue = calculateTAM(businessData, year);
-  const samPercentage = (sam.percentage_of_tam?.value || 0) / 100;
-  
-  return tamValue * samPercentage;
-}
-
-/**
- * Calculate Serviceable Obtainable Market (SOM) for a specific year
- */
-export function calculateSOM(businessData: BusinessData, year: number): number {
-  const som = businessData?.assumptions?.market_analysis?.serviceable_obtainable_market;
-  if (!som) return 0;
-  
-  const samValue = calculateSAM(businessData, year);
-  const somPercentage = (som.percentage_of_sam?.value || 0) / 100;
-  
-  return samValue * somPercentage;
-}
-
-/**
- * Calculate market share for a specific time period
- */
-export function calculateMarketShare(businessData: BusinessData, monthIndex: number): number {
-  const marketShare = businessData?.assumptions?.market_analysis?.market_share;
-  if (!marketShare) return 0;
-  
-  const currentShare = (marketShare.current_share?.value || 0) / 100;
-  const targetShare = (marketShare.target_share?.value || 0) / 100;
-  const targetTimeframe = marketShare.target_timeframe?.value || 5; // years
-  const strategy = marketShare.penetration_strategy || 'linear';
-  
-  const yearsPassed = monthIndex / 12;
-  const progressRatio = Math.min(yearsPassed / targetTimeframe, 1);
-  
-  let penetrationFactor: number;
-  
-  switch (strategy) {
-    case 'linear':
-      penetrationFactor = progressRatio;
-      break;
-    case 'exponential':
-      // Faster growth early, slowing down later
-      penetrationFactor = 1 - Math.exp(-3 * progressRatio);
-      break;
-    case 's_curve':
-      // S-curve: slow start, rapid middle, slow end
-      penetrationFactor = 1 / (1 + Math.exp(-10 * (progressRatio - 0.5)));
-      break;
-    default:
-      penetrationFactor = progressRatio;
-  }
-  
-  return currentShare + (targetShare - currentShare) * penetrationFactor;
-}
-
-/**
- * Calculate market-based volume for a specific month
- */
-export function calculateMarketBasedVolume(businessData: BusinessData, monthIndex: number): number {
-  const year = Math.floor(monthIndex / 12) + 2024; // Assuming 2024 as base year
-  const marketShare = calculateMarketShare(businessData, monthIndex);
-  const som = calculateSOM(businessData, year);
-  
-  const avgCustomerValue = businessData?.assumptions?.market_analysis?.avg_customer_value?.annual_value?.value;
-  if (!avgCustomerValue || avgCustomerValue === 0) return 0;
-  
-  // Calculate monthly volume from annual market size
-  const annualMarketVolume = (som * marketShare) / avgCustomerValue;
-  return annualMarketVolume / 12; // Convert to monthly
-}
-
-/**
- * Get market analysis metrics for a specific time period
- */
-export function getMarketMetrics(businessData: BusinessData, monthIndex: number): {
-  year: number;
-  tam: number;
-  sam: number;
-  som: number;
-  marketShare: number;
-  marketBasedVolume: number;
-  competitivePosition: {
-    ourShare: number;
-    competitorShares: Array<{ name: string; share: number; positioning: string }>;
-    marketConcentration: number;
-  };
-} {
-  const year = Math.floor(monthIndex / 12) + 2024;
-  const tam = calculateTAM(businessData, year);
-  const sam = calculateSAM(businessData, year);
-  const som = calculateSOM(businessData, year);
-  const marketShare = calculateMarketShare(businessData, monthIndex);
-  const marketBasedVolume = calculateMarketBasedVolume(businessData, monthIndex);
-  
-  // Competitive analysis
-  const competitors = businessData?.assumptions?.market_analysis?.competitive_landscape || [];
-  const competitorShares = competitors.map(comp => ({
-    name: comp.competitor_name,
-    share: (comp.market_share?.value || 0) / 100,
-    positioning: comp.positioning
-  }));
-  
-  // Calculate market concentration (Herfindahl Index)
-  const allShares = [marketShare, ...competitorShares.map(c => c.share)];
-  const marketConcentration = allShares.reduce((sum, share) => sum + Math.pow(share, 2), 0);
-  
-  return {
-    year,
-    tam,
-    sam,
-    som,
-    marketShare,
-    marketBasedVolume,
-    competitivePosition: {
-      ourShare: marketShare,
-      competitorShares,
-      marketConcentration
-    }
-  };
-}
-
-/**
- * Calculate market penetration rate over time
- */
-export function getMarketPenetrationTrajectory(businessData: BusinessData, periods: number): Array<{
-  period: number;
-  year: number;
-  tam: number;
-  sam: number;
-  som: number;
-  marketShare: number;
-  marketBasedVolume: number;
-  marketValue: number;
-}> {
-  const trajectory = [];
-  
-  for (let i = 0; i < periods; i++) {
-    const year = Math.floor(i / 12) + 2024;
-    const tam = calculateTAM(businessData, year);
-    const sam = calculateSAM(businessData, year);
-    const som = calculateSOM(businessData, year);
-    const marketShare = calculateMarketShare(businessData, i);
-    const marketBasedVolume = calculateMarketBasedVolume(businessData, i);
-    const marketValue = som * marketShare;
-    
-    trajectory.push({
-      period: i + 1,
-      year,
-      tam,
-      sam,
-      som,
-      marketShare,
-      marketBasedVolume,
-      marketValue
-    });
-  }
-  
-  return trajectory;
-}
-
-/**
- * Validate market analysis assumptions for consistency
- */
-export function validateMarketAssumptions(businessData: BusinessData): {
-  isValid: boolean;
-  warnings: string[];
-  errors: string[];
-} {
-  const warnings: string[] = [];
-  const errors: string[] = [];
-  const marketAnalysis = businessData?.assumptions?.market_analysis;
-  
-  if (!marketAnalysis) {
-    return { isValid: true, warnings: [], errors: [] };
-  }
-  
-  // Check TAM configuration
-  const tam = marketAnalysis.total_addressable_market;
-  if (tam && tam.base_value?.value <= 0) {
-    errors.push('TAM base value must be greater than zero');
-  }
-  
-  // Check SAM percentage
-  const sam = marketAnalysis.serviceable_addressable_market;
-  if (sam) {
-    const samPct = sam.percentage_of_tam?.value || 0;
-    if (samPct <= 0 || samPct > 100) {
-      errors.push('SAM percentage must be between 0 and 100');
-    }
-  }
-  
-  // Check SOM percentage
-  const som = marketAnalysis.serviceable_obtainable_market;
-  if (som) {
-    const somPct = som.percentage_of_sam?.value || 0;
-    if (somPct <= 0 || somPct > 100) {
-      errors.push('SOM percentage must be between 0 and 100');
-    }
-  }
-  
-  // Check market share assumptions
-  const marketShare = marketAnalysis.market_share;
-  if (marketShare) {
-    const current = marketShare.current_share?.value || 0;
-    const target = marketShare.target_share?.value || 0;
-    
-    if (current < 0 || current > 100) {
-      errors.push('Current market share must be between 0 and 100');
-    }
-    if (target < 0 || target > 100) {
-      errors.push('Target market share must be between 0 and 100');
-    }
-    if (target < current) {
-      warnings.push('Target market share is lower than current share - considering market decline?');
-    }
-    if (target > 50) {
-      warnings.push('Target market share above 50% may face regulatory scrutiny');
-    }
-  }
-  
-  // Check competitive landscape consistency
-  const competitors = marketAnalysis.competitive_landscape || [];
-  const totalCompetitorShare = competitors.reduce((sum, comp) => sum + (comp.market_share?.value || 0), 0);
-  const ourShare = marketShare?.current_share?.value || 0;
-  
-  if (totalCompetitorShare + ourShare > 100) {
-    errors.push('Total market share (ours + competitors) exceeds 100%');
-  }
-  
-  if (totalCompetitorShare + ourShare < 80) {
-    warnings.push('Identified market players account for less than 80% of market - consider adding more competitors or "Others" category');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    warnings,
-    errors
-  };
-}
 
 /**
  * Implementation factor based on timeline

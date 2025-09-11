@@ -9,9 +9,8 @@ import { safeJSONParse, validateBusinessData } from '@/lib/utils/json-validation
 import { JSONTemplate } from './JSONTemplate';
 import { FinancialAnalysis } from './FinancialAnalysis';
 // import { DataVisualization } from './DataVisualization';
-import { DatapointsViewer } from './JSONDataViewer';
+import { AssumptionsTab } from './AssumptionsTab';
 import { CashFlowStatement } from './CashFlowStatement';
-import { SensitivityAnalysis } from './SensitivityAnalysis';
 import { MarketAnalysis } from './MarketAnalysis';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 
@@ -19,7 +18,7 @@ export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData } = useBusinessData();
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow' | 'sensitivity' | 'market'>('input');
+  const [activeTab, setActiveTab] = useState<'input' | 'analysis' | 'charts' | 'data' | 'cashflow' | 'market'>('input');
   const [hasUploadedData, setHasUploadedData] = useState(false);
   const { toast } = useToast();
 
@@ -276,10 +275,7 @@ export function BusinessCaseAnalyzer() {
                 {/* Move Assumptions (formerly Data Points) to the top of the tools list */}
                 <Button 
                   variant={activeTab === 'data' ? 'default' : 'ghost'} 
-                  onClick={() => {
-                    setActiveTab('data');
-                    window.dispatchEvent(new Event('tabchange'));
-                  }}
+                  onClick={() => setActiveTab('data')}
                   disabled={!hasUploadedData}
                   className="flex items-center gap-2"
                 >
@@ -289,10 +285,7 @@ export function BusinessCaseAnalyzer() {
 
                 <Button
                   variant={activeTab === 'cashflow' ? 'default' : 'ghost'} 
-                  onClick={() => {
-                    setActiveTab('cashflow');
-                    window.dispatchEvent(new Event('tabchange'));
-                  }}
+                  onClick={() => setActiveTab('cashflow')}
                   disabled={!hasUploadedData}
                   className="flex items-center gap-2"
                 >
@@ -301,10 +294,7 @@ export function BusinessCaseAnalyzer() {
                 </Button>
                 <Button 
                   variant={activeTab === 'analysis' ? 'default' : 'ghost'} 
-                  onClick={() => {
-                    setActiveTab('analysis');
-                    window.dispatchEvent(new Event('tabchange'));
-                  }}
+                  onClick={() => setActiveTab('analysis')}
                   disabled={!hasUploadedData}
                   className="flex items-center gap-2"
                 >
@@ -326,24 +316,10 @@ export function BusinessCaseAnalyzer() {
                   Data Visualization
                 </Button>
                 */ }
-                <Button 
-                  variant={activeTab === 'sensitivity' ? 'default' : 'ghost'} 
-                  onClick={() => {
-                    setActiveTab('sensitivity');
-                    window.dispatchEvent(new Event('tabchange'));
-                  }}
-                  disabled={!hasUploadedData}
-                  className="flex items-center gap-2"
-                >
-                  <Edit3 className="h-4 w-4" />
-                  Scenario Analysis
-                </Button>
+                {/* Scenario Analysis tab removed */}
                 <Button 
                   variant={activeTab === 'market' ? 'default' : 'ghost'} 
-                  onClick={() => {
-                    setActiveTab('market');
-                    window.dispatchEvent(new Event('tabchange'));
-                  }}
+                  onClick={() => setActiveTab('market')}
                   disabled={!hasUploadedData}
                   className="flex items-center gap-2"
                 >
@@ -389,74 +365,31 @@ export function BusinessCaseAnalyzer() {
               </Card>
             )}
 
+            {/* Keep all tabs mounted but show/hide based on activeTab */}
+            {jsonData && (
+              <>
+                <div className={activeTab === 'data' ? 'animate-fade-in' : 'hidden'}>
+                  <AssumptionsTab />
+                </div>
 
-            {activeTab === 'data' && jsonData && (
-              <div className="animate-fade-in">
-                <DatapointsViewer data={jsonData} />
-              </div>
+                <div className={activeTab === 'cashflow' ? 'animate-fade-in' : 'hidden'}>
+                  <CashFlowStatement />
+                </div>
+
+                <div className={activeTab === 'analysis' ? 'animate-fade-in' : 'hidden'}>
+                  <FinancialAnalysis />
+                </div>
+
+                {/* Scenario Analysis removed */}
+
+                <div className={activeTab === 'market' ? 'animate-fade-in' : 'hidden'}>
+                  <MarketAnalysis />
+                </div>
+              </>
             )}
 
-            {activeTab === 'cashflow' && jsonData && (
-              <div className="animate-fade-in">
-                <CashFlowStatement />
-              </div>
-            )}
-
-            {activeTab === 'analysis' && jsonData && (
-              <div className="animate-fade-in">
-                <FinancialAnalysis />
-              </div>
-            )}
-
-            {/* Data Visualization rendering commented out while placeholder */}
-            { /*
-            {activeTab === 'charts' && jsonData && (
-              <div className="animate-fade-in">
-                <DataVisualization data={jsonData} />
-              </div>
-            )}
-            */ }
-
-            {activeTab === 'sensitivity' && jsonData && (
-              <div className="animate-fade-in">
-                <SensitivityAnalysis />
-              </div>
-            )}
-
-            {activeTab === 'market' && jsonData && (
-              <div className="animate-fade-in">
-                <MarketAnalysis />
-              </div>
-            )}
-
-            {activeTab === 'analysis' && !jsonData && (
-              <Card className="bg-gradient-card shadow-card">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="text-center space-y-3">
-                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <h3 className="text-lg font-semibold">No Data Available</h3>
-                    <p className="text-muted-foreground">Please paste valid JSON data to view financial analysis.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Charts placeholder UI commented out while feature is disabled */}
-            { /*
-            {activeTab === 'charts' && !jsonData && (
-              <Card className="bg-gradient-card shadow-card">
-                <CardContent className="flex items-center justify-center py-12">
-                  <div className="text-center space-y-3">
-                    <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
-                    <h3 className="text-lg font-semibold">No Data Available</h3>
-                    <p className="text-muted-foreground">Please paste valid JSON data to view charts and visualizations.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            */ }
-
-            {!jsonData && (activeTab !== 'input' || hasUploadedData) && activeTab !== 'analysis' && activeTab !== 'charts' && activeTab !== 'market' && (
+            {/* Show "No Data Available" message only when no data is loaded */}
+            {!jsonData && activeTab !== 'input' && (
               <Card className="bg-gradient-card shadow-card">
                 <CardContent className="flex items-center justify-center py-12">
                   <div className="text-center space-y-3">

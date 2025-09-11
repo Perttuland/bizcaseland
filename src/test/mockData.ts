@@ -1,4 +1,5 @@
 import { BusinessData } from '@/contexts/BusinessDataContext';
+import { MarketData } from '@/lib/market-calculations';
 
 export const createMockBusinessData = (overrides: Partial<BusinessData> = {}): BusinessData => ({
   meta: {
@@ -294,7 +295,7 @@ export const createMockMarketAnalysisData = (overrides: Partial<BusinessData> = 
           rationale: 'Companies with 100-1000 employees',
           volume: {
             type: 'pattern',
-            pattern_type: 'exponential',
+            pattern_type: 'geom_growth',
             series: [{ period: 1, value: 50, unit: 'customers', rationale: 'Initial customer base' }],
             monthly_growth_rate: { value: 0.08, unit: '%', rationale: '8% monthly growth through market penetration' },
             yearly_adjustments: {
@@ -313,83 +314,6 @@ export const createMockMarketAnalysisData = (overrides: Partial<BusinessData> = 
       cogs_pct: { value: 0.25, unit: '%', rationale: 'SaaS infrastructure and support costs' },
       cac: { value: 1200, unit: 'EUR', rationale: 'Sales and marketing cost per customer acquisition' },
       ...overrides.assumptions?.unit_economics
-    },
-    market_analysis: {
-      total_addressable_market: {
-        base_value: { value: 2500000000, unit: 'EUR', rationale: 'European enterprise software market size' },
-        growth_rate: { value: 0.12, unit: '%', rationale: 'Enterprise SaaS market growing at 12% annually' },
-        currency: 'EUR',
-        year: 2024
-      },
-      serviceable_addressable_market: {
-        percentage_of_tam: { value: 8, unit: '%', rationale: 'Mid-market segment represents 8% of total enterprise market' }
-      },
-      serviceable_obtainable_market: {
-        percentage_of_sam: { value: 15, unit: '%', rationale: 'Realistic penetration given our resources and positioning' }
-      },
-      market_share: {
-        current_share: { value: 0.1, unit: '%', rationale: 'Currently 0.1% market share as new entrant' },
-        target_share: { value: 2.5, unit: '%', rationale: 'Target 2.5% market share within 5 years' },
-        target_timeframe: { value: 5, unit: 'years', rationale: '5-year strategic plan horizon' },
-        penetration_strategy: 'exponential'
-      },
-      competitive_landscape: [
-        {
-          competitor_name: 'Market Leader Corp',
-          market_share: { value: 35, unit: '%', rationale: 'Dominant player with legacy enterprise solutions' },
-          positioning: 'Enterprise-focused, high-touch sales model'
-        },
-        {
-          competitor_name: 'Agile Solutions Inc',
-          market_share: { value: 22, unit: '%', rationale: 'Strong mid-market presence with modern platform' },
-          positioning: 'Mid-market specialist with self-service onboarding'
-        },
-        {
-          competitor_name: 'Innovation Labs',
-          market_share: { value: 15, unit: '%', rationale: 'Technology leader with advanced AI features' },
-          positioning: 'Premium solution for tech-forward companies'
-        },
-        {
-          competitor_name: 'Regional Player',
-          market_share: { value: 8, unit: '%', rationale: 'Strong in specific geographic markets' },
-          positioning: 'Local expertise and language support'
-        }
-      ],
-      market_segments: [
-        {
-          id: 'manufacturing',
-          name: 'Manufacturing',
-          size_percentage: { value: 35, unit: '%', rationale: 'Largest segment within mid-market enterprise' },
-          growth_rate: { value: 0.10, unit: '%', rationale: 'Manufacturing digitization driving growth' },
-          target_share: { value: 3.0, unit: '%', rationale: 'Strong value proposition for manufacturing processes' }
-        },
-        {
-          id: 'professional_services',
-          name: 'Professional Services',
-          size_percentage: { value: 25, unit: '%', rationale: 'High adoption rate for SaaS solutions' },
-          growth_rate: { value: 0.15, unit: '%', rationale: 'Remote work driving software adoption' },
-          target_share: { value: 4.0, unit: '%', rationale: 'Natural fit for our solution capabilities' }
-        },
-        {
-          id: 'retail',
-          name: 'Retail & E-commerce',
-          size_percentage: { value: 20, unit: '%', rationale: 'Growing segment with digital transformation needs' },
-          growth_rate: { value: 0.18, unit: '%', rationale: 'E-commerce boom accelerating adoption' },
-          target_share: { value: 2.0, unit: '%', rationale: 'Competitive segment requiring specialized features' }
-        },
-        {
-          id: 'healthcare',
-          name: 'Healthcare',
-          size_percentage: { value: 20, unit: '%', rationale: 'Regulated industry with specific compliance needs' },
-          growth_rate: { value: 0.08, unit: '%', rationale: 'Slower adoption due to regulatory requirements' },
-          target_share: { value: 1.5, unit: '%', rationale: 'Requires compliance features and longer sales cycles' }
-        }
-      ],
-      avg_customer_value: {
-        annual_value: { value: 2500, unit: 'EUR', rationale: 'Average annual contract value per customer' },
-        lifetime_value: { value: 12500, unit: 'EUR', rationale: 'Based on 5-year average customer lifetime' }
-      },
-      ...overrides.assumptions?.market_analysis
     },
     opex: [
       { name: 'Sales & Marketing', value: { value: 45000, unit: 'EUR', rationale: 'Aggressive customer acquisition strategy' } },
@@ -414,18 +338,6 @@ export const createMockMarketAnalysisData = (overrides: Partial<BusinessData> = 
   },
   drivers: [
     {
-      key: 'Market Share Target',
-      path: 'assumptions.market_analysis.market_share.target_share.value',
-      range: [1.0, 5.0],
-      rationale: 'Target market share achievement impacts volume and revenue projections significantly'
-    },
-    {
-      key: 'Market Growth Rate',
-      path: 'assumptions.market_analysis.total_addressable_market.growth_rate.value',
-      range: [0.05, 0.20],
-      rationale: 'Overall market growth rate affects total addressable market size over time'
-    },
-    {
       key: 'Customer Acquisition Cost',
       path: 'assumptions.unit_economics.cac.value',
       range: [800, 2000],
@@ -436,13 +348,186 @@ export const createMockMarketAnalysisData = (overrides: Partial<BusinessData> = 
       path: 'assumptions.pricing.avg_unit_price.value',
       range: [2000, 4000],
       rationale: 'Pricing strategy affects competitive positioning and customer adoption'
-    },
-    {
-      key: 'Penetration Timeline',
-      path: 'assumptions.market_analysis.market_share.target_timeframe.value',
-      range: [3, 7],
-      rationale: 'Time to reach market share targets affects investment requirements and returns'
     }
   ],
+  ...overrides
+});
+
+export const createMockMarketData = (overrides: Partial<MarketData> = {}): MarketData => ({
+  schema_version: '1.0',
+  meta: {
+    title: 'Test Market Analysis',
+    description: 'Mock market data for testing calculations',
+    currency: 'EUR',
+    base_year: 2024,
+    analysis_horizon_years: 5,
+    created_date: '2024-01-01',
+    analyst: 'Test Analyst',
+    ...overrides.meta
+  },
+  market_sizing: {
+    total_addressable_market: {
+      base_value: { value: 2500000000, unit: 'EUR', rationale: 'European enterprise software market size' },
+      growth_rate: { value: 12, unit: 'percentage_per_year', rationale: 'Enterprise SaaS market growing at 12% annually' },
+      market_definition: 'Mid-market enterprise software solutions in Europe',
+      data_sources: ['Industry Report 2024', 'Government Statistics', 'Company Research']
+    },
+    serviceable_addressable_market: {
+      percentage_of_tam: { value: 8, unit: 'percentage', rationale: 'Mid-market segment represents 8% of total enterprise market' },
+      geographic_constraints: 'Limited to DACH region initially',
+      regulatory_constraints: 'GDPR compliance required',
+      capability_constraints: 'Local language support needed'
+    },
+    serviceable_obtainable_market: {
+      percentage_of_sam: { value: 15, unit: 'percentage', rationale: 'Realistic penetration given our resources and positioning' },
+      resource_constraints: 'Limited sales team capacity',
+      competitive_barriers: 'Established competitors with strong relationships',
+      time_constraints: '3-year market entry timeline'
+    },
+    ...overrides.market_sizing
+  },
+  market_share: {
+    current_position: {
+      current_share: { value: 0.1, unit: 'percentage', rationale: 'Currently 0.1% market share as new entrant' },
+      market_entry_date: '2024-01-01',
+      current_revenue: { value: 250000, unit: 'EUR_per_year', rationale: 'Initial revenue from pilot customers' }
+    },
+    target_position: {
+      target_share: { value: 2.5, unit: 'percentage', rationale: 'Target 2.5% market share within 5 years' },
+      target_timeframe: { value: 5, unit: 'years', rationale: '5-year strategic plan horizon' },
+      penetration_strategy: 'exponential',
+      key_milestones: [
+        {
+          year: 1,
+          milestone: 'Market validation and initial traction',
+          target_share: 0.3,
+          rationale: 'Focus on proving product-market fit'
+        },
+        {
+          year: 3,
+          milestone: 'Established market presence',
+          target_share: 1.2,
+          rationale: 'Scaled sales and marketing operations'
+        }
+      ]
+    },
+    penetration_drivers: [
+      {
+        driver: 'Product differentiation',
+        impact: 'high',
+        description: 'Unique AI-powered features',
+        timeline: 'Year 1-2'
+      }
+    ],
+    ...overrides.market_share
+  },
+  competitive_landscape: {
+    market_structure: {
+      concentration_level: 'moderately_concentrated',
+      concentration_rationale: 'Top 4 players control 60% of market',
+      barriers_to_entry: 'medium',
+      barriers_description: 'Requires significant technical expertise and sales relationships'
+    },
+    competitors: [
+      {
+        name: 'Market Leader Corp',
+        market_share: { value: 35, unit: 'percentage', rationale: 'Dominant player with legacy enterprise solutions' },
+        positioning: 'Enterprise-focused, high-touch sales model',
+        strengths: ['Brand recognition', 'Enterprise relationships'],
+        weaknesses: ['Legacy technology', 'Slow innovation'],
+        threat_level: 'high',
+        competitive_response: 'Likely to improve product features and pricing'
+      },
+      {
+        name: 'Agile Solutions Inc',
+        market_share: { value: 22, unit: 'percentage', rationale: 'Strong mid-market presence with modern platform' },
+        positioning: 'Mid-market specialist with self-service onboarding',
+        strengths: ['Modern platform', 'Good pricing'],
+        weaknesses: ['Limited enterprise features', 'Smaller team'],
+        threat_level: 'medium',
+        competitive_response: 'May accelerate feature development'
+      }
+    ],
+    competitive_advantages: [
+      {
+        advantage: 'AI-powered automation',
+        sustainability: 'high',
+        rationale: 'Patent-protected technology with significant R&D investment'
+      }
+    ],
+    ...overrides.competitive_landscape
+  },
+  customer_analysis: {
+    market_segments: [
+      {
+        id: 'manufacturing',
+        name: 'Manufacturing',
+        size_percentage: { value: 35, unit: 'percentage', rationale: 'Largest segment within mid-market enterprise' },
+        growth_rate: { value: 10, unit: 'percentage_per_year', rationale: 'Manufacturing digitization driving growth' },
+        target_share: { value: 3.0, unit: 'percentage', rationale: 'Strong value proposition for manufacturing processes' },
+        customer_profile: 'Mid-size manufacturers with 100-1000 employees',
+        value_drivers: ['Process automation', 'Cost reduction', 'Quality improvement'],
+        entry_strategy: 'Partner with manufacturing consultants'
+      }
+    ],
+    customer_economics: {
+      average_customer_value: {
+        annual_value: { value: 2500, unit: 'EUR_per_customer_per_year', rationale: 'Average annual contract value per customer' },
+        lifetime_value: { value: 12500, unit: 'EUR_per_customer', rationale: 'Based on 5-year average customer lifetime' },
+        acquisition_cost: { value: 1200, unit: 'EUR_per_customer', rationale: 'Sales and marketing cost per acquisition' }
+      },
+      customer_behavior: {
+        purchase_frequency: { value: 1, unit: 'purchases_per_year', rationale: 'Annual contract renewals' },
+        loyalty_rate: { value: 85, unit: 'percentage', rationale: 'High switching costs create loyalty' },
+        referral_rate: { value: 15, unit: 'percentage', rationale: 'Strong word-of-mouth in industry' }
+      }
+    },
+    ...overrides.customer_analysis
+  },
+  market_dynamics: {
+    growth_drivers: [
+      {
+        driver: 'Digital transformation',
+        impact: 'high',
+        timeline: 'Ongoing',
+        description: 'Companies accelerating digital initiatives'
+      }
+    ],
+    market_risks: [
+      {
+        risk: 'Economic downturn',
+        probability: 'medium',
+        impact: 'high',
+        mitigation: 'Focus on cost-saving value proposition'
+      }
+    ],
+    technology_trends: [
+      {
+        trend: 'AI integration',
+        relevance: 'high',
+        impact_timeline: '2024-2026',
+        strategic_response: 'Invest heavily in AI capabilities'
+      }
+    ],
+    ...overrides.market_dynamics
+  },
+  volume_projections: {
+    calculation_method: 'market_share_based',
+    assumptions: {
+      market_growth_compounds: true,
+      share_growth_independent: false,
+      customer_value_stable: true
+    },
+    sensitivity_factors: [
+      {
+        factor: 'market_growth_rate',
+        base_case: 12,
+        optimistic: 18,
+        pessimistic: 8,
+        rationale: 'Market growth sensitivity analysis'
+      }
+    ],
+    ...overrides.volume_projections
+  },
   ...overrides
 });

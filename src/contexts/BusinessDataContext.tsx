@@ -104,42 +104,6 @@ export interface BusinessData {
         };
       }>;
     };
-    market_analysis?: {
-      total_addressable_market?: {
-        base_value: { value: number; unit: string; rationale: string };
-        growth_rate: { value: number; unit: string; rationale: string };
-        currency: string;
-        year: number; // Base year for TAM calculation
-      };
-      serviceable_addressable_market?: {
-        percentage_of_tam: { value: number; unit: string; rationale: string };
-      };
-      serviceable_obtainable_market?: {
-        percentage_of_sam: { value: number; unit: string; rationale: string };
-      };
-      market_share?: {
-        current_share: { value: number; unit: string; rationale: string };
-        target_share: { value: number; unit: string; rationale: string };
-        target_timeframe: { value: number; unit: string; rationale: string }; // years to reach target
-        penetration_strategy: 'linear' | 'exponential' | 's_curve';
-      };
-      competitive_landscape?: Array<{
-        competitor_name: string;
-        market_share: { value: number; unit: string; rationale: string };
-        positioning: string;
-      }>;
-      market_segments?: Array<{
-        id: string;
-        name: string;
-        size_percentage: { value: number; unit: string; rationale: string };
-        growth_rate: { value: number; unit: string; rationale: string };
-        target_share: { value: number; unit: string; rationale: string };
-      }>;
-      avg_customer_value?: {
-        annual_value: { value: number; unit: string; rationale: string };
-        lifetime_value: { value: number; unit: string; rationale: string };
-      };
-    };
   };
   drivers?: Array<{
     key: string;

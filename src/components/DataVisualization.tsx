@@ -134,16 +134,30 @@ export function DataVisualization({ data }: DataVisualizationProps) {
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+      const isCostSavingsModel = businessData?.meta?.business_model === 'cost_savings';
+      
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-elevation">
           <p className="font-semibold text-foreground">{`Period: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} style={{ color: entry.color }} className="text-sm">
-              {`${entry.dataKey}: ${entry.dataKey.includes('revenue') || entry.dataKey.includes('cashFlow') || entry.dataKey.includes('ebitda') || entry.dataKey.includes('costs') || entry.dataKey.includes('profit') 
-                ? formatCurrency(entry.value) 
-                : entry.value.toLocaleString()}`}
-            </p>
-          ))}
+          {payload.map((entry: any, index: number) => {
+            // Transform labels for cost savings models
+            let displayLabel = entry.dataKey;
+            if (isCostSavingsModel) {
+              if (entry.dataKey === 'netCashFlow' || entry.dataKey === 'cashFlow') {
+                displayLabel = 'Net Benefit';
+              } else if (entry.dataKey === 'revenue') {
+                displayLabel = 'Total Benefits';
+              }
+            }
+            
+            return (
+              <p key={index} style={{ color: entry.color }} className="text-sm">
+                {`${displayLabel}: ${entry.dataKey.includes('revenue') || entry.dataKey.includes('cashFlow') || entry.dataKey.includes('ebitda') || entry.dataKey.includes('costs') || entry.dataKey.includes('profit') || entry.dataKey.includes('netCashFlow')
+                  ? formatCurrency(entry.value) 
+                  : entry.value.toLocaleString()}`}
+              </p>
+            );
+          })}
         </div>
       );
     }

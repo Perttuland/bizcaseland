@@ -18,8 +18,11 @@ export function setNestedValue<T>(obj: T, path: string, value: any): T {
     throw new Error('Path must be a non-empty string');
   }
 
-  // Use selective deep clone - only clone the path we're modifying
-  const result = selectiveDeepClone(obj, [path]);
+  // If the path includes array indexing (e.g., items[0].value) selective cloning
+  // may not correctly clone array elements because it treats path parts literally.
+  // In such cases we fall back to a full deep clone to avoid mutating original arrays.
+  const shouldDeepClone = path.includes('[');
+  const result = shouldDeepClone ? safeDeepClone(obj) : selectiveDeepClone(obj, [path]);
   
   const pathParts = path.split('.');
   let current: any = result;
