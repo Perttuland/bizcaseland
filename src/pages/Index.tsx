@@ -1,4 +1,4 @@
-import { BusinessCaseAnalyzer } from '@/components/BusinessCaseAnalyzer';
+import { BusinessCaseAnalyzer } from '@/components/business-case';
 
 function Index() {
   return (

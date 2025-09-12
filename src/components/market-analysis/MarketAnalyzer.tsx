@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, TrendingUp, Users, Target, PieChart, BarChart3, Download, Upload, RefreshCw } from 'lucide-react';
-import { LineChart, Line, AreaChart, Area, PieChart as RechartsPieChart, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
-import { JSONDataViewer } from './JSONDataViewer';
+import { LineChart, Line, AreaChart, Area, PieChart as RechartsPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
+import { Textarea } from '@/components/ui/textarea';
 import { MarketAnalysisTemplate } from './MarketAnalysisTemplate';
 import { 
   MarketData,
@@ -104,12 +104,35 @@ export function MarketAnalyzer() {
               Load Market Analysis Data
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <JSONDataViewer
-              templateContent={MarketAnalysisTemplate}
-              onDataLoad={handleDataLoad}
-              placeholder="Load or paste your market analysis JSON data here..."
-            />
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="market-data-input" className="text-sm font-medium">
+                Market Analysis JSON Data
+              </label>
+              <Textarea
+                id="market-data-input"
+                placeholder="Paste your market analysis JSON data here..."
+                className="min-h-[300px] font-mono text-sm"
+                onChange={(e) => {
+                  try {
+                    const data = JSON.parse(e.target.value);
+                    handleDataLoad(data);
+                  } catch (error) {
+                    // Invalid JSON, do nothing
+                  }
+                }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(MarketAnalysisTemplate, null, 2));
+                }}
+              >
+                Copy Template
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

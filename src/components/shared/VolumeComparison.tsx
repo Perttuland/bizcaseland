@@ -7,8 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, TrendingUp, ArrowRight, BarChart3, Calculator, Download } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
-import { JSONDataViewer } from './JSONDataViewer';
-import { MarketAnalysisTemplate } from './MarketAnalysisTemplate';
+import { Textarea } from '@/components/ui/textarea';
+import { MarketAnalysisTemplate } from '../market-analysis/MarketAnalysisTemplate';
 import { 
   MarketData,
   getMarketPenetrationTrajectory,
@@ -162,12 +162,35 @@ export function VolumeComparison() {
               Load Market Analysis Data
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <JSONDataViewer
-              templateContent={MarketAnalysisTemplate}
-              onDataLoad={handleMarketDataLoad}
-              placeholder="Load or paste your market analysis JSON data here..."
-            />
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="market-data-input" className="text-sm font-medium">
+                Market Analysis JSON Data
+              </label>
+              <Textarea
+                id="market-data-input"
+                placeholder="Paste your market analysis JSON data here..."
+                className="min-h-[300px] font-mono text-sm"
+                onChange={(e) => {
+                  try {
+                    const data = JSON.parse(e.target.value);
+                    handleMarketDataLoad(data);
+                  } catch (error) {
+                    // Invalid JSON, do nothing
+                  }
+                }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(MarketAnalysisTemplate, null, 2));
+                }}
+              >
+                Copy Template
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
