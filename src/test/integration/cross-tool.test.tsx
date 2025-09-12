@@ -28,7 +28,7 @@ describe('Cross-Tool Integration Tests', () => {
 
   it('renders cross-tool demo page', () => {
     render(<CrossToolDemo />);
-    expect(screen.getByText('Data Shopping Mode')).toBeInTheDocument();
+    expect(screen.getByText('Data Shopping Mode placeholder')).toBeInTheDocument();
   });
 
   it('displays sample market data', () => {

@@ -12,6 +12,8 @@ import {
   calculateTimeSeriesVolume,
   calculateTotalVolumeForMonth,
   calculateSegmentVolumeForMonth,
+  calculateSegmentSeasonalPattern,
+  calculateSegmentGeometricGrowth,
   calculateCapexForMonth,
   calculateImplementationFactor,
   calculateBaselineCostsForMonth,
@@ -1464,6 +1466,90 @@ describe('Calculations Engine', () => {
         
         expect(() => calculateDynamicSegmentVolume(segment, 12)).not.toThrow();
         expect(calculateDynamicSegmentVolume(segment, 12)).toBe(-50); // Negative volume
+      });
+    });
+  });
+
+  describe('New Segment Pattern Functions', () => {
+    describe('calculateSegmentSeasonalPattern', () => {
+      it('should calculate seasonal pattern correctly', () => {
+        const volume = {
+          base_value: 100,
+          seasonal_pattern: [1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.8, 0.9, 1.0, 1.1, 1.3, 1.5]
+        };
+
+        // Test first month (index 0)
+        expect(calculateSegmentSeasonalPattern(volume, 0)).toBe(120); // 100 * 1.2
+        
+        // Test mid-year month (index 6) 
+        expect(calculateSegmentSeasonalPattern(volume, 6)).toBe(80); // 100 * 0.8
+        
+        // Test end of year (index 11)
+        expect(calculateSegmentSeasonalPattern(volume, 11)).toBe(150); // 100 * 1.5
+        
+        // Test pattern repeats in second year (index 12 = month 0 of year 2)
+        expect(calculateSegmentSeasonalPattern(volume, 12)).toBe(120); // 100 * 1.2
+      });
+
+      it('should handle missing seasonal pattern', () => {
+        const volume = {
+          base_value: 100,
+          seasonal_pattern: []
+        };
+
+        expect(calculateSegmentSeasonalPattern(volume, 0)).toBe(100); // Returns base_value
+      });
+
+      it('should handle missing base_value', () => {
+        const volume = {
+          seasonal_pattern: [1.2, 1.1, 1.0]
+        };
+
+        expect(calculateSegmentSeasonalPattern(volume, 0)).toBe(0); // Returns 0
+      });
+    });
+
+    describe('calculateSegmentGeometricGrowth', () => {
+      it('should calculate geometric growth correctly', () => {
+        const volume = {
+          base_value: 100,
+          growth_rate: 0.08 // 8% monthly growth
+        };
+
+        // Test first month (index 0)
+        expect(calculateSegmentGeometricGrowth(volume, 0)).toBe(100); // 100 * (1.08)^0
+        
+        // Test second month (index 1)
+        expect(calculateSegmentGeometricGrowth(volume, 1)).toBeCloseTo(108); // 100 * (1.08)^1
+        
+        // Test after 12 months (index 12)
+        const expected12 = 100 * Math.pow(1.08, 12);
+        expect(calculateSegmentGeometricGrowth(volume, 12)).toBeCloseTo(expected12);
+      });
+
+      it('should handle zero growth rate', () => {
+        const volume = {
+          base_value: 100,
+          growth_rate: 0
+        };
+
+        expect(calculateSegmentGeometricGrowth(volume, 0)).toBe(100);
+        expect(calculateSegmentGeometricGrowth(volume, 12)).toBe(100); // No growth
+      });
+
+      it('should handle negative growth rate', () => {
+        const volume = {
+          base_value: 100,
+          growth_rate: -0.05 // 5% monthly decline
+        };
+
+        expect(calculateSegmentGeometricGrowth(volume, 1)).toBeCloseTo(95); // 100 * 0.95
+      });
+
+      it('should handle missing values', () => {
+        const volume = {};
+
+        expect(calculateSegmentGeometricGrowth(volume, 0)).toBe(0);
       });
     });
   });

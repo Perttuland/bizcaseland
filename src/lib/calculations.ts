@@ -333,6 +333,17 @@ export function calculateSegmentVolumeForMonth(segment: any, monthIndex: number,
   const volume = segment?.volume;
   if (!volume) return 0;
 
+  // First check for new segment-level pattern types with base_value
+  if (volume.pattern_type) {
+    // New segment-level patterns
+    if (volume.pattern_type === "seasonal_growth" && volume.seasonal_pattern && volume.base_value !== undefined) {
+      return calculateSegmentSeasonalPattern(volume, monthIndex);
+    } else if (volume.pattern_type === "geometric_growth" && volume.growth_rate !== undefined && volume.base_value !== undefined) {
+      return calculateSegmentGeometricGrowth(volume, monthIndex);
+    }
+  }
+
+  // Existing pattern logic for backward compatibility
   if (volume.type === "pattern") {
     // Check which pattern type is configured (only one should be used)
     if (volume.pattern_type === "seasonal_growth") {
@@ -469,6 +480,34 @@ export function calculateTimeSeriesVolume(volume: any, monthIndex: number): numb
   // Extend pattern if we run out of data
   const lastValue = series[series.length - 1]?.value || 0;
   return lastValue;
+}
+
+/**
+ * Calculate volume using segment-level seasonal pattern
+ */
+export function calculateSegmentSeasonalPattern(volume: any, monthIndex: number): number {
+  const baseValue = volume?.base_value || 0;
+  const seasonalPattern = volume?.seasonal_pattern || [];
+  
+  if (seasonalPattern.length === 0) {
+    return baseValue;
+  }
+  
+  // Repeat the seasonal pattern for years beyond the first
+  const monthInYear = monthIndex % seasonalPattern.length;
+  const seasonalityFactor = seasonalPattern[monthInYear] || 1;
+  
+  return baseValue * seasonalityFactor;
+}
+
+/**
+ * Calculate volume using segment-level geometric growth
+ */
+export function calculateSegmentGeometricGrowth(volume: any, monthIndex: number): number {
+  const baseValue = volume?.base_value || 0;
+  const growthRate = volume?.growth_rate || 0;
+  
+  return baseValue * Math.pow(1 + growthRate, monthIndex);
 }
 
 /**
