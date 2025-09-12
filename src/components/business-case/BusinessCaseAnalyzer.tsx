@@ -4,17 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
 import { 
   Calculator, 
   Upload, 
@@ -30,34 +19,67 @@ import {
   FileText,
   PieChart,
   DollarSign,
-  Activity,
-  RotateCcw
+  Activity
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { safeJSONParse, validateBusinessData } from '@/lib/utils/json-validation';
 import { JSONTemplateComponent, downloadTemplate } from './JSONTemplateComponent';
 import { FinancialAnalysis } from './FinancialAnalysis';
 import { AssumptionsTab } from './AssumptionsTab';
 import { CashFlowStatement } from './CashFlowStatement';
-import { MarketAnalysis } from '../market-analysis/MarketAnalysis';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { useApp } from '@/contexts/AppContext';
+import { ThemeToggle } from '../shared/ThemeToggle';
+import { BUSINESS_CASE_SAMPLE_DATA } from './SampleData';
 
 export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData } = useBusinessData();
   const { syncDataFromStorage, clearAllData } = useApp();
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [activeTab, setActiveTab] = useState('data');
   const [hasUploadedData, setHasUploadedData] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Initialize activeTab - check for navigation state first, then default based on data
+  const getInitialTab = () => {
+    // Check if navigated from market analysis with specific tab request
+    if (location.state?.initialTab) {
+      return location.state.initialTab;
+    }
+    // Default behavior: show data tab if no data, cashflow if data exists
+    return jsonData && Object.keys(jsonData).length > 0 ? 'cashflow' : 'data';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [shouldAutoSwitch, setShouldAutoSwitch] = useState(false);
 
   // Sync data from localStorage when component mounts
   useEffect(() => {
     syncDataFromStorage();
   }, [syncDataFromStorage]);
+
+  // Handle navigation state changes (e.g., from market analysis switch button)
+  useEffect(() => {
+    if (location.state?.initialTab) {
+      setActiveTab(location.state.initialTab);
+      // Clear the state immediately to prevent it from affecting future navigations
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.initialTab, navigate]);
+
+  // Set initial tab based on data availability (runs after data is loaded)
+  useEffect(() => {
+    if (jsonData && Object.keys(jsonData).length > 0 && shouldAutoSwitch) {
+      // Only auto-switch if currently on data tab
+      if (activeTab === 'data') {
+        setActiveTab('cashflow');
+      }
+      setShouldAutoSwitch(false);
+    }
+  }, [jsonData, shouldAutoSwitch]); // Only respond to data changes and auto-switch flag
 
   const moduleConfig = [
     {
@@ -89,6 +111,17 @@ export function BusinessCaseAnalyzer() {
       color: 'bg-gray-500'
     }
   ];
+
+  const handleSampleData = () => {
+    const sampleJson = JSON.stringify(BUSINESS_CASE_SAMPLE_DATA, null, 2);
+    setInputJson(sampleJson);
+    validateJson(sampleJson);
+    toast({
+      title: "Sample Data Loaded",
+      description: "Payroll automation sample data has been loaded successfully.",
+      variant: "default",
+    });
+  };
 
   const handleJsonPaste = (value: string) => {
     setInputJson(value);
@@ -171,12 +204,129 @@ export function BusinessCaseAnalyzer() {
 
     updateData(parseResult.data as BusinessData);
     setHasUploadedData(true);
-    setActiveTab('cashflow'); // Set to cash flow when data is loaded
+    setShouldAutoSwitch(true); // Signal that we should auto-switch after data load
     syncDataFromStorage(); // Sync with AppContext
     
     toast({
       title: "Data Loaded Successfully",
       description: "Business case data has been loaded and validated.",
+      variant: "default",
+    });
+  };
+
+  const loadSampleData = () => {
+    const sampleBusinessData = {
+      meta: {
+        title: "Sample Software Project Business Case",
+        description: "Example business case for a software project investment with detailed financial projections",
+        business_model: "recurring",
+        currency: "EUR",
+        periods: 60,
+        frequency: "monthly"
+      },
+      revenue_streams: {
+        subscription_revenue: {
+          pricing: {
+            avg_unit_price: {
+              value: 99,
+              unit: "EUR_per_month",
+              rationale: "Monthly subscription price based on market research"
+            }
+          },
+          volume_drivers: {
+            customers: {
+              penetration: {
+                strategy: "s_curve",
+                max_penetration: {
+                  value: 5000,
+                  unit: "customers",
+                  rationale: "Target market penetration over 5 years"
+                },
+                ramp_up_months: {
+                  value: 36,
+                  unit: "months",
+                  rationale: "3-year ramp up to full market penetration"
+                }
+              }
+            }
+          }
+        }
+      },
+      cost_structure: {
+        fixed_costs: {
+          salaries: {
+            value: 50000,
+            unit: "EUR_per_month",
+            rationale: "Development and operations team salaries"
+          },
+          office_rent: {
+            value: 3000,
+            unit: "EUR_per_month",
+            rationale: "Office space rental costs"
+          },
+          software_licenses: {
+            value: 2000,
+            unit: "EUR_per_month",
+            rationale: "Development tools and infrastructure licenses"
+          }
+        },
+        variable_costs: {
+          customer_support: {
+            value: 15,
+            unit: "EUR_per_customer_per_month",
+            rationale: "Customer support costs per customer"
+          },
+          hosting: {
+            value: 8,
+            unit: "EUR_per_customer_per_month",
+            rationale: "Cloud hosting costs per customer"
+          }
+        }
+      },
+      investments: {
+        initial_development: {
+          value: 200000,
+          unit: "EUR",
+          rationale: "Initial software development investment",
+          timing: "month_0"
+        },
+        marketing_campaign: {
+          value: 50000,
+          unit: "EUR",
+          rationale: "Initial marketing and customer acquisition",
+          timing: "month_0"
+        }
+      },
+      assumptions: {
+        growth: {
+          monthly_churn_rate: {
+            value: 2.5,
+            unit: "percentage",
+            rationale: "Expected monthly customer churn rate"
+          }
+        },
+        financial: {
+          discount_rate: {
+            value: 10,
+            unit: "percentage_per_year",
+            rationale: "Company cost of capital for NPV calculations"
+          },
+          tax_rate: {
+            value: 25,
+            unit: "percentage",
+            rationale: "Corporate tax rate"
+          }
+        }
+      }
+    };
+
+    const jsonString = JSON.stringify(sampleBusinessData, null, 2);
+    setInputJson(jsonString);
+    validateJson(jsonString);
+    
+    toast({
+      title: "Sample Data Loaded",
+      description: "Sample business case data has been loaded. Click 'Update Data' to apply it.",
       variant: "default",
     });
   };
@@ -237,57 +387,21 @@ export function BusinessCaseAnalyzer() {
             <Calculator className="h-8 w-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold">Business Case Analyzer</h1>
-              <p className="text-muted-foreground">Professional financial analysis and validation tool</p>
+              <p className="text-muted-foreground">Financial modeling tool for investment analysis and business case development</p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate('/market')}
+              onClick={() => navigate('/market', { state: { initialTab: 'overview' } })}
               className="hover:bg-green-50 hover:border-green-200"
             >
               <Target className="h-4 w-4 mr-1" />
               Switch to Market Analysis
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="hover:bg-red-50 hover:border-red-200 text-red-600"
-                >
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Reset All Data
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Reset All Data</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete all business case and market analysis data. 
-                    This action cannot be undone. Are you sure you want to continue?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => {
-                      clearAllData();
-                      toast({
-                        title: "Data Reset",
-                        description: "All data has been cleared successfully.",
-                        variant: "default",
-                      });
-                    }}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Reset All Data
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         </div>
 
@@ -331,6 +445,14 @@ export function BusinessCaseAnalyzer() {
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Template
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleSampleData}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Load Sample Data
                 </Button>
               </div>
 
@@ -395,10 +517,11 @@ export function BusinessCaseAnalyzer() {
         </div>
         
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate('/market')}
+            onClick={() => navigate('/market', { state: { initialTab: 'overview' } })}
             className="hover:bg-green-50 hover:border-green-200"
           >
             <Target className="h-4 w-4 mr-1" />
@@ -415,43 +538,6 @@ export function BusinessCaseAnalyzer() {
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="hover:bg-red-50 hover:border-red-200 text-red-600"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset All Data</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete all business case and market analysis data. 
-                  This action cannot be undone. Are you sure you want to continue?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => {
-                    clearAllData();
-                    toast({
-                      title: "Data Reset",
-                      description: "All data has been cleared successfully.",
-                      variant: "default",
-                    });
-                  }}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Reset All Data
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </div>
 
@@ -496,6 +582,14 @@ export function BusinessCaseAnalyzer() {
             <CardContent className="space-y-4">
               <div className="flex gap-2 mb-4">
                 <JSONTemplateComponent />
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={loadSampleData}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Load Sample Data
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm"

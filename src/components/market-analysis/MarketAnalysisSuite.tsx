@@ -4,18 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Target, 
@@ -31,12 +20,12 @@ import {
   FileText,
   BarChart3,
   Copy,
-  CheckCircle2,
-  RotateCcw
+  CheckCircle2
 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { MarketData } from '@/lib/market-calculations';
 import { MarketSuiteMetrics, calculateSuiteMetrics, validateMarketSuiteData } from '@/lib/market-suite-calculations';
+import { ThemeToggle } from '../shared/ThemeToggle';
 
 // Import all market analysis modules
 import { MarketSizingModule } from './modules/MarketSizingModule';
@@ -54,14 +43,52 @@ export interface MarketAnalysisSuiteProps {
 
 export function MarketAnalysisSuite({ onExportResults, onImportData, className }: MarketAnalysisSuiteProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { appState, syncDataFromStorage, updateMarketData, clearAllData } = useApp();
-  const [activeTab, setActiveTab] = useState('data');
   const [inputJson, setInputJson] = useState('');
   const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
   const { toast } = useToast();
 
   // Use market data from AppContext, cast to MarketData type
   const marketData = appState.marketData as MarketData | null;
+
+  // Initialize activeTab - check for navigation state first, then default based on data
+  const getInitialTab = () => {
+    // Check if navigated from business case with specific tab request
+    if (location.state?.initialTab) {
+      return location.state.initialTab;
+    }
+    // Default behavior: show data tab if no data, overview if data exists
+    return marketData && Object.keys(marketData).length > 0 ? 'overview' : 'data';
+  };
+  
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [shouldAutoSwitch, setShouldAutoSwitch] = useState(false);
+
+  // Sync data from localStorage when component mounts
+  useEffect(() => {
+    syncDataFromStorage();
+  }, [syncDataFromStorage]);
+
+  // Handle navigation state changes (e.g., from business case switch button)
+  useEffect(() => {
+    if (location.state?.initialTab) {
+      setActiveTab(location.state.initialTab);
+      // Clear the state immediately to prevent it from affecting future navigations
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state?.initialTab, navigate]);
+
+  // Set initial tab based on data availability (runs after data is loaded)
+  useEffect(() => {
+    if (marketData && Object.keys(marketData).length > 0 && shouldAutoSwitch) {
+      // Only auto-switch if currently on data tab
+      if (activeTab === 'data') {
+        setActiveTab('overview');
+      }
+      setShouldAutoSwitch(false);
+    }
+  }, [marketData, shouldAutoSwitch]); // Only respond to data changes and auto-switch flag
 
   // Calculate suite metrics from market data
   const suiteMetrics = useMemo(() => 
@@ -85,13 +112,6 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
   useEffect(() => {
     syncDataFromStorage();
   }, [syncDataFromStorage]);
-
-  // Switch to overview tab when market data is loaded
-  useEffect(() => {
-    if (marketData && activeTab === 'data') {
-      setActiveTab('overview');
-    }
-  }, [marketData, activeTab]);
 
   const moduleConfig = [
     {
@@ -176,6 +196,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
       const parsed = JSON.parse(inputJson);
       updateMarketData(parsed);
       syncDataFromStorage();
+      setShouldAutoSwitch(true); // Signal that we should auto-switch after data load
       
       toast({
         title: "Data Loaded Successfully",
@@ -223,8 +244,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
     const sampleData: MarketData = {
       schema_version: "1.0",
       meta: {
-        title: "AI-Powered Customer Service Platform - Market Analysis",
-        description: "Comprehensive market analysis for an AI-powered customer service automation platform targeting mid-market companies",
+        title: "Sample Market Analysis Project",
+        description: "Example market analysis demonstrating comprehensive market research methodology and data structure",
         currency: "EUR",
         base_year: 2024,
         analysis_horizon_years: 5,
@@ -371,7 +392,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
     };
 
     updateMarketData(sampleData);
-    setActiveTab('overview');
+    setShouldAutoSwitch(true); // Signal that we should auto-switch after data load
     toast({
       title: "Sample Data Loaded",
       description: "Comprehensive market analysis sample data has been loaded with full visualizations.",
@@ -406,58 +427,22 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             </Button>
             <Target className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-bold">Market Analysis Suite</h1>
-              <p className="text-muted-foreground">🔥 FULL FEATURED VERSION - With Chart Modules & Visualizations</p>
+              <h1 className="text-3xl font-bold">Market Analysis</h1>
+              <p className="text-muted-foreground">Comprehensive market research with data analysis and visualization tools</p>
             </div>
           </div>
           
           <div className="flex items-center gap-3">
+            <ThemeToggle />
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => navigate('/business')}
+              onClick={() => navigate('/business', { state: { initialTab: 'cashflow' } })}
               className="hover:bg-blue-50 hover:border-blue-200"
             >
               <Calculator className="h-4 w-4 mr-1" />
               Switch to Business Case
             </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="hover:bg-red-50 hover:border-red-200 text-red-600"
-                >
-                  <RotateCcw className="h-4 w-4 mr-1" />
-                  Reset All Data
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Reset All Data</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete all business case and market analysis data. 
-                    This action cannot be undone. Are you sure you want to continue?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction 
-                    onClick={() => {
-                      clearAllData();
-                      toast({
-                        title: "Data Reset",
-                        description: "All data has been cleared successfully.",
-                        variant: "default",
-                      });
-                    }}
-                    className="bg-red-600 hover:bg-red-700"
-                  >
-                    Reset All Data
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         </div>
 
@@ -531,7 +516,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
           </Button>
           <Target className="h-8 w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold">Market Analysis Suite</h1>
+            <h1 className="text-3xl font-bold">Market Analysis</h1>
             <p className="text-muted-foreground">
               {marketData?.meta?.title || 'Untitled Market Analysis'}
             </p>
@@ -539,10 +524,11 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
         </div>
         
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate('/business')}
+            onClick={() => navigate('/business', { state: { initialTab: 'cashflow' } })}
             className="hover:bg-blue-50 hover:border-blue-200"
           >
             <Calculator className="h-4 w-4 mr-1" />
@@ -559,43 +545,6 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="hover:bg-red-50 hover:border-red-200 text-red-600"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Reset All Data</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete all business case and market analysis data. 
-                  This action cannot be undone. Are you sure you want to continue?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={() => {
-                    clearAllData();
-                    toast({
-                      title: "Data Reset",
-                      description: "All data has been cleared successfully.",
-                      variant: "default",
-                    });
-                  }}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Reset All Data
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       </div>
 
@@ -813,7 +762,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             marketData={marketData}
             onDataLoad={(data) => {
               updateMarketData(data);
-              setActiveTab('overview');
+              setShouldAutoSwitch(true); // Signal that we should auto-switch after data load
               toast({
                 title: "Data Loaded Successfully",
                 description: "Market analysis data has been loaded and visualizations are ready.",

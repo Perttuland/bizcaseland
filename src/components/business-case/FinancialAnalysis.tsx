@@ -153,7 +153,7 @@ export function FinancialAnalysis() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-financial-primary-foreground/80">Net Profit (5Y)</p>
+                <p className="text-sm text-white/80">Net Profit (5Y)</p>
                 <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.netProfit, businessData.meta.currency)}</p>
               </div>
               <DollarSign className="h-8 w-8 text-white" />

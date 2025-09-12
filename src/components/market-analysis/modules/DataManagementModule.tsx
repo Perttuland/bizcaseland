@@ -363,7 +363,7 @@ export function DataManagementModule({
                     <li>Copy the JSON template below</li>
                     <li>Provide it to an AI assistant with your market research context</li>
                     <li>Ask the AI to populate the template with your specific market data</li>
-                    <li>Import the completed JSON into the Market Analysis Suite</li>
+                    <li>Import the completed JSON into the Market Analysis tool</li>
                     <li>Review and refine the analysis with our interactive tools</li>
                   </ol>
                 </div>

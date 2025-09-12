@@ -1,0 +1,140 @@
+{
+  "meta": {
+    "title": "European EV Charging Market Analysis", 
+    "description": "Comprehensive market analysis for electric vehicle charging infrastructure opportunity in European markets",
+    "analyst": "Strategic Planning Team",
+    "date": "2025-09-12",
+    "currency": "EUR",
+    "base_year": 2025
+  },
+  "market_sizing": {
+    "tam": {
+      "value": 8500000000,
+      "unit": "EUR",
+      "rationale": "Total European EV charging market based on EU transportation electrification goals and infrastructure investment plans",
+      "confidence": 0.85,
+      "sources": ["EU Green Deal", "BloombergNEF", "McKinsey Energy Transition Report"]
+    },
+    "sam": {
+      "percentage": 25,
+      "value": 2125000000,
+      "unit": "EUR", 
+      "rationale": "Serviceable addressable market focusing on commercial and public charging segments",
+      "confidence": 0.80,
+      "geographic_scope": ["Germany", "France", "Netherlands", "Sweden", "Austria"]
+    },
+    "som": {
+      "percentage": 8,
+      "value": 170000000,
+      "unit": "EUR",
+      "rationale": "Achievable market share based on competitive analysis and go-to-market strategy",
+      "confidence": 0.75,
+      "timeframe": "5 years"
+    }
+  },
+  "competitive_landscape": {
+    "major_players": [
+      {
+        "name": "Ionity",
+        "market_share": 35,
+        "strengths": ["Premium brand", "Fast charging", "OEM partnerships"],
+        "weaknesses": ["High pricing", "Limited network density"],
+        "threat_level": "high"
+      },
+      {
+        "name": "Allego",
+        "market_share": 20,
+        "strengths": ["Wide coverage", "Commercial focus", "Software platform"],
+        "weaknesses": ["Variable charging speeds", "User experience"],
+        "threat_level": "medium"
+      },
+      {
+        "name": "Shell Recharge",
+        "market_share": 15,
+        "strengths": ["Brand recognition", "Retail integration", "Payment systems"],
+        "weaknesses": ["Late market entry", "Technology gaps"],
+        "threat_level": "medium"
+      }
+    ],
+    "market_dynamics": {
+      "growth_drivers": [
+        "EU regulatory mandates for charging infrastructure",
+        "Rapid EV adoption rates exceeding 40% annually",
+        "Corporate sustainability commitments",
+        "Government subsidies and tax incentives"
+      ],
+      "barriers": [
+        "High capital requirements for infrastructure deployment",
+        "Grid capacity and permitting challenges", 
+        "Standardization and interoperability issues",
+        "Price competition and margin pressure"
+      ]
+    }
+  },
+  "customer_segments": [
+    {
+      "id": "fleet_operators",
+      "name": "Commercial Fleet Operators",
+      "size_percentage": { "value": 40, "unit": "percentage", "rationale": "Largest revenue opportunity with predictable usage patterns" },
+      "growth_rate": { "value": 25, "unit": "percentage_per_year", "rationale": "Accelerating fleet electrification driven by TCO advantages" },
+      "target_share": { "value": 15, "unit": "percentage", "rationale": "Achievable through dedicated B2B sales and fleet management solutions" },
+      "customer_profile": "Logistics companies, delivery services, taxi/ride-sharing with 50+ vehicle fleets",
+      "value_drivers": ["Cost predictability", "Uptime guarantees", "Fleet management integration", "Bulk pricing"],
+      "entry_strategy": "Direct enterprise sales with fleet management software integration"
+    },
+    {
+      "id": "retail_locations", 
+      "name": "Retail & Hospitality",
+      "size_percentage": { "value": 35, "unit": "percentage", "rationale": "High-traffic locations with extended dwell times" },
+      "growth_rate": { "value": 30, "unit": "percentage_per_year", "rationale": "Retail integration becoming customer expectation" },
+      "target_share": { "value": 12, "unit": "percentage", "rationale": "Partnership-based approach with revenue sharing models" },
+      "customer_profile": "Shopping centers, hotels, restaurants, entertainment venues",
+      "value_drivers": ["Customer traffic increase", "Revenue sharing", "Sustainability marketing", "Minimal operating overhead"],
+      "entry_strategy": "Partnership development with revenue-sharing and co-marketing agreements"
+    },
+    {
+      "id": "public_infrastructure",
+      "name": "Public Infrastructure",
+      "size_percentage": { "value": 25, "unit": "percentage", "rationale": "Government-mandated infrastructure development" },
+      "growth_rate": { "value": 20, "unit": "percentage_per_year", "rationale": "Steady growth aligned with public procurement cycles" },
+      "target_share": { "value": 8, "unit": "percentage", "rationale": "Conservative estimate due to public tender competition" },
+      "customer_profile": "Municipalities, transport authorities, public parking operators",
+      "value_drivers": ["Regulatory compliance", "Public service mandate", "EU funding access", "Long-term contracts"],
+      "entry_strategy": "Public tender participation with emphasis on total cost of ownership and service reliability"
+    }
+  ],
+  "strategic_recommendations": {
+    "market_entry_timing": "Optimal - Market growth accelerating with regulatory tailwinds",
+    "recommended_approach": "Phased market entry starting with commercial fleet partnerships",
+    "key_success_factors": [
+      "Strategic partnerships with fleet operators and retail chains",
+      "Technology differentiation through smart charging and grid integration", 
+      "Competitive pricing with value-added services",
+      "Regulatory compliance and proactive government relations"
+    ],
+    "risk_mitigation": [
+      "Diversified customer portfolio across segments",
+      "Flexible technology platform for rapid market adaptation",
+      "Strategic partnerships to reduce capital requirements",
+      "Active monitoring of regulatory and competitive developments"
+    ]
+  },
+  "financial_projections": {
+    "revenue_forecast": {
+      "year_1": 15000000,
+      "year_2": 35000000,
+      "year_3": 65000000,
+      "year_4": 110000000,
+      "year_5": 170000000,
+      "rationale": "Conservative growth based on segment penetration rates and competitive positioning"
+    },
+    "investment_requirements": {
+      "infrastructure": 80000000,
+      "technology": 15000000,
+      "operations": 25000000,
+      "marketing": 10000000,
+      "total": 130000000,
+      "rationale": "5-year investment plan for target market penetration across priority segments"
+    }
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "European Market Entry - Fintech Service",
+    "description": "Expansion of fintech payment platform into European markets with localized service offerings and regulatory compliance requirements.",
+    "business_model": "market_entry",
+    "currency": "EUR",
+    "periods": 60,
+    "frequency": "monthly"
+  },
+  "assumptions": {
+    "pricing": {
+      "avg_unit_price": { 
+        "value": 0.015, 
+        "unit": "EUR_per_transaction", 
+        "rationale": "Transaction-based pricing competitive with local payment processors" 
+      },
+      "yearly_adjustments": {
+        "pricing_factors": [
+          { "year": 1, "factor": 0.80, "rationale": "Introductory pricing 20% below market to gain market share" },
+          { "year": 2, "factor": 0.90, "rationale": "Gradual price increase as platform gains adoption" },
+          { "year": 3, "factor": 0.95, "rationale": "Further price normalization towards market rates" },
+          { "year": 4, "factor": 1.00, "rationale": "Full market pricing achieved with established market position" },
+          { "year": 5, "factor": 1.03, "rationale": "Premium pricing justified by superior service and features" }
+        ],
+        "price_overrides": []
+      }
+    },
+    "financial": {
+      "interest_rate": { 
+        "value": 0.08, 
+        "unit": "ratio", 
+        "rationale": "8% discount rate for established fintech company expanding to new markets" 
+      }
+    },
+    "customers": {
+      "churn_pct": { 
+        "value": 0.02, 
+        "unit": "monthly_churn_rate", 
+        "rationale": "2% monthly churn typical for B2B fintech services with strong integration" 
+      },
+      "segments": [
+        {
+          "name": "SME Merchants - Germany",
+          "volume": {
+            "base_value": 100000,
+            "unit": "transactions_per_month",
+            "rationale": "Conservative estimate for German SME market penetration",
+            "pattern_type": "geometric_growth",
+            "growth_rate": 0.12,
+            "growth_rationale": "12% monthly growth through targeted sales and partnerships"
+          }
+        },
+        {
+          "name": "SME Merchants - France",
+          "volume": {
+            "base_value": 75000,
+            "unit": "transactions_per_month",
+            "rationale": "French market entry 6 months after German launch",
+            "pattern_type": "geometric_growth",
+            "growth_rate": 0.10,
+            "growth_rationale": "10% monthly growth leveraging German market learnings"
+          }
+        },
+        {
+          "name": "Enterprise Clients - DACH Region",
+          "volume": {
+            "base_value": 50000,
+            "unit": "transactions_per_month",
+            "rationale": "High-value enterprise clients with larger transaction volumes",
+            "pattern_type": "linear_growth",
+            "growth_rate": 15000,
+            "growth_rationale": "Linear growth of 15,000 transactions monthly through enterprise sales"
+          }
+        }
+      ]
+    },
+    "unit_economics": {
+      "cogs_pct": { 
+        "value": 0.30, 
+        "unit": "percentage_of_revenue", 
+        "rationale": "30% COGS including payment processing, compliance, and infrastructure costs" 
+      },
+      "cac": { 
+        "value": 85.0, 
+        "unit": "EUR_per_customer", 
+        "rationale": "Customer acquisition cost through localized marketing and sales efforts" 
+      }
+    },
+    "opex": [
+      { 
+        "name": "Sales & Marketing", 
+        "value": { 
+          "value": 45000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Localized marketing campaigns and regional sales team establishment" 
+        } 
+      },
+      { 
+        "name": "R&D", 
+        "value": { 
+          "value": 30000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Platform localization, regulatory compliance features, and integration development" 
+        } 
+      },
+      { 
+        "name": "G&A", 
+        "value": { 
+          "value": 25000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "European operations setup including legal, compliance, and customer support" 
+        } 
+      }
+    ],
+    "capex": [
+      {
+        "name": "European Market Entry Setup",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "front_loaded",
+          "series": [
+            { "period": 1, "value": 300000.0, "unit": "EUR", "rationale": "Legal setup, regulatory compliance, and initial market research" },
+            { "period": 3, "value": 200000.0, "unit": "EUR", "rationale": "Platform localization and banking partnerships establishment" },
+            { "period": 6, "value": 150000.0, "unit": "EUR", "rationale": "German market launch campaign and sales team setup" },
+            { "period": 12, "value": 120000.0, "unit": "EUR", "rationale": "French market expansion and additional compliance requirements" },
+            { "period": 24, "value": 100000.0, "unit": "EUR", "rationale": "DACH region enterprise sales infrastructure" }
+          ]
+        }
+      },
+      {
+        "name": "Technology Infrastructure",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "distributed",
+          "series": [
+            { "period": 2, "value": 180000.0, "unit": "EUR", "rationale": "European data centers and security infrastructure" },
+            { "period": 8, "value": 80000.0, "unit": "EUR", "rationale": "Load balancing and redundancy systems" },
+            { "period": 18, "value": 60000.0, "unit": "EUR", "rationale": "Advanced analytics and fraud detection systems" },
+            { "period": 36, "value": 40000.0, "unit": "EUR", "rationale": "AI-powered risk assessment and automation tools" }
+          ]
+        }
+      }
+    ]
+  }
+}

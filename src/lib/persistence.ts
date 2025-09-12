@@ -36,7 +36,7 @@ export interface SessionData {
 /**
  * Safe localStorage wrapper with error handling
  */
-class SafeStorage {
+export class SafeStorage {
   private isAvailable(): boolean {
     try {
       const test = '__storage_test__';

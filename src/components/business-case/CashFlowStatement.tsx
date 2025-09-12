@@ -115,7 +115,7 @@ export function CashFlowStatement() {
     { label: 'EBITDA', key: 'ebitda', isTotal: true, category: 'profit' },
     { label: 'CAPEX', key: 'capex', category: 'capex' },
     { label: '', key: 'spacer3', category: 'spacer' },
-    { label: isCostSavingsModel ? 'Net Benefit' : 'Net Cash Flow', key: 'netCashFlow', isTotal: true, category: 'cash' },
+    { label: isCostSavingsModel ? 'Cumulative Benefit' : 'Net Cash Flow', key: 'netCashFlow', isTotal: true, category: 'cash', cumulative: isCostSavingsModel },
   ];
 
   // Filter out rows that have no data across all months
@@ -306,8 +306,15 @@ export function CashFlowStatement() {
                             {row.category === 'profit' && <DollarSign className="h-3 w-3 text-financial-primary" />}
                           </div>
                         </td>
-                        {monthlyData.map((month) => {
-                          const value = month[row.key as keyof typeof month] as number;
+                        {monthlyData.map((month, monthIndex) => {
+                          let value = month[row.key as keyof typeof month] as number;
+                          
+                          // Calculate cumulative value if this row requires it
+                          if (row.cumulative && typeof value === 'number') {
+                            value = monthlyData.slice(0, monthIndex + 1)
+                              .reduce((sum, m) => sum + (m[row.key as keyof typeof m] as number || 0), 0);
+                          }
+                          
                           const assumptions = getAssumptions(row.key, month.month);
                           
                           return (
@@ -589,7 +596,7 @@ export function CashFlowStatement() {
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
               <TrendingUp className="h-5 w-5 text-financial-success" />
-              <span>{isCostSavingsModel ? 'Net Benefit' : 'Net Cash Flow'}</span>
+              <span>{isCostSavingsModel ? 'Cumulative Benefit' : 'Net Cash Flow'}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="flex items-center justify-center">
@@ -627,7 +634,7 @@ export function CashFlowStatement() {
                   <Bar 
                     dataKey="netCashFlow" 
                     fill="hsl(var(--financial-primary))"
-                    name={isCostSavingsModel ? "Net Benefit" : "Net Cash Flow"}
+                    name={isCostSavingsModel ? "Cumulative Benefit" : "Net Cash Flow"}
                     radius={[2, 2, 0, 0]}
                   />
                 </BarChart>

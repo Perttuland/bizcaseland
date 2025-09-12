@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "SaaS Platform Revenue Growth",
+    "description": "New SaaS platform launch targeting small-to-medium businesses with subscription-based pricing model, focusing on customer acquisition and revenue growth.",
+    "business_model": "revenue_growth",
+    "currency": "EUR",
+    "periods": 36,
+    "frequency": "monthly"
+  },
+  "assumptions": {
+    "pricing": {
+      "avg_unit_price": { 
+        "value": 99.0, 
+        "unit": "EUR_per_month", 
+        "rationale": "Competitive pricing for SMB segment based on market research and competitor analysis" 
+      },
+      "yearly_adjustments": {
+        "pricing_factors": [
+          { "year": 1, "factor": 1.0, "rationale": "Launch pricing to establish market presence" },
+          { "year": 2, "factor": 1.05, "rationale": "5% price increase based on value-added features" },
+          { "year": 3, "factor": 1.08, "rationale": "8% cumulative increase reflecting market maturity" }
+        ],
+        "price_overrides": []
+      }
+    },
+    "financial": {
+      "interest_rate": { 
+        "value": 0.12, 
+        "unit": "ratio", 
+        "rationale": "12% discount rate reflecting technology startup risk profile" 
+      }
+    },
+    "customers": {
+      "churn_pct": { 
+        "value": 0.05, 
+        "unit": "monthly_churn_rate", 
+        "rationale": "5% monthly churn typical for SMB SaaS platforms based on industry benchmarks" 
+      },
+      "segments": [
+        {
+          "name": "Small Business (1-50 employees)",
+          "volume": {
+            "base_value": 50,
+            "unit": "customers_per_month",
+            "rationale": "Conservative launch target of 50 new customers per month",
+            "pattern_type": "geometric_growth",
+            "growth_rate": 0.15,
+            "growth_rationale": "15% monthly growth through digital marketing and referrals"
+          }
+        },
+        {
+          "name": "Medium Business (51-200 employees)", 
+          "volume": {
+            "base_value": 25,
+            "unit": "customers_per_month",
+            "rationale": "Targeted enterprise sales approach yielding 25 customers monthly",
+            "pattern_type": "linear_growth",
+            "growth_rate": 5,
+            "growth_rationale": "Linear growth of 5 additional customers per month through sales team expansion"
+          }
+        }
+      ]
+    },
+    "unit_economics": {
+      "cogs_pct": { 
+        "value": 0.20, 
+        "unit": "percentage_of_revenue", 
+        "rationale": "20% COGS including hosting, support, and infrastructure costs" 
+      },
+      "cac": { 
+        "value": 150.0, 
+        "unit": "EUR_per_customer", 
+        "rationale": "Customer acquisition cost through digital marketing and sales activities" 
+      }
+    },
+    "opex": [
+      { 
+        "name": "Sales & Marketing", 
+        "value": { 
+          "value": 25000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Aggressive marketing spend for customer acquisition and brand building" 
+        } 
+      },
+      { 
+        "name": "R&D", 
+        "value": { 
+          "value": 40000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Development team for platform features and maintenance" 
+        } 
+      },
+      { 
+        "name": "G&A", 
+        "value": { 
+          "value": 15000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Administrative overhead including finance, HR, and operations" 
+        } 
+      }
+    ],
+    "capex": [
+      {
+        "name": "Platform Development & Infrastructure",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "front_loaded",
+          "series": [
+            { "period": 1, "value": 150000.0, "unit": "EUR", "rationale": "Initial platform development and cloud infrastructure setup" },
+            { "period": 7, "value": 50000.0, "unit": "EUR", "rationale": "Major feature release and security enhancements" },
+            { "period": 13, "value": 75000.0, "unit": "EUR", "rationale": "Platform scaling and advanced analytics features" },
+            { "period": 25, "value": 40000.0, "unit": "EUR", "rationale": "AI/ML capabilities and integration enhancements" }
+          ]
+        }
+      }
+    ]
+  }
+}

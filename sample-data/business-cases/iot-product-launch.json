@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "meta": {
+    "title": "Smart Home IoT Product Launch",
+    "description": "Launch of innovative smart home IoT device targeting consumers with one-time sales model and service revenue streams.",
+    "business_model": "product_launch",
+    "currency": "EUR",
+    "periods": 48,
+    "frequency": "monthly"
+  },
+  "assumptions": {
+    "pricing": {
+      "avg_unit_price": { 
+        "value": 299.0, 
+        "unit": "EUR_per_unit", 
+        "rationale": "Premium pricing strategy for innovative IoT device with unique features" 
+      },
+      "yearly_adjustments": {
+        "pricing_factors": [
+          { "year": 1, "factor": 1.0, "rationale": "Launch pricing to establish market presence" },
+          { "year": 2, "factor": 0.90, "rationale": "10% price reduction to compete with market entrants" },
+          { "year": 3, "factor": 0.85, "rationale": "Further price optimization for mass market penetration" },
+          { "year": 4, "factor": 0.80, "rationale": "Mature product pricing with improved manufacturing efficiency" }
+        ],
+        "price_overrides": [
+          { "period": 24, "price": 249.0, "rationale": "Holiday season promotional pricing" },
+          { "period": 36, "price": 229.0, "rationale": "End-of-year clearance pricing" }
+        ]
+      }
+    },
+    "financial": {
+      "interest_rate": { 
+        "value": 0.10, 
+        "unit": "ratio", 
+        "rationale": "10% discount rate for consumer hardware product evaluation" 
+      }
+    },
+    "customers": {
+      "churn_pct": { 
+        "value": 0.0, 
+        "unit": "n/a", 
+        "rationale": "One-time purchase model; churn not applicable for hardware sales" 
+      },
+      "segments": [
+        {
+          "name": "Early Adopters",
+          "volume": {
+            "base_value": 500,
+            "unit": "units_per_month",
+            "rationale": "Tech enthusiasts and early adopters driving initial sales",
+            "pattern_type": "seasonal_growth",
+            "seasonal_pattern": [1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.8, 0.9, 1.0, 1.1, 1.3, 1.5],
+            "growth_rationale": "Seasonal demand with peak holiday periods and product launch excitement"
+          }
+        },
+        {
+          "name": "Mass Market Consumers",
+          "volume": {
+            "base_value": 200,
+            "unit": "units_per_month",
+            "rationale": "Mainstream consumers adopting after proven market validation",
+            "pattern_type": "geometric_growth",
+            "growth_rate": 0.08,
+            "growth_rationale": "8% monthly growth as product gains market acceptance and word-of-mouth"
+          }
+        }
+      ]
+    },
+    "unit_economics": {
+      "cogs_pct": { 
+        "value": 0.45, 
+        "unit": "percentage_of_revenue", 
+        "rationale": "45% COGS including manufacturing, components, packaging, and logistics" 
+      },
+      "cac": { 
+        "value": 45.0, 
+        "unit": "EUR_per_customer", 
+        "rationale": "Customer acquisition through online advertising, retail partnerships, and PR" 
+      }
+    },
+    "opex": [
+      { 
+        "name": "Sales & Marketing", 
+        "value": { 
+          "value": 35000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Product marketing, advertising, and retail channel management" 
+        } 
+      },
+      { 
+        "name": "R&D", 
+        "value": { 
+          "value": 20000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Ongoing product development and firmware updates" 
+        } 
+      },
+      { 
+        "name": "G&A", 
+        "value": { 
+          "value": 12000.0, 
+          "unit": "EUR_per_month", 
+          "rationale": "Operations, customer support, and administrative functions" 
+        } 
+      }
+    ],
+    "capex": [
+      {
+        "name": "Product Development & Manufacturing Setup",
+        "timeline": {
+          "type": "time_series",
+          "pattern_type": "front_loaded",
+          "series": [
+            { "period": 1, "value": 200000.0, "unit": "EUR", "rationale": "Initial product development, prototyping, and certification" },
+            { "period": 6, "value": 150000.0, "unit": "EUR", "rationale": "Manufacturing setup and initial inventory investment" },
+            { "period": 12, "value": 100000.0, "unit": "EUR", "rationale": "Production scaling and quality assurance systems" },
+            { "period": 24, "value": 75000.0, "unit": "EUR", "rationale": "Product line extension and second generation development" }
+          ]
+        }
+      },
+      {
+        "name": "Service Platform Development",
+        "timeline": {
+          "type": "time_series", 
+          "pattern_type": "distributed",
+          "series": [
+            { "period": 3, "value": 80000.0, "unit": "EUR", "rationale": "Cloud service platform and mobile app development" },
+            { "period": 18, "value": 40000.0, "unit": "EUR", "rationale": "Advanced analytics and AI features" },
+            { "period": 30, "value": 30000.0, "unit": "EUR", "rationale": "Integration with smart home ecosystems" }
+          ]
+        }
+      }
+    ]
+  }
+}
