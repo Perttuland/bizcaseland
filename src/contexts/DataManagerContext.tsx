@@ -10,6 +10,15 @@ import {
 } from '@/lib/utils/data-sync';
 import { CrossToolDataService, SourcedBusinessAssumption } from '@/lib/utils/cross-tool-integration';
 
+// NEW: Market Insights Cart Integration
+import { MarketInsightsCartService } from '@/lib/market-insights-cart-service';
+import { 
+  CartState, 
+  TransferOperation, 
+  AnyMarketInsight,
+  CartItem 
+} from '@/lib/market-insights-cart';
+
 // Unified data interfaces
 export interface UnifiedProjectData {
   projectId: string;
@@ -63,6 +72,18 @@ interface DataManagerContextType {
   
   // Enhanced business data management with sourced assumptions
   updateBusinessDataWithSource: (path: string, sourcedAssumption: SourcedBusinessAssumption) => void;
+  
+  // NEW: Market Insights Cart Integration
+  marketInsightsCart: {
+    cartState: CartState | null;
+    cartService: MarketInsightsCartService;
+    extractInsightsFromCurrentMarketData: () => Promise<readonly AnyMarketInsight[]>;
+    addInsightToCart: (insight: AnyMarketInsight, userNotes?: string) => Promise<boolean>;
+    removeInsightFromCart: (insightId: string) => Promise<boolean>;
+    clearCart: () => Promise<void>;
+    transferInsightsToBusinessCase: (transferType?: 'bulk' | 'selective') => Promise<TransferOperation | null>;
+    onCartChange: (callback: (state: CartState) => void) => () => void;
+  };
 }
 
 export interface MarketBusinessInsights {
@@ -102,6 +123,15 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
   const [projects, setProjects] = useState<UnifiedProjectData[]>([]);
   const storage = new SafeStorage();
 
+  // NEW: Market Insights Cart State
+  const [cartService] = useState(() => new MarketInsightsCartService({
+    maxCartItems: 20,
+    autoValidation: true,
+    persistenceEnabled: true
+  }));
+  const [cartState, setCartState] = useState<CartState | null>(null);
+  const [cartChangeCallbacks, setCartChangeCallbacks] = useState<((state: CartState) => void)[]>([]);
+
   // Load projects on mount
   useEffect(() => {
     const savedProjects = storage.get<UnifiedProjectData[]>(STORAGE_KEYS.PROJECTS, []);
@@ -114,7 +144,10 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
         setCurrentProject(project);
       }
     }
-  }, []);
+
+    // Initialize cart state
+    setCartState(cartService.getCartState());
+  }, [cartService]);
 
   const createProject = useCallback(async (name: string, type: 'business' | 'market' | 'unified'): Promise<string> => {
     const projectId = `project_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -364,6 +397,129 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
     return true;
   }, [projects, currentProject, storage]);
 
+  // ===== MARKET INSIGHTS CART IMPLEMENTATION =====
+  
+  // Helper function to update cart state and notify callbacks
+  const updateCartState = useCallback(() => {
+    const newState = cartService.getCartState();
+    setCartState(newState);
+    cartChangeCallbacks.forEach(callback => callback(newState));
+  }, [cartService, cartChangeCallbacks]);
+
+  // Extract insights from current market data
+  const extractInsightsFromCurrentMarketData = useCallback(async (): Promise<readonly AnyMarketInsight[]> => {
+    if (!currentProject?.marketData) {
+      return [];
+    }
+    
+    try {
+      return await cartService.extractInsightsFromMarket(currentProject.marketData);
+    } catch (error) {
+      console.error('Failed to extract insights from market data:', error);
+      return [];
+    }
+  }, [currentProject?.marketData, cartService]);
+
+  // Add insight to cart
+  const addInsightToCart = useCallback(async (insight: AnyMarketInsight, userNotes?: string): Promise<boolean> => {
+    try {
+      const success = await cartService.addInsight(insight, userNotes);
+      if (success) {
+        updateCartState();
+      }
+      return success;
+    } catch (error) {
+      console.error('Failed to add insight to cart:', error);
+      return false;
+    }
+  }, [cartService, updateCartState]);
+
+  // Remove insight from cart
+  const removeInsightFromCart = useCallback(async (insightId: string): Promise<boolean> => {
+    try {
+      const success = await cartService.removeInsight(insightId);
+      if (success) {
+        updateCartState();
+      }
+      return success;
+    } catch (error) {
+      console.error('Failed to remove insight from cart:', error);
+      return false;
+    }
+  }, [cartService, updateCartState]);
+
+  // Clear cart
+  const clearCart = useCallback(async (): Promise<void> => {
+    try {
+      await cartService.clearCart();
+      updateCartState();
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+    }
+  }, [cartService, updateCartState]);
+
+  // Transfer insights to business case
+  const transferInsightsToBusinessCase = useCallback(async (transferType: 'bulk' | 'selective' = 'bulk'): Promise<TransferOperation | null> => {
+    if (!currentProject?.businessData) {
+      console.error('No business data available for transfer');
+      return null;
+    }
+
+    try {
+      const cartState = cartService.getCartState();
+      if (cartState.totalItems === 0) {
+        console.warn('No items in cart to transfer');
+        return null;
+      }
+
+      // Create transfer operation
+      const operation = cartService.createTransferOperation(cartState.items, {
+        id: `transfer_${Date.now()}`,
+        targetBusinessCaseId: currentProject.projectId,
+        transferType,
+        options: {
+          preserveExistingData: true,
+          mergeStrategy: 'smart_merge',
+          validateBeforeTransfer: true
+        },
+        metadata: {
+          title: `Market Insights Transfer - ${currentProject.projectName}`,
+          description: `Transfer of ${cartState.totalItems} market insights to business case`,
+          analyst: 'User'
+        }
+      });
+
+      // Execute transfer (this would integrate with business data in real implementation)
+      const result = await cartService.executeTransfer(operation, currentProject.businessData);
+      
+      if (result.success) {
+        // Clear cart after successful transfer
+        await cartService.clearCart();
+        updateCartState();
+        
+        // Save project with updated data
+        await saveProject();
+      }
+
+      return operation;
+    } catch (error) {
+      console.error('Failed to transfer insights to business case:', error);
+      return null;
+    }
+  }, [currentProject, cartService, updateCartState, saveProject]);
+
+  // Register cart change callback
+  const onCartChange = useCallback((callback: (state: CartState) => void): (() => void) => {
+    setCartChangeCallbacks(prev => [...prev, callback]);
+    
+    // Return unsubscribe function
+    return () => {
+      setCartChangeCallbacks(prev => prev.filter(cb => cb !== callback));
+    };
+  }, []);
+
+  // ===== END CART IMPLEMENTATION =====
+
   const exportProject = useCallback(async (format: 'json' | 'csv'): Promise<string> => {
     if (!currentProject) return '';
     
@@ -405,7 +561,17 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
     getMarketInsights,
     validateDataConsistency,
     transferMarketVolumeToBusinessCase,
-    updateBusinessDataWithSource
+    updateBusinessDataWithSource,
+    marketInsightsCart: {
+      cartState,
+      cartService,
+      extractInsightsFromCurrentMarketData,
+      addInsightToCart,
+      removeInsightFromCart,
+      clearCart,
+      transferInsightsToBusinessCase,
+      onCartChange
+    }
   };
 
   return (

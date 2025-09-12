@@ -1,231 +1,342 @@
-import React, { useState } from 'react';
+/**
+ * Enhanced Cross-Tool Integration Demo with Data Shopping Mode
+ * 
+ * This page demonstrates the sophisticated data shopping paradigm for gathering market data
+ * to be used in business case analysis. Users can explore market data, add insights to cart,
+ * and transfer them with intelligent validation and mapping.
+ * 
+ * Features:
+ * - Data Shopping Mode with shopping cart paradigm
+ * - Comprehensive market data extraction
+ * - Real-time validation and transfer operations  
+ * - Modification tracking with audit trails
+ * - Rollback capabilities and business rules validation
+ * - Integration with DataManagerContext for reactive updates
+ */
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { WorkingMarketToBusinessTransfer } from '@/components/shared';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  ShoppingCart, 
+  Database, 
+  Download, 
+  RefreshCw,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  Package,
+  TrendingUp
+} from 'lucide-react';
+
+import { DataShoppingMode } from '@/components/business-case/DataShoppingMode';
+import { useDataManager } from '@/contexts/DataManagerContext';
+import { 
+  marketDataScenarios, 
+  scenarioDescriptions,
+  getScenarioTestData 
+} from '@/lib/market-insights-test-data';
 import { MarketData } from '@/lib/market-calculations';
+import { TransferOperation } from '@/lib/data-shopping-types';
 
-// Sample market data for testing the transfer functionality
-const sampleMarketData: MarketData = {
-  schema_version: "1.0",
-  meta: {
-    title: "SaaS Customer Service Platform Market Analysis",
-    description: "Market analysis for AI-powered customer service platform",
-    currency: "EUR",
-    base_year: 2024,
-    analysis_horizon_years: 5,
-    created_date: "2024-09-12",
-    analyst: "Market Research Team"
-  },
-  market_sizing: {
-    total_addressable_market: {
-      base_value: { 
-        value: 2500000, 
-        unit: "EUR", 
-        rationale: "European SMB customer service software market, based on industry reports" 
-      },
-      growth_rate: { 
-        value: 12, 
-        unit: "percentage_per_year", 
-        rationale: "AI-driven growth in customer service automation sector" 
-      },
-      market_definition: "Customer service software for European SMBs with 10-500 employees",
-      data_sources: [
-        "Gartner Customer Service BPO Market Report 2024",
-        "IDC European Software Market Analysis 2024"
-      ]
-    },
-    serviceable_addressable_market: {
-      percentage_of_tam: { 
-        value: 60, 
-        unit: "percentage", 
-        rationale: "Addressable portion considering our technical capabilities and market entry strategy" 
-      },
-      geographic_constraints: "Initially targeting Germany, Netherlands, and Nordics",
-      regulatory_constraints: "GDPR compliance required for all customer data processing",
-      capability_constraints: "Limited to companies needing multilingual support (English, German, Dutch)"
-    },
-    serviceable_obtainable_market: {
-      percentage_of_sam: { 
-        value: 30, 
-        unit: "percentage", 
-        rationale: "Realistic market penetration given competitive landscape and resource constraints" 
-      },
-      resource_constraints: "Limited by sales team capacity and implementation resources",
-      competitive_barriers: "Established players like Zendesk and Salesforce Service Cloud",
-      time_constraints: "5-year horizon for market penetration"
-    }
-  },
-  market_share: {
-    current_position: {
-      current_share: { 
-        value: 0, 
-        unit: "percentage", 
-        rationale: "New market entrant, no current market share" 
-      },
-      market_entry_date: "2025-01-01",
-      current_revenue: { 
-        value: 0, 
-        unit: "EUR_per_year", 
-        rationale: "Pre-launch phase" 
-      }
-    },
-    target_position: {
-      target_share: { 
-        value: 8, 
-        unit: "percentage", 
-        rationale: "Ambitious but achievable target based on superior AI capabilities and customer success program" 
-      },
-      target_timeframe: { 
-        value: 5, 
-        unit: "years", 
-        rationale: "5-year strategic planning horizon" 
-      },
-      penetration_strategy: "exponential",
-      key_milestones: [
-        { year: 1, milestone: "Initial market entry", target_share: 0.5, rationale: "Focus on early adopters" },
-        { year: 2, milestone: "Product-market fit", target_share: 2, rationale: "Proven value proposition" },
-        { year: 3, milestone: "Scale up phase", target_share: 4, rationale: "Expanded sales team" },
-        { year: 5, milestone: "Market leader in niche", target_share: 8, rationale: "Established market presence" }
-      ]
-    }
-  }
-};
+// ===== DEMO SCENARIOS =====
 
-// Sample business data with customer segments for testing
-const sampleBusinessSegments = [
+type ScenarioKey = keyof typeof marketDataScenarios;
+
+const DEMO_SCENARIOS: { key: ScenarioKey; label: string; description: string }[] = [
   {
-    id: "smb_tech",
-    label: "SMB Tech Companies",
-    rationale: "Technology companies with 10-100 employees needing advanced customer service"
+    key: 'saas',
+    label: 'SaaS Platform',
+    description: 'High-growth European customer service SaaS with comprehensive market data'
   },
   {
-    id: "retail_chains", 
-    label: "Retail Chains",
-    rationale: "Multi-location retail businesses requiring consistent customer service"
+    key: 'iot',
+    label: 'IoT Platform',
+    description: 'Industrial IoT platform with sensor network market opportunities'
   },
   {
-    id: "financial_services",
-    label: "Financial Services",
-    rationale: "Small financial service providers needing compliant customer communication"
+    key: 'fintech',
+    label: 'FinTech Solution',
+    description: 'Digital payment solution targeting European SMB market'
+  },
+  {
+    key: 'healthcare',
+    label: 'Healthcare AI',
+    description: 'AI-powered diagnostic platform for healthcare providers'
   }
 ];
 
-export function CrossToolIntegrationDemo() {
-  const [transferResult, setTransferResult] = useState<{success: boolean; message: string} | null>(null);
+// ===== MAIN COMPONENT =====
 
-  const handleTransferComplete = (result: {success: boolean; message: string}) => {
-    setTransferResult(result);
-    console.log('Transfer completed:', result);
+export function CrossToolDemo() {
+  // ===== STATE MANAGEMENT =====
+  
+  const { 
+    currentProject,
+    createProject,
+    updateMarketData
+  } = useDataManager();
+  
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioKey>('saas');
+  const [currentMarketData, setCurrentMarketData] = useState<MarketData>(marketDataScenarios.saas);
+  const [transferHistory, setTransferHistory] = useState<TransferOperation[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeMode, setActiveMode] = useState<'overview' | 'shopping'>('shopping');
+
+  // ===== SCENARIO MANAGEMENT =====
+  
+  const loadScenario = async (scenarioKey: ScenarioKey) => {
+    setIsLoading(true);
+    try {
+      const scenarioData = marketDataScenarios[scenarioKey];
+      setCurrentMarketData(scenarioData);
+      setSelectedScenario(scenarioKey);
+      
+      // Update the market data in the data manager context
+      if (currentProject) {
+        await updateMarketData(currentProject.id, scenarioData);
+      }
+    } catch (error) {
+      console.error('Failed to load scenario:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // ===== TRANSFER HANDLING =====
+  
+  const handleTransferComplete = (operation: TransferOperation) => {
+    setTransferHistory(prev => [operation, ...prev]);
+    
+    // Show success notification
+    console.log('Transfer completed:', {
+      operation: operation.id,
+      items: operation.itemCount,
+      target: operation.targetProject
+    });
+  };
+
+  // ===== EFFECTS =====
+  
+  useEffect(() => {
+    loadScenario(selectedScenario);
+  }, [selectedScenario]);
+
+  // ===== RENDER =====
+  
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold">Cross-Tool Integration Demo</h1>
-        <p className="text-muted-foreground">
-          First working implementation of Market Analysis → Business Case volume transfer
+    <div className="container mx-auto py-8 space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold">Data Shopping Mode placeholder</h1>
+        <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          Gather market data to be used in business case analysis. 
+          Explore comprehensive market insights, add them to your shopping cart, 
+          and transfer with intelligent validation and mapping.
         </p>
       </div>
 
-      {/* Market Data Summary */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Sample Market Analysis Data</CardTitle>
-          <CardDescription>
-            Using sample SaaS platform market analysis for demonstration
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">TAM</p>
-              <p className="text-2xl font-bold">€2.5M</p>
-              <p className="text-xs text-muted-foreground">Total Addressable Market</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">SAM</p>
-              <p className="text-2xl font-bold">60%</p>
-              <p className="text-xs text-muted-foreground">Serviceable Addressable</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">SOM</p>
-              <p className="text-2xl font-bold">30%</p>
-              <p className="text-xs text-muted-foreground">Serviceable Obtainable</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Target Share</p>
-              <p className="text-2xl font-bold">8%</p>
-              <p className="text-xs text-muted-foreground">5-year target</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Mode Selection */}
+      <div className="flex justify-center">
+        <Tabs value={activeMode} onValueChange={(value) => setActiveMode(value as typeof activeMode)}>
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="shopping" className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              Data Shopping
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      {/* Available Business Case Segments */}
+      {/* Scenario Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Available Customer Segments</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Market Data Scenarios
+          </CardTitle>
           <CardDescription>
-            Customer segments available for volume transfer (simulated business case data)
+            Choose a market scenario to explore comprehensive data sets
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {sampleBusinessSegments.map(segment => (
-              <div key={segment.id} className="p-3 border rounded-lg">
-                <h4 className="font-medium">{segment.label}</h4>
-                <p className="text-sm text-muted-foreground mt-1">{segment.rationale}</p>
-                <Badge variant="outline" className="mt-2">Ready for transfer</Badge>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {DEMO_SCENARIOS.map((scenario) => (
+              <Card 
+                key={scenario.key}
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  selectedScenario === scenario.key ? 'ring-2 ring-primary' : ''
+                }`}
+                onClick={() => loadScenario(scenario.key)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium">{scenario.label}</h3>
+                    {selectedScenario === scenario.key && (
+                      <CheckCircle className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{scenario.description}</p>
+                  {isLoading && selectedScenario === scenario.key && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <RefreshCw className="h-3 w-3 animate-spin" />
+                      <span className="text-xs">Loading...</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      {/* Transfer Result */}
-      {transferResult && (
+      {/* Main Content */}
+      <Tabs value={activeMode} className="space-y-6">
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Market Data Overview
+              </CardTitle>
+              <CardDescription>
+                Current scenario: {DEMO_SCENARIOS.find(s => s.key === selectedScenario)?.label}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Market Size */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Market Size</h4>
+                    <div className="space-y-1 text-sm">
+                      <div>TAM: ${currentMarketData.marketSize?.total?.toLocaleString() || 'N/A'}</div>
+                      <div>SAM: ${currentMarketData.marketSize?.addressable?.toLocaleString() || 'N/A'}</div>
+                      <div>SOM: ${currentMarketData.marketSize?.serviceable?.toLocaleString() || 'N/A'}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Growth Rates */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Growth Rates</h4>
+                    <div className="space-y-1 text-sm">
+                      <div>Historical: {((currentMarketData.growthRates?.historical || 0) * 100).toFixed(1)}%</div>
+                      <div>Projected: {((currentMarketData.growthRates?.projected || 0) * 100).toFixed(1)}%</div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Customer Economics */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Customer Economics</h4>
+                    <div className="space-y-1 text-sm">
+                      <div>CAC: ${currentMarketData.customerEconomics?.acquisitionCost || 'N/A'}</div>
+                      <div>LTV: ${currentMarketData.customerEconomics?.lifetimeValue || 'N/A'}</div>
+                      <div>ARPU: ${currentMarketData.customerEconomics?.arpu || 'N/A'}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Competitors */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-2">Competition</h4>
+                    <div className="space-y-1 text-sm">
+                      <div>Major Players: {currentMarketData.competitors?.major?.length || 0}</div>
+                      <div>Market Share: Available</div>
+                      <div>Pricing: Available</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Data Quality Indicators */}
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Data Quality:</strong> High confidence market data with comprehensive coverage
+                  </AlertDescription>
+                </Alert>
+                <Alert>
+                  <CheckCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Coverage:</strong> Market size, customer economics, competitive landscape
+                  </AlertDescription>
+                </Alert>
+                <Alert>
+                  <TrendingUp className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Ready for:</strong> Business case analysis and financial modeling
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Data Shopping Tab */}
+        <TabsContent value="shopping" className="space-y-6">
+          <DataShoppingMode
+            marketData={currentMarketData}
+            onTransferComplete={handleTransferComplete}
+            className="min-h-[600px]"
+          />
+        </TabsContent>
+      </Tabs>
+
+      {/* Transfer History */}
+      {transferHistory.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className={transferResult.success ? "text-green-600" : "text-red-600"}>
-              Transfer {transferResult.success ? "Successful" : "Failed"}
+            <CardTitle className="flex items-center gap-2">
+              <Download className="h-5 w-5" />
+              Transfer History
             </CardTitle>
+            <CardDescription>
+              Recent data transfers to business case projects
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p>{transferResult.message}</p>
+            <div className="space-y-3">
+              {transferHistory.slice(0, 5).map((transfer, index) => (
+                <div key={transfer.id} className="flex items-center justify-between p-3 border rounded">
+                  <div>
+                    <h4 className="font-medium">Transfer to {transfer.targetProject}</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {transfer.itemCount} items • {new Date(transfer.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+                  <Badge variant={transfer.status === 'completed' ? 'default' : transfer.status === 'failed' ? 'destructive' : 'secondary'}>
+                    {transfer.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Working Transfer Component */}
-      <WorkingMarketToBusinessTransfer 
-        marketData={sampleMarketData}
-        onTransferComplete={handleTransferComplete}
-      />
-
-      {/* Instructions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Demo Instructions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <ol className="list-decimal list-inside space-y-2 text-sm">
-            <li><strong>Review the market data:</strong> Sample SaaS platform analysis with TAM of €2.5M</li>
-            <li><strong>Adjust unit price:</strong> Change the assumed price per unit to see volume calculations update</li>
-            <li><strong>Create business case:</strong> Click to create a sample business case project</li>
-            <li><strong>Transfer volume:</strong> Select a customer segment and transfer the calculated volume</li>
-            <li><strong>Add notes:</strong> Include context about your assumptions and methodology</li>
-            <li><strong>Verify transfer:</strong> Check the business case tool to see the updated volume assumptions</li>
-          </ol>
-          
-          <div className="mt-4 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
-            <p className="text-sm text-blue-800">
-              <strong>Expected Result:</strong> Market analysis volume (€2.5M × 60% × 30% × 8% ÷ unit price) 
-              will be transferred to the selected customer segment with full traceability and source attribution.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Footer */}
+      <div className="text-center text-sm text-muted-foreground">
+        <p>
+          Data Shopping Mode enables sophisticated market data collection for business case analysis.
+          Select data points, manage modifications, and transfer with comprehensive validation.
+        </p>
+      </div>
     </div>
   );
 }
+
+export default CrossToolDemo;

@@ -66,7 +66,7 @@ export function BusinessCaseAnalyzer() {
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Market analysis data is available. 
-            <Button variant="link" onClick={() => /* navigate to sync */}>
+            <Button variant="link" onClick={() => {/* navigate to sync */}}>
               Sync market insights to business case
             </Button>
           </AlertDescription>

@@ -39,6 +39,37 @@ export function FinancialAnalysis() {
     return () => window.removeEventListener('datarefreshed', handleDataRefreshed);
   }, [businessData]);
   
+  // Get drivers and initialize values if needed (moved before early return)
+  const drivers = businessData?.drivers || [];
+  
+  // Create modified business data with current driver values
+  const modifiedBusinessData = useMemo(() => {
+    if (!businessData) return null;
+    
+    let modified = businessData;
+    
+    for (const driver of drivers) {
+      const currentValue = driverValues[driver.key];
+      if (currentValue !== undefined) {
+        modified = setNestedValue(modified, driver.path, currentValue);
+      }
+    }
+    
+    return modified;
+  }, [businessData, driverValues, drivers]);
+  
+  // Calculate metrics from modified business data using centralized calculations
+  const calculatedMetrics = useMemo(() => {
+    if (!modifiedBusinessData) return null;
+    
+    const metrics = calculateBusinessMetrics(modifiedBusinessData);
+
+    // Ensure break-even month is recalculated correctly
+    metrics.breakEvenMonth = calculateBreakEven(metrics.monthlyData);
+
+    return metrics;
+  }, [modifiedBusinessData]);
+
   if (!businessData) {
     return (
       <Card className="bg-gradient-card shadow-card">
@@ -52,37 +83,12 @@ export function FinancialAnalysis() {
       </Card>
     );
   }
-  
-  // Get drivers and initialize values if needed
-  const drivers = businessData.drivers || [];
-  
-  // Create modified business data with current driver values
-  const modifiedBusinessData = useMemo(() => {
-    let modified = businessData;
-    
-    for (const driver of drivers) {
-      const currentValue = driverValues[driver.key];
-      if (currentValue !== undefined) {
-        modified = setNestedValue(modified, driver.path, currentValue);
-      }
-    }
-    
-    return modified;
-  }, [businessData, driverValues]);
-  
-  // Calculate metrics from modified business data using centralized calculations
-  const calculatedMetrics = useMemo(() => {
-    const metrics = calculateBusinessMetrics(modifiedBusinessData);
-
-    // Ensure break-even month is recalculated correctly
-    metrics.breakEvenMonth = calculateBreakEven(metrics.monthlyData);
-
-    return metrics;
-  }, [modifiedBusinessData]);
 
   // Persist driver changes only when user explicitly applies them
   const applyDriverChanges = () => {
-    updateData(modifiedBusinessData);
+    if (modifiedBusinessData) {
+      updateData(modifiedBusinessData);
+    }
   };
 
   const handleDriverChange = (driverKey: string, value: number) => {
