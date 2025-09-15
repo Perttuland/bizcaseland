@@ -66,7 +66,7 @@ export function AssumptionsTab() {
       if (unit.includes('hours')) {
         return `${value.toFixed(1)} hours`;
       }
-      if (unit.includes('month')) {
+      if (unit === 'month' || unit.includes('month') && !unit.includes('per_month')) {
         return `Month ${value}`;
       }
       return value.toLocaleString();
@@ -245,9 +245,71 @@ export function AssumptionsTab() {
 
       if (data.assumptions?.customers?.segments) {
         data.assumptions.customers.segments.forEach((segment, index) => {
-          if (segment.volume?.base_year_total) {
+          // Cast segment to any to handle the actual data structure vs typed interface mismatch
+          const segmentAny = segment as any;
+          
+          // Handle modern data structure with base_value and growth_rate
+          if (segmentAny.volume?.base_value !== undefined) {
             rows.push({
-              label: `  ${segment.label} - Base Volume`,
+              label: `  ${segmentAny.name || segment.label} - Base Volume`,
+              value: segmentAny.volume.base_value,
+              unit: segmentAny.volume.unit || 'units_per_month',
+              rationale: segmentAny.volume.rationale || `Base volume for ${segmentAny.name || segment.label}`,
+              category: 'volume',
+              isSubItem: true
+            });
+          }
+          
+          // Show growth rate based on pattern type
+          if (segmentAny.volume?.growth_rate !== undefined) {
+            const growthLabel = segmentAny.volume.pattern_type === 'linear_growth' 
+              ? 'Linear Growth' 
+              : 'Growth Rate';
+            const growthUnit = segmentAny.volume.pattern_type === 'linear_growth'
+              ? 'units_per_month'
+              : 'ratio';
+            
+            rows.push({
+              label: `  ${segmentAny.name || segment.label} - ${growthLabel}`,
+              value: segmentAny.volume.growth_rate,
+              unit: growthUnit,
+              rationale: segmentAny.volume.growth_rationale || 'Growth rate assumption',
+              category: 'volume',
+              isSubItem: true
+            });
+          }
+          
+          // Show growth pattern type
+          if (segmentAny.volume?.pattern_type) {
+            rows.push({
+              label: `  ${segmentAny.name || segment.label} - Growth Pattern`,
+              value: segmentAny.volume.pattern_type.replace('_', ' '),
+              unit: 'pattern',
+              rationale: segmentAny.volume.growth_rationale || 'Growth pattern methodology',
+              category: 'volume',
+              isSubItem: true
+            });
+          }
+          
+          // Handle seasonal patterns
+          if (segmentAny.volume?.pattern_type === 'seasonal_growth' && segmentAny.volume?.seasonal_pattern) {
+            const peakMonth = segmentAny.volume.seasonal_pattern.indexOf(Math.max(...segmentAny.volume.seasonal_pattern)) + 1;
+            const lowMonth = segmentAny.volume.seasonal_pattern.indexOf(Math.min(...segmentAny.volume.seasonal_pattern)) + 1;
+            
+            rows.push({
+              label: `  ${segmentAny.name || segment.label} - Seasonal Variation`,
+              value: `Peak: Month ${peakMonth}, Low: Month ${lowMonth}`,
+              unit: 'seasonal',
+              rationale: 'Seasonal demand pattern throughout the year',
+              category: 'volume',
+              isSubItem: true
+            });
+          }
+          
+          // Handle legacy data structure for backward compatibility
+          if (!segmentAny.volume?.base_value && segment.volume?.base_year_total) {
+            rows.push({
+              label: `  ${segmentAny.name || segment.label} - Base Volume`,
               value: segment.volume.base_year_total.value,
               unit: segment.volume.base_year_total.unit,
               rationale: segment.volume.base_year_total.rationale,
@@ -255,9 +317,10 @@ export function AssumptionsTab() {
               isSubItem: true
             });
           }
-          if (segment.volume?.yoy_growth) {
+          
+          if (!segmentAny.volume?.growth_rate && segment.volume?.yoy_growth) {
             rows.push({
-              label: `  ${segment.label} - Growth Rate`,
+              label: `  ${segmentAny.name || segment.label} - Growth Rate`,
               value: segment.volume.yoy_growth.value,
               unit: segment.volume.yoy_growth.unit,
               rationale: segment.volume.yoy_growth.rationale,

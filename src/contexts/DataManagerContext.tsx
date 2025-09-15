@@ -334,6 +334,17 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
       }
       
       // For backwards compatibility, update the existing structure but add source metadata
+      // Support both old and new data structures
+      if (!segment.volume) {
+        segment.volume = {} as any;
+      }
+      
+      // Modern structure
+      (segment.volume as any).base_value = sourcedAssumption.value;
+      (segment.volume as any).unit = sourcedAssumption.unit;
+      (segment.volume as any).rationale = `${sourcedAssumption.rationale} [Source: Market Analysis, Confidence: ${(sourcedAssumption.sources.market_analysis!.source_metadata.confidence_score! * 100).toFixed(0)}%]`;
+      
+      // Legacy structure for backward compatibility
       segment.volume.base_year_total = {
         value: sourcedAssumption.value,
         unit: sourcedAssumption.unit,

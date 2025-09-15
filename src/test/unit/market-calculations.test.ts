@@ -12,7 +12,7 @@ import {
   formatMarketCurrency,
   formatMarketPercent,
   MarketData
-} from './market-calculations';
+} from '@/lib/market-calculations';
 import { createMockMarketData } from '@/test/mockData';
 
 describe('Market Calculations Engine', () => {

@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { MarketInsightsCartService } from './market-insights-cart-service';
+import { MarketInsightsCartService } from '@/lib/market-insights-cart-service';
 import { 
   VolumeProjectionInsight,
   MarketSizingInsight,
@@ -14,8 +14,8 @@ import {
   CartValidationResult,
   TransferResult,
   DEFAULT_CART_CONFIG
-} from './market-insights-cart';
-import { MarketData } from './market-calculations';
+} from '@/lib/market-insights-cart';
+import { MarketData } from '@/lib/market-calculations';
 import { BusinessData } from '@/contexts/BusinessDataContext';
 
 // ===== TEST DATA =====

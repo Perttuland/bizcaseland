@@ -32,7 +32,7 @@ import {
   MonthlyData,
   CalculatedMetrics,
   IRR_ERROR_CODES
-} from './calculations';
+} from '@/lib/calculations';
 import { BusinessData } from '@/contexts/BusinessDataContext';
 import { createMockBusinessData, createMockMonthlyData, createMockCostSavingsData } from '@/test/mockData';
 
@@ -856,9 +856,10 @@ describe('Calculations Engine', () => {
         // Month 1 (month 2): processing speed should start
         const month1Gains = calculateEfficiencyGainsForMonth(costSavingsData, 1);
         
-        // Processing speed: (120-12) * 2.5 * implementation_factor = 108 * 2.5 * (1/5) = 54
+        // NEW LOGIC: Efficiency gains = improved value × value per unit × implementation factor
+        // Processing speed: 120 invoices/hour × 2.5 EUR/invoice × (1/5) = 60 EUR
         // Accuracy hasn't started yet (starts month 3)
-        expect(month1Gains).toBeCloseTo(54, 0);
+        expect(month1Gains).toBeCloseTo(60, 0);
       });
 
       it('should return 0 for non-cost-savings models', () => {
@@ -870,10 +871,11 @@ describe('Calculations Engine', () => {
         // Month 6: both processing speed and accuracy should be fully implemented
         const month6Gains = calculateEfficiencyGainsForMonth(costSavingsData, 6);
         
-        // Processing speed: 108 * 2.5 = 270
-        // Accuracy: (100-15) * 45 = 85 * 45 = 3825
-        // Total: 270 + 3825 = 4095
-        expect(month6Gains).toBeCloseTo(4095, 0);
+        // NEW LOGIC: Efficiency gains = improved value × value per unit (full implementation)
+        // Processing speed: 120 invoices/hour × 2.5 EUR/invoice = 300 EUR
+        // Accuracy: 15 errors/month × 45 EUR/error = 675 EUR  
+        // Total: 300 + 675 = 975 EUR
+        expect(month6Gains).toBeCloseTo(975, 0);
       });
     });
 

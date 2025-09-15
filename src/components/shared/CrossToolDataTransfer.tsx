@@ -83,7 +83,12 @@ export function MarketToBusinessTransfer({
                     ...segment,
                     volume: {
                       ...segment.volume,
-                      base_year_total: sourcedAssumption // Replace with sourced version
+                      // Use modern data structure
+                      base_value: sourcedAssumption?.value || sourcedAssumption, // Support both value object and direct value
+                      unit: sourcedAssumption?.unit || 'units_per_year',
+                      rationale: sourcedAssumption?.rationale || 'Sourced from market analysis',
+                      // Keep legacy structure for backward compatibility
+                      base_year_total: sourcedAssumption
                     }
                   }
                 : segment
@@ -137,7 +142,7 @@ export function MarketToBusinessTransfer({
             <div className="space-y-2">
               <p className="text-sm font-medium">Projected Volume</p>
               <p className="text-2xl font-bold">
-                {volumePreview.volume_projection.base_year_total.toLocaleString()}
+                {((volumePreview.volume_projection as any).base_year_total || (volumePreview.volume_projection as any).base_value || 0).toLocaleString()}
               </p>
               <p className="text-xs text-muted-foreground">
                 {volumePreview.volume_projection.unit}
@@ -162,7 +167,7 @@ export function MarketToBusinessTransfer({
             <AlertDescription>
               <strong>Market Analysis:</strong> TAM €{volumePreview.source_analysis.tam_value.toLocaleString()} 
               × {volumePreview.source_analysis.target_market_share}% target share 
-              = {volumePreview.volume_projection.base_year_total.toLocaleString()} units/year
+              = {((volumePreview.volume_projection as any).base_year_total || (volumePreview.volume_projection as any).base_value || 0).toLocaleString()} units/year
             </AlertDescription>
           </Alert>
         )}

@@ -339,7 +339,8 @@ export function FinancialAnalysis() {
                   <div className="text-3xl font-bold text-financial-primary mb-2">
                     {(() => {
                       const totalEfficiencyHours = calculatedMetrics.monthlyData.reduce((sum, month) => {
-                        // Calculate efficiency gains in hours for each month
+                        // Calculate actual hours saved for display (baseline - improved)
+                        // Note: This is different from monetary calculation which uses improved value only
                         const efficiencyGains = businessData?.assumptions?.cost_savings?.efficiency_gains || [];
                         const monthlyHoursGained = efficiencyGains.reduce((total, gain) => {
                           const baselineHours = gain.baseline_value?.value || 0;
@@ -385,6 +386,8 @@ export function FinancialAnalysis() {
                     {(() => {
                       const totalInvestment = calculatedMetrics.totalInvestmentRequired;
                       const totalEfficiencyHours = calculatedMetrics.monthlyData.reduce((sum, month) => {
+                        // Calculate actual hours saved for display (baseline - improved)
+                        // Note: This is different from monetary calculation which uses improved value only
                         const efficiencyGains = businessData?.assumptions?.cost_savings?.efficiency_gains || [];
                         const monthlyHoursGained = efficiencyGains.reduce((total, gain) => {
                           const baselineHours = gain.baseline_value?.value || 0;

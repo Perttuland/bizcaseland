@@ -10,7 +10,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { MarketInsightsCart } from './MarketInsightsCart';
+import { MarketInsightsCart } from '@/components/market-analysis/MarketInsightsCart';
 import { saasMarketData, fintechMarketData, iotMarketData } from '@/lib/market-insights-test-data';
 import { MarketData } from '@/lib/market-calculations';
 

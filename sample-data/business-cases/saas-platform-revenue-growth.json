@@ -3,9 +3,9 @@
   "meta": {
     "title": "SaaS Platform Revenue Growth",
     "description": "New SaaS platform launch targeting small-to-medium businesses with subscription-based pricing model, focusing on customer acquisition and revenue growth.",
-    "business_model": "revenue_growth",
+    "business_model": "recurring",
     "currency": "EUR",
-    "periods": 36,
+    "periods": 60,
     "frequency": "monthly"
   },
   "assumptions": {
@@ -39,7 +39,10 @@
       },
       "segments": [
         {
+          "id": "small_business",
+          "label": "Small Business (1-50 employees)",
           "name": "Small Business (1-50 employees)",
+          "rationale": "Target small businesses with 1-50 employees as primary customer segment",
           "volume": {
             "base_value": 50,
             "unit": "customers_per_month",
@@ -50,7 +53,10 @@
           }
         },
         {
-          "name": "Medium Business (51-200 employees)", 
+          "id": "medium_business", 
+          "label": "Medium Business (51-200 employees)",
+          "name": "Medium Business (51-200 employees)",
+          "rationale": "Target medium businesses with 51-200 employees through direct sales",
           "volume": {
             "base_value": 25,
             "unit": "customers_per_month",
@@ -115,5 +121,43 @@
         }
       }
     ]
-  }
+  },
+  "drivers": [
+    {
+      "key": "unit_price",
+      "path": "assumptions.pricing.avg_unit_price.value",
+      "range": [79, 89, 99, 109, 119],
+      "rationale": "Price sensitivity analysis across different SaaS subscription tiers"
+    },
+    {
+      "key": "small_biz_growth_rate",
+      "path": "assumptions.customers.segments[0].volume.growth_rate",
+      "range": [0.08, 0.10, 0.12, 0.15, 0.18],
+      "rationale": "Monthly growth rate sensitivity for small business customer acquisition"
+    },
+    {
+      "key": "medium_biz_growth_rate", 
+      "path": "assumptions.customers.segments[1].volume.growth_rate",
+      "range": [8, 12, 15, 20, 25],
+      "rationale": "Monthly linear growth sensitivity for medium business customer acquisition"
+    },
+    {
+      "key": "churn_rate",
+      "path": "assumptions.customers.churn_pct.value",
+      "range": [0.02, 0.035, 0.05, 0.065, 0.08],
+      "rationale": "Monthly churn rate sensitivity analysis for subscription retention"
+    },
+    {
+      "key": "cac_cost",
+      "path": "assumptions.unit_economics.cac.value",
+      "range": [150, 200, 250, 300, 350],
+      "rationale": "Customer acquisition cost sensitivity across different marketing channels"
+    },
+    {
+      "key": "sales_marketing_spend",
+      "path": "assumptions.opex[0].value.value",
+      "range": [25000, 35000, 45000, 55000, 65000],
+      "rationale": "Sales & Marketing operational expense sensitivity for growth investment"
+    }
+  ]
 }
