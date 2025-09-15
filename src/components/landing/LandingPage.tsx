@@ -44,7 +44,7 @@ export function LandingPage() {
   };
   
   const switchToMarketMode = () => {
-    navigate('/market');
+    navigate('/market', { state: { initialTab: 'overview' } });
   };
 
   const handleResetAllData = () => {
