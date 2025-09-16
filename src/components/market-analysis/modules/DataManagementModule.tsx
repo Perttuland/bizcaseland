@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Upload, 
   Download, 
@@ -13,11 +14,14 @@ import {
   CheckCircle, 
   AlertTriangle,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Sparkles,
+  Brain
 } from 'lucide-react';
 
 import { MarketData } from '@/lib/market-calculations';
 import { MarketAnalysisTemplate } from '../MarketAnalysisTemplate';
+import { ExampleMarketAnalyses } from '../ExampleMarketAnalyses';
 
 interface DataManagementModuleProps {
   marketData?: MarketData | null;
@@ -41,7 +45,35 @@ export function DataManagementModule({
   const [jsonInput, setJsonInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('import');
+  const [activeTab, setActiveTab] = useState('examples');
+  const { toast } = useToast();
+
+  const handleLoadExample = async (caseId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`/sample-data/market-analysis/${caseId}.json`);
+      if (!response.ok) {
+        throw new Error('Failed to load example');
+      }
+      const exampleData = await response.json();
+      onDataLoad(exampleData as MarketData);
+      toast({
+        title: "Example loaded successfully!",
+        description: "Market analysis data ready for exploration.",
+      });
+    } catch (err) {
+      setError('Failed to load example. Please try again.');
+      toast({
+        title: "Failed to load example",
+        description: "Please try again or load data manually.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleJsonImport = async () => {
     setIsLoading(true);
@@ -87,58 +119,107 @@ export function DataManagementModule({
 
   if (showUploadOnly) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center gap-3 mb-4">
           <FileText className="h-5 w-5 text-blue-600" />
-          <h3 className="text-lg font-semibold">Import Market Analysis Data</h3>
+          <div>
+            <h3 className="text-lg font-semibold">Import Market Research Data</h3>
+            <p className="text-sm text-muted-foreground">
+              Start with examples or import your own market analysis data
+            </p>
+          </div>
         </div>
         
-        <Alert>
-          <FileText className="h-4 w-4" />
-          <AlertDescription>
-            Import market analysis data using our JSON template. You can use AI to populate the template with market research data.
-          </AlertDescription>
-        </Alert>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="examples">Example Markets</TabsTrigger>
+            <TabsTrigger value="import">Import Data</TabsTrigger>
+          </TabsList>
 
-        <div className="flex gap-3">
-          <Button onClick={handleTemplateLoad} variant="outline" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Load Template
-          </Button>
-          <Button onClick={handleTemplateCopy} variant="outline" className="flex items-center gap-2">
-            <Copy className="h-4 w-4" />
-            Copy Template
-          </Button>
-        </div>
+          <TabsContent value="examples" className="mt-6">
+            <ExampleMarketAnalyses 
+              onLoadExample={handleLoadExample}
+              isLoading={isLoading}
+            />
+          </TabsContent>
 
-        <div className="space-y-3">
-          <Textarea
-            value={jsonInput}
-            onChange={(e) => setJsonInput(e.target.value)}
-            placeholder="Paste your market analysis JSON data here..."
-            className="min-h-[200px] font-mono text-sm"
-          />
-          
-          {error && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          <Button 
-            onClick={handleJsonImport}
-            disabled={!jsonInput.trim() || isLoading}
-            className="w-full"
-          >
-            {isLoading ? (
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
-            )}
-            {isLoading ? 'Processing...' : 'Import Analysis Data'}
-          </Button>
-        </div>
+          <TabsContent value="import" className="mt-6">
+            <div className="space-y-4">
+              <Alert>
+                <Sparkles className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>Tip:</strong> Use AI tools like ChatGPT or Claude to research your market and populate the template with real data.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex gap-3">
+                <Button onClick={handleTemplateLoad} variant="outline" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Load Template
+                </Button>
+                <Button onClick={handleTemplateCopy} variant="outline" className="flex items-center gap-2">
+                  <Copy className="h-4 w-4" />
+                  Copy Template
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                <Textarea
+                  value={jsonInput}
+                  onChange={(e) => setJsonInput(e.target.value)}
+                  placeholder="Paste your market analysis data here..."
+                  className="min-h-[200px] font-mono text-sm"
+                />
+                
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+                
+                <Button 
+                  onClick={handleJsonImport}
+                  disabled={!jsonInput.trim() || isLoading}
+                  className="w-full"
+                >
+                  {isLoading ? (
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {isLoading ? 'Processing...' : 'Import Market Data'}
+                </Button>
+              </div>
+
+              {/* GenAI Workflow */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                    <Brain className="h-4 w-4" />
+                    GenAI Workflow for Market Research
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-3 text-sm text-blue-800">
+                    <div>
+                      <strong>1. Copy Template:</strong> Use the "Copy Template" button above
+                    </div>
+                    <div>
+                      <strong>2. Research with AI:</strong> Ask ChatGPT/Claude: "Research the [your market] and fill out this market analysis template with real data: [paste template]"
+                    </div>
+                    <div>
+                      <strong>3. Import Results:</strong> Paste the completed template and click "Import Market Data"
+                    </div>
+                    <div className="text-blue-600 text-xs mt-2">
+                      💡 <strong>Pro tip:</strong> Be specific about geographic regions, time frames, and market segments for better AI research
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }
@@ -217,22 +298,37 @@ export function DataManagementModule({
       )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="examples">Examples</TabsTrigger>
           <TabsTrigger value="import">Import Data</TabsTrigger>
           <TabsTrigger value="export">Export Results</TabsTrigger>
           <TabsTrigger value="template">Template & Guide</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="examples">
+          <Card>
+            <CardHeader>
+              <CardTitle>Example Market Analyses</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ExampleMarketAnalyses 
+                onLoadExample={handleLoadExample}
+                isLoading={isLoading}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="import">
           <Card>
             <CardHeader>
-              <CardTitle>Import Market Analysis Data</CardTitle>
+              <CardTitle>Import Market Research Data</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <Alert>
-                <FileText className="h-4 w-4" />
+                <Sparkles className="h-4 w-4" />
                 <AlertDescription>
-                  Import market analysis data using our JSON template. You can use AI to populate the template with your market research data.
+                  <strong>Tip:</strong> Use AI tools like ChatGPT or Claude to research your market and populate the template with real data.
                 </AlertDescription>
               </Alert>
 
@@ -246,7 +342,7 @@ export function DataManagementModule({
               <Textarea
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
-                placeholder="Paste your market analysis JSON data here..."
+                placeholder="Paste your market analysis data here..."
                 className="min-h-[300px] font-mono text-sm"
               />
               
@@ -267,8 +363,34 @@ export function DataManagementModule({
                 ) : (
                   <Upload className="h-4 w-4 mr-2" />
                 )}
-                {isLoading ? 'Processing...' : 'Import Analysis Data'}
+                {isLoading ? 'Processing...' : 'Import Market Data'}
               </Button>
+
+              {/* GenAI Workflow */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                    <Brain className="h-4 w-4" />
+                    GenAI Workflow for Market Research
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="space-y-3 text-sm text-blue-800">
+                    <div>
+                      <strong>1. Copy Template:</strong> Use the "Copy Template" button above
+                    </div>
+                    <div>
+                      <strong>2. Research with AI:</strong> Ask ChatGPT/Claude: "Research the [your market] and fill out this market analysis template with real data: [paste template]"
+                    </div>
+                    <div>
+                      <strong>3. Import Results:</strong> Paste the completed template and click "Import Market Data"
+                    </div>
+                    <div className="text-blue-600 text-xs mt-2">
+                      💡 <strong>Pro tip:</strong> Be specific about geographic regions, time frames, and market segments for better AI research
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </CardContent>
           </Card>
         </TabsContent>

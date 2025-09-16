@@ -428,8 +428,8 @@ export function calculateSeasonalGrowthVolume(volume: any, monthIndex: number, b
  * Calculate volume using geometric growth pattern
  */
 export function calculateGeomGrowthVolume(volume: any, monthIndex: number, businessData?: BusinessData): number {
-  // Try to get values from volume object first, then fallback to growth_settings
-  let startValue = volume?.series?.[0]?.value;
+  // Try to get values from volume object first - support multiple formats
+  let startValue = volume?.start?.value || volume?.series?.[0]?.value;
   let monthlyGrowthRate = volume.monthly_growth_rate?.value;
   
   // If not found in volume, try growth_settings
@@ -451,8 +451,8 @@ export function calculateGeomGrowthVolume(volume: any, monthIndex: number, busin
  * Calculate volume using linear growth pattern
  */
 export function calculateLinearGrowthVolume(volume: any, monthIndex: number, businessData?: BusinessData): number {
-  // Try to get values from volume object first, then fallback to growth_settings
-  let startValue = volume?.series?.[0]?.value;
+  // Try to get values from volume object first - support multiple formats
+  let startValue = volume?.start?.value || volume?.series?.[0]?.value;
   let monthlyIncrease = volume.monthly_flat_increase?.value;
   
   // If not found in volume, try growth_settings

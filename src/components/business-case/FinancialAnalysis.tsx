@@ -171,7 +171,7 @@ export function FinancialAnalysis() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Net Present Value</p>
+                <p className="text-sm text-white/80">Net Present Value</p>
                 <p className="text-2xl font-bold text-white">{formatCurrency(calculatedMetrics.npv, businessData.meta.currency)}</p>
               </div>
               <Target className="h-8 w-8 text-white" />

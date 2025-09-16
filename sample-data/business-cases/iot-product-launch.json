@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "meta": {
     "title": "Smart Home IoT Product Launch",
-    "description": "Launch of innovative smart home IoT device targeting consumers with one-time sales model and service revenue streams.",
+    "description": "Launch of innovative smart home IoT device targeting early adopters and mainstream consumers with balanced revenue-cost model and realistic growth projections.",
     "business_model": "product_launch",
     "currency": "EUR",
     "periods": 48,
@@ -13,18 +13,18 @@
       "avg_unit_price": { 
         "value": 299.0, 
         "unit": "EUR_per_unit", 
-        "rationale": "Premium pricing strategy for innovative IoT device with unique features" 
+        "rationale": "Premium pricing strategy competitive with existing smart home devices" 
       },
       "yearly_adjustments": {
         "pricing_factors": [
           { "year": 1, "factor": 1.0, "rationale": "Launch pricing to establish market presence" },
-          { "year": 2, "factor": 0.90, "rationale": "10% price reduction to compete with market entrants" },
-          { "year": 3, "factor": 0.85, "rationale": "Further price optimization for mass market penetration" },
-          { "year": 4, "factor": 0.80, "rationale": "Mature product pricing with improved manufacturing efficiency" }
+          { "year": 2, "factor": 0.95, "rationale": "5% price reduction to compete with market entrants" },
+          { "year": 3, "factor": 0.90, "rationale": "Further price optimization for mass market penetration" },
+          { "year": 4, "factor": 0.88, "rationale": "Mature product pricing with improved manufacturing efficiency" }
         ],
         "price_overrides": [
-          { "period": 24, "price": 249.0, "rationale": "Holiday season promotional pricing" },
-          { "period": 36, "price": 229.0, "rationale": "End-of-year clearance pricing" }
+          { "period": 24, "price": 269.0, "rationale": "Holiday season promotional pricing" },
+          { "period": 36, "price": 249.0, "rationale": "End-of-year clearance pricing" }
         ]
       }
     },
@@ -43,64 +43,109 @@
       },
       "segments": [
         {
-          "name": "Early Adopters",
+          "id": "tech_enthusiasts",
+          "label": "Tech Enthusiasts & Early Adopters",
+          "rationale": "Tech-savvy professionals aged 25-45 who prioritize innovation and are willing to pay premium for cutting-edge smart home technology. Highly active on social media and influence broader adoption.",
+          "psychographics": {
+            "values": ["innovation", "status", "convenience"],
+            "behaviors": ["research-driven purchasing", "social media sharing", "brand advocacy"],
+            "pain_points": ["compatibility issues", "setup complexity", "privacy concerns"]
+          },
+          "market_positioning": {
+            "size_percentage": 8,
+            "growth_trend": "stable",
+            "competitive_intensity": "high",
+            "value_drivers": ["feature richness", "build quality", "ecosystem integration"]
+          },
           "volume": {
-            "base_value": 500,
-            "unit": "units_per_month",
-            "rationale": "Tech enthusiasts and early adopters driving initial sales",
+            "type": "pattern",
             "pattern_type": "seasonal_growth",
-            "seasonal_pattern": [1.2, 1.1, 1.0, 0.9, 0.8, 0.7, 0.8, 0.9, 1.0, 1.1, 1.3, 1.5],
-            "growth_rationale": "Seasonal demand with peak holiday periods and product launch excitement"
+            "base_year_total": { "value": 1800, "unit": "units_per_year", "rationale": "Conservative estimate: 150 units/month baseline for niche early adopter market" },
+            "seasonality_index_12": [1.1, 1.0, 0.9, 0.8, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.4, 1.6],
+            "yoy_growth": { "value": 0.15, "unit": "decimal", "rationale": "15% yearly growth as product gains reputation and word-of-mouth" }
           }
         },
         {
-          "name": "Mass Market Consumers",
+          "id": "mainstream_adopters",
+          "label": "Mainstream Smart Home Adopters",
+          "rationale": "Urban and suburban homeowners aged 30-55 who are interested in smart home convenience but need proven value proposition. Focus on practical benefits over technical features.",
+          "psychographics": {
+            "values": ["convenience", "reliability", "value for money"],
+            "behaviors": ["peer recommendations", "review-based decisions", "gradual adoption"],
+            "pain_points": ["complexity fears", "cost concerns", "integration challenges"]
+          },
+          "market_positioning": {
+            "size_percentage": 25,
+            "growth_trend": "expanding",
+            "competitive_intensity": "medium",
+            "value_drivers": ["ease of use", "proven reliability", "customer support"]
+          },
           "volume": {
-            "base_value": 200,
-            "unit": "units_per_month",
-            "rationale": "Mainstream consumers adopting after proven market validation",
-            "pattern_type": "geometric_growth",
-            "growth_rate": 0.08,
-            "growth_rationale": "8% monthly growth as product gains market acceptance and word-of-mouth"
+            "type": "pattern",
+            "pattern_type": "geom_growth",
+            "start": { "value": 40, "unit": "units_per_month", "rationale": "Start small with gradual adoption as product proves market fit" },
+            "monthly_growth_rate": { "value": 0.03, "unit": "decimal", "rationale": "3% monthly growth through word-of-mouth and marketing investment" }
+          }
+        },
+        {
+          "id": "smart_home_enthusiasts", 
+          "label": "Smart Home Ecosystem Builders",
+          "rationale": "Existing smart home users aged 28-50 who systematically build comprehensive home automation systems. They value integration and are willing to invest in quality components.",
+          "psychographics": {
+            "values": ["system optimization", "automation", "energy efficiency"],
+            "behaviors": ["systematic purchasing", "ecosystem loyalty", "DIY installation"],
+            "pain_points": ["vendor lock-in", "upgrade costs", "system complexity"]
+          },
+          "market_positioning": {
+            "size_percentage": 12,
+            "growth_trend": "steady",
+            "competitive_intensity": "high",
+            "value_drivers": ["compatibility", "API access", "expandability"]
+          },
+          "volume": {
+            "type": "pattern",
+            "pattern_type": "linear_growth",
+            "start": { "value": 25, "unit": "units_per_month", "rationale": "Steady baseline from existing smart home users" },
+            "monthly_flat_increase": { "value": 2, "unit": "units_per_month", "rationale": "Predictable growth as market expands and awareness increases" }
           }
         }
       ]
     },
     "unit_economics": {
       "cogs_pct": { 
-        "value": 0.45, 
+        "value": 0.55, 
         "unit": "percentage_of_revenue", 
-        "rationale": "45% COGS including manufacturing, components, packaging, and logistics" 
+        "rationale": "55% COGS including manufacturing (35%), components (15%), packaging (2%), and logistics (3%) - realistic for IoT hardware" 
       },
       "cac": { 
-        "value": 45.0, 
+        "value": 75.0, 
         "unit": "EUR_per_customer", 
-        "rationale": "Customer acquisition through online advertising, retail partnerships, and PR" 
+        "rationale": "Customer acquisition through targeted digital marketing, influencer partnerships, and retail channel development" 
       }
     },
     "opex": [
       { 
         "name": "Sales & Marketing", 
         "value": { 
-          "value": 35000.0, 
+          "value": 45000.0, 
           "unit": "EUR_per_month", 
-          "rationale": "Product marketing, advertising, and retail channel management" 
+          "rationale": "Digital marketing, content creation, influencer partnerships, and retail channel support" 
         } 
       },
       { 
         "name": "R&D", 
         "value": { 
-          "value": 20000.0, 
+          "value": 25000.0, 
           "unit": "EUR_per_month", 
-          "rationale": "Ongoing product development and firmware updates" 
+          "rationale": "Ongoing product development, firmware updates, and next-generation features" 
         } 
       },
       { 
         "name": "G&A", 
         "value": { 
-          "value": 12000.0, 
+          "value": 18000.0, 
           "unit": "EUR_per_month", 
-          "rationale": "Operations, customer support, and administrative functions" 
+          "rationale": "Operations, customer support, quality assurance, and administrative functions" 
         } 
       }
     ],
@@ -111,22 +156,22 @@
           "type": "time_series",
           "pattern_type": "front_loaded",
           "series": [
-            { "period": 1, "value": 200000.0, "unit": "EUR", "rationale": "Initial product development, prototyping, and certification" },
-            { "period": 6, "value": 150000.0, "unit": "EUR", "rationale": "Manufacturing setup and initial inventory investment" },
-            { "period": 12, "value": 100000.0, "unit": "EUR", "rationale": "Production scaling and quality assurance systems" },
-            { "period": 24, "value": 75000.0, "unit": "EUR", "rationale": "Product line extension and second generation development" }
+            { "period": 1, "value": 250000.0, "unit": "EUR", "rationale": "Initial product development, prototyping, certification, and tooling" },
+            { "period": 6, "value": 180000.0, "unit": "EUR", "rationale": "Manufacturing setup, supplier relationships, and initial inventory investment" },
+            { "period": 12, "value": 120000.0, "unit": "EUR", "rationale": "Production scaling, quality systems, and supply chain optimization" },
+            { "period": 24, "value": 90000.0, "unit": "EUR", "rationale": "Product line extension and second generation development" }
           ]
         }
       },
       {
-        "name": "Service Platform Development",
+        "name": "Technology Platform & Services",
         "timeline": {
           "type": "time_series", 
           "pattern_type": "distributed",
           "series": [
-            { "period": 3, "value": 80000.0, "unit": "EUR", "rationale": "Cloud service platform and mobile app development" },
-            { "period": 18, "value": 40000.0, "unit": "EUR", "rationale": "Advanced analytics and AI features" },
-            { "period": 30, "value": 30000.0, "unit": "EUR", "rationale": "Integration with smart home ecosystems" }
+            { "period": 3, "value": 95000.0, "unit": "EUR", "rationale": "Cloud service platform, mobile app development, and security infrastructure" },
+            { "period": 18, "value": 60000.0, "unit": "EUR", "rationale": "Advanced analytics, AI features, and voice assistant integration" },
+            { "period": 30, "value": 40000.0, "unit": "EUR", "rationale": "Ecosystem integrations and third-party platform compatibility" }
           ]
         }
       }

@@ -2,9 +2,50 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Users, TrendingUp, Info, Target, Calendar } from 'lucide-react';
+import { 
+  Users, 
+  TrendingUp, 
+  Info, 
+  Target, 
+  Calendar, 
+  Brain, 
+  Eye, 
+  Heart,
+  Zap,
+  Shield,
+  Star,
+  Award,
+  PieChart as PieIcon,
+  BarChart3,
+  ArrowUpRight,
+  ArrowDownRight,
+  Gauge,
+  Activity,
+  Lightbulb,
+  Trophy
+} from 'lucide-react';
 import { BusinessData } from '@/contexts/BusinessDataContext';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  ResponsiveContainer, 
+  Tooltip as RechartsTooltip,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar
+} from 'recharts';
 import { calculateSegmentVolumeForMonth } from '@/lib/calculations';
 
 interface CustomerSegmentsProps {
@@ -217,6 +258,333 @@ export function CustomerSegments({ data }: CustomerSegmentsProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Enhanced Customer Insights with Wow Effect */}
+      {segments.some(segment => segment.psychographics || segment.market_positioning) && (
+        <Card className="bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 border-2 border-purple-200 shadow-xl">
+          <CardHeader className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 text-white rounded-t-lg">
+            <CardTitle className="flex items-center space-x-3">
+              <Brain className="h-6 w-6" />
+              <span className="text-xl">Customer Intelligence Dashboard</span>
+              <Badge className="bg-white/20 text-white border-white/30">AI-Powered Insights</Badge>
+            </CardTitle>
+            <p className="text-blue-100 mt-2">Deep customer understanding through behavioral analysis and market positioning</p>
+          </CardHeader>
+          <CardContent className="p-6">
+            
+            {/* Psychographic Insights Grid */}
+            <div className="mb-8">
+              <h3 className="text-lg font-bold mb-4 flex items-center space-x-2">
+                <Heart className="h-5 w-5 text-pink-600" />
+                <span className="bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
+                  Psychographic DNA Analysis
+                </span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {/* Values Radar Chart */}
+                <Card className="bg-white/60 backdrop-blur-sm border border-purple-200">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-center mb-3 flex items-center justify-center space-x-2">
+                      <Zap className="h-4 w-4 text-yellow-600" />
+                      <span>Core Values Spectrum</span>
+                    </h4>
+                    {(() => {
+                      const allValues = segments.flatMap(s => s.psychographics?.values || []);
+                      const valueCounts = allValues.reduce((acc, value) => {
+                        acc[value] = (acc[value] || 0) + 1;
+                        return acc;
+                      }, {} as Record<string, number>);
+                      
+                      const radarData = Object.entries(valueCounts).map(([value, count]) => ({
+                        value: value.charAt(0).toUpperCase() + value.slice(1),
+                        score: (count / segments.length) * 100
+                      }));
+                      
+                      if (radarData.length === 0) return (
+                        <div className="text-center text-muted-foreground text-sm">
+                          No values data available
+                        </div>
+                      );
+                      
+                      return (
+                        <ResponsiveContainer width="100%" height={200}>
+                          <RadarChart data={radarData}>
+                            <PolarGrid />
+                            <PolarAngleAxis dataKey="value" tick={{ fontSize: 11 }} />
+                            <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} />
+                            <Radar
+                              name="Values"
+                              dataKey="score"
+                              stroke="#8b5cf6"
+                              fill="#8b5cf6"
+                              fillOpacity={0.3}
+                              strokeWidth={2}
+                            />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+
+                {/* Behavior Patterns */}
+                <Card className="bg-white/60 backdrop-blur-sm border border-blue-200">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-center mb-3 flex items-center justify-center space-x-2">
+                      <Activity className="h-4 w-4 text-blue-600" />
+                      <span>Behavior Patterns</span>
+                    </h4>
+                    <div className="space-y-2">
+                      {segments.map((segment, idx) => (
+                        segment.psychographics?.behaviors?.map((behavior, bidx) => (
+                          <div key={`${idx}-${bidx}`} className="flex items-center space-x-2 text-sm">
+                            <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${
+                              bidx % 3 === 0 ? 'from-blue-400 to-blue-600' :
+                              bidx % 3 === 1 ? 'from-purple-400 to-purple-600' :
+                              'from-pink-400 to-pink-600'
+                            }`} />
+                            <span className="capitalize">{behavior}</span>
+                          </div>
+                        ))
+                      )).flat()}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Pain Points Analysis */}
+                <Card className="bg-white/60 backdrop-blur-sm border border-red-200">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-center mb-3 flex items-center justify-center space-x-2">
+                      <Shield className="h-4 w-4 text-red-600" />
+                      <span>Pain Point Matrix</span>
+                    </h4>
+                    <div className="space-y-2">
+                      {segments.map((segment, idx) => (
+                        segment.psychographics?.pain_points?.map((pain, pidx) => (
+                          <div key={`${idx}-${pidx}`} className="bg-red-50 rounded-lg p-2 border-l-2 border-red-400">
+                            <div className="text-xs font-medium text-red-800 mb-1">{segment.label}</div>
+                            <div className="text-xs text-red-600">{pain}</div>
+                          </div>
+                        ))
+                      )).flat()}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Market Positioning Intelligence */}
+            <div className="mb-8">
+              <h3 className="text-lg font-bold mb-4 flex items-center space-x-2">
+                <Target className="h-5 w-5 text-green-600" />
+                <span className="bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                  Strategic Market Positioning
+                </span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Market Share Distribution */}
+                <Card className="bg-white/60 backdrop-blur-sm border border-green-200">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-center mb-3 flex items-center justify-center space-x-2">
+                      <PieIcon className="h-4 w-4 text-green-600" />
+                      <span>Market Share Potential</span>
+                    </h4>
+                    {(() => {
+                      const marketData = segments
+                        .filter(s => s.market_positioning?.size_percentage)
+                        .map((segment, idx) => ({
+                          name: segment.label,
+                          value: segment.market_positioning.size_percentage,
+                          fill: `hsl(${idx * 137.5 % 360}, 70%, 50%)`
+                        }));
+                      
+                      if (marketData.length === 0) return (
+                        <div className="text-center text-muted-foreground text-sm">
+                          No market sizing data available
+                        </div>
+                      );
+                      
+                      return (
+                        <ResponsiveContainer width="100%" height={200}>
+                          <PieChart>
+                            <Pie
+                              data={marketData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={40}
+                              outerRadius={80}
+                              paddingAngle={5}
+                              dataKey="value"
+                            >
+                              {marketData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip 
+                              formatter={(value) => [`${value}%`, 'Market Share']}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      );
+                    })()}
+                  </CardContent>
+                </Card>
+
+                {/* Competitive Intensity Heatmap */}
+                <Card className="bg-white/60 backdrop-blur-sm border border-orange-200">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold text-center mb-3 flex items-center justify-center space-x-2">
+                      <Gauge className="h-4 w-4 text-orange-600" />
+                      <span>Competitive Landscape</span>
+                    </h4>
+                    <div className="space-y-3">
+                      {segments.map((segment, idx) => {
+                        if (!segment.market_positioning?.competitive_intensity) return null;
+                        
+                        const intensity = segment.market_positioning.competitive_intensity;
+                        const intensityScore = 
+                          intensity === 'very high' ? 95 :
+                          intensity === 'high' ? 75 :
+                          intensity === 'medium' ? 50 :
+                          intensity === 'low' ? 25 : 10;
+                        
+                        const color = 
+                          intensityScore >= 80 ? 'bg-red-500' :
+                          intensityScore >= 60 ? 'bg-orange-500' :
+                          intensityScore >= 40 ? 'bg-yellow-500' :
+                          intensityScore >= 20 ? 'bg-blue-500' : 'bg-green-500';
+                        
+                        return (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium">{segment.label}</span>
+                              <span className="capitalize">{intensity}</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full ${color} transition-all duration-300`}
+                                style={{ width: `${intensityScore}%` }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+
+            {/* Value Drivers Intelligence */}
+            <div className="mb-6">
+              <h3 className="text-lg font-bold mb-4 flex items-center space-x-2">
+                <Lightbulb className="h-5 w-5 text-yellow-600" />
+                <span className="bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+                  Value Driver Optimization
+                </span>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {segments.map((segment, idx) => {
+                  if (!segment.market_positioning?.value_drivers) return null;
+                  
+                  return (
+                    <Card key={idx} className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200">
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Trophy className="h-4 w-4 text-yellow-600" />
+                          <h4 className="font-semibold text-sm">{segment.label}</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {segment.market_positioning.value_drivers.map((driver, didx) => (
+                            <div key={didx} className="flex items-center space-x-2">
+                              <Star className="h-3 w-3 text-yellow-500" />
+                              <span className="text-xs font-medium">{driver}</span>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Growth Trend Indicator */}
+                        {segment.market_positioning.growth_trend && (
+                          <div className="mt-3 pt-2 border-t border-yellow-200">
+                            <div className="flex items-center space-x-2">
+                              {segment.market_positioning.growth_trend === 'expanding' ? 
+                                <ArrowUpRight className="h-3 w-3 text-green-600" /> :
+                                segment.market_positioning.growth_trend === 'steady' ?
+                                <ArrowDownRight className="h-3 w-3 text-blue-600" /> :
+                                <Eye className="h-3 w-3 text-gray-600" />
+                              }
+                              <span className="text-xs font-medium capitalize">
+                                {segment.market_positioning.growth_trend} Market
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Strategic Insights Summary */}
+            <Card className="bg-gradient-to-r from-purple-100 to-blue-100 border-2 border-purple-300">
+              <CardContent className="p-6">
+                <h3 className="text-lg font-bold mb-4 flex items-center space-x-2">
+                  <Award className="h-5 w-5 text-purple-600" />
+                  <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                    Strategic Insights & Recommendations
+                  </span>
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-purple-800 mb-2">Key Opportunities</h4>
+                    <ul className="space-y-1 text-sm text-purple-700">
+                      {segments.filter(s => s.market_positioning?.growth_trend === 'expanding').length > 0 && (
+                        <li className="flex items-center space-x-2">
+                          <ArrowUpRight className="h-3 w-3 text-green-600" />
+                          <span>{segments.filter(s => s.market_positioning?.growth_trend === 'expanding').length} expanding market segment(s)</span>
+                        </li>
+                      )}
+                      {segments.filter(s => s.market_positioning?.competitive_intensity === 'low' || s.market_positioning?.competitive_intensity === 'medium').length > 0 && (
+                        <li className="flex items-center space-x-2">
+                          <Shield className="h-3 w-3 text-blue-600" />
+                          <span>Lower competition in {segments.filter(s => s.market_positioning?.competitive_intensity === 'low' || s.market_positioning?.competitive_intensity === 'medium').length} segment(s)</span>
+                        </li>
+                      )}
+                      <li className="flex items-center space-x-2">
+                        <Target className="h-3 w-3 text-orange-600" />
+                        <span>Total addressable market: {segments.reduce((sum, s) => sum + (s.market_positioning?.size_percentage || 0), 0)}% share potential</span>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold text-purple-800 mb-2">Risk Factors</h4>
+                    <ul className="space-y-1 text-sm text-purple-700">
+                      {segments.filter(s => s.market_positioning?.competitive_intensity === 'very high' || s.market_positioning?.competitive_intensity === 'high').length > 0 && (
+                        <li className="flex items-center space-x-2">
+                          <Gauge className="h-3 w-3 text-red-600" />
+                          <span>High competition in {segments.filter(s => s.market_positioning?.competitive_intensity === 'very high' || s.market_positioning?.competitive_intensity === 'high').length} segment(s)</span>
+                        </li>
+                      )}
+                      {segments.flatMap(s => s.psychographics?.pain_points || []).length > 0 && (
+                        <li className="flex items-center space-x-2">
+                          <Shield className="h-3 w-3 text-yellow-600" />
+                          <span>{segments.flatMap(s => s.psychographics?.pain_points || []).length} identified pain points to address</span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Customer Segments Details */}
       <Card className="bg-gradient-card shadow-card">

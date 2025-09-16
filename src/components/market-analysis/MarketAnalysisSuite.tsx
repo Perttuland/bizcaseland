@@ -4,6 +4,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -101,6 +112,15 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
     marketData ? validateMarketSuiteData(marketData) : null,
     [marketData]
   );
+
+  // Handler for resetting all data
+  const handleResetAllData = () => {
+    clearAllData();
+    toast({
+      title: "All data cleared",
+      description: "Market analysis data has been reset. You can start fresh or load new data.",
+    });
+  };
 
   // Handler for updating market data from modules
   const handleDataUpdate = (data: MarketData) => {
@@ -427,8 +447,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             </Button>
             <Target className="h-8 w-8 text-blue-600" />
             <div>
-              <h1 className="text-3xl font-bold">Market Analysis</h1>
-              <p className="text-muted-foreground">Comprehensive market research with data analysis and visualization tools</p>
+              <h1 className="text-3xl font-bold">Market Research & Analysis</h1>
+              <p className="text-muted-foreground">Discover market opportunities with comprehensive analysis and insights</p>
             </div>
           </div>
           
@@ -449,50 +469,21 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
         <Card className="max-w-4xl mx-auto">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Get Started with Market Analysis
+              <Target className="h-5 w-5 text-blue-600" />
+              Start Your Market Research
             </CardTitle>
+            <p className="text-muted-foreground mt-2">
+              Explore ready-made market analyses or import your own research data to get insights on market size, 
+              competition, customer segments, and growth opportunities.
+            </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              <div className="flex gap-3 mb-4">
-                <Button 
-                  onClick={loadSampleData}
-                  className="flex items-center gap-2"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Load Sample Data with Charts
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="json-input" className="text-sm font-medium">
-                  Market Analysis Data (JSON Format)
-                </label>
-                <Textarea
-                  id="json-input"
-                  placeholder="Paste your market analysis JSON data here..."
-                  value={inputJson}
-                  onChange={(e) => handleJsonPaste(e.target.value)}
-                  className="min-h-[300px] font-mono text-sm"
-                />
-                <ValidationBadge />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={refreshData}
-                  disabled={!isValidJson}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Load Market Data
-                </Button>
-                <Button variant="outline" onClick={() => setInputJson('')}>
-                  Clear
-                </Button>
-              </div>
-            </div>
+            <DataManagementModule 
+              marketData={marketData}
+              onDataLoad={handleDataUpdate}
+              validation={validation}
+              showUploadOnly={true}
+            />
           </CardContent>
         </Card>
       </div>
@@ -516,7 +507,7 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
           </Button>
           <Target className="h-8 w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold">Market Analysis</h1>
+            <h1 className="text-3xl font-bold">Market Research & Analysis</h1>
             <p className="text-muted-foreground">
               {marketData?.meta?.title || 'Untitled Market Analysis'}
             </p>
@@ -545,6 +536,31 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             <Download className="h-4 w-4 mr-1" />
             Export
           </Button>
+          
+          {/* Reset Button with Confirmation */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm" className="hover:bg-red-50 hover:border-red-200">
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Reset Data
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset All Market Analysis Data?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete all market analysis data including market sizing, competitive analysis, 
+                  customer segments, and strategic planning. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetAllData} className="bg-red-600 hover:bg-red-700">
+                  Reset All Data
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
 
