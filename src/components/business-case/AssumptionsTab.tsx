@@ -252,7 +252,7 @@ export function AssumptionsTab() {
           if (segmentAny.volume?.type === 'pattern') {
             const patternType = segmentAny.volume.pattern_type;
             
-            // Extract base value from series or growth_settings
+            // Extract base value from series, growth_settings, or direct base_value
             let baseValue, baseUnit, baseRationale;
             if (segmentAny.volume.series && segmentAny.volume.series[0]) {
               baseValue = segmentAny.volume.series[0].value;
@@ -262,6 +262,11 @@ export function AssumptionsTab() {
               baseValue = data.assumptions.growth_settings[patternType].start.value;
               baseUnit = data.assumptions.growth_settings[patternType].start.unit;
               baseRationale = data.assumptions.growth_settings[patternType].start.rationale;
+            } else if (segmentAny.volume.base_value !== undefined) {
+              // Handle direct base_value in volume object
+              baseValue = segmentAny.volume.base_value;
+              baseUnit = segmentAny.volume.unit;
+              baseRationale = segmentAny.volume.rationale;
             }
             
             if (baseValue !== undefined) {
@@ -275,7 +280,7 @@ export function AssumptionsTab() {
               });
             }
             
-            // Extract growth rate from growth_settings
+            // Extract growth rate from growth_settings or direct growth_rate
             let growthValue, growthUnit, growthRationale;
             if (data.assumptions?.growth_settings?.[patternType]) {
               const growthSettings = data.assumptions.growth_settings[patternType];
@@ -293,6 +298,12 @@ export function AssumptionsTab() {
                 growthUnit = growthSettings.yoy_growth.unit;
                 growthRationale = growthSettings.yoy_growth.rationale;
               }
+            } else if (segmentAny.volume.growth_rate !== undefined) {
+              // Handle direct growth_rate in volume object
+              growthValue = segmentAny.volume.growth_rate;
+              // For linear growth, the growth_rate is in units_per_month; for others it's a ratio
+              growthUnit = (segmentAny.volume.pattern_type === 'linear_growth') ? 'units_per_month' : 'ratio';
+              growthRationale = segmentAny.volume.growth_rationale || 'Growth rate assumption';
             }
             
             if (growthValue !== undefined) {
@@ -310,15 +321,17 @@ export function AssumptionsTab() {
               });
             }
             
-            // Show growth pattern type
-            rows.push({
-              label: `  ${segmentAny.name || segment.label} - Growth Pattern`,
-              value: patternType.replace('_', ' '),
-              unit: 'pattern',
-              rationale: `Growth methodology: ${patternType}`,
-              category: 'volume',
-              isSubItem: true
-            });
+            // Show growth pattern type (only if patternType is defined)
+            if (patternType) {
+              rows.push({
+                label: `  ${segmentAny.name || segment.label} - Growth Pattern`,
+                value: patternType.replace('_', ' '),
+                unit: 'pattern',
+                rationale: `Growth methodology: ${patternType}`,
+                category: 'volume',
+                isSubItem: true
+              });
+            }
             
             // Handle yearly adjustments if present
             if (segmentAny.volume.yearly_adjustments?.volume_factors) {

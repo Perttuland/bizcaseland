@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest';
 import { calculateBusinessMetrics } from '@/lib/calculations';
-import fintechSampleData from '@/../sample-data/business-cases/fintech-market-entry.json';
+import fintechSampleData from '@/../public/sample-data/business-cases/fintech-market-entry.json';
 
 describe('Realistic Business Case Sample Data Tests', () => {
   describe('IoT Product Launch - Realistic Scenarios', () => {

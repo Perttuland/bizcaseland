@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load fintech sample data
-const fintechPath = path.join(__dirname, 'sample-data', 'business-cases', 'fintech-market-entry.json');
+const fintechPath = path.join(__dirname, 'public', 'sample-data', 'business-cases', 'fintech-market-entry.json');
 const fintechData = JSON.parse(fs.readFileSync(fintechPath, 'utf8'));
 
 console.log('=== FINTECH SAMPLE DATA ANALYSIS ===');

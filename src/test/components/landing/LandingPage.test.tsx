@@ -52,7 +52,7 @@ describe('LandingPage Component', () => {
     expect(marketAnalysisButton).toBeInTheDocument();
     
     await user.click(marketAnalysisButton);
-    expect(mockNavigate).toHaveBeenCalledWith('/market');
+    expect(mockNavigate).toHaveBeenCalledWith('/market', { state: { initialTab: 'overview' } });
   });
 
   it('displays feature lists correctly', () => {
