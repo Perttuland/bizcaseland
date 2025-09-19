@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { copyTextToClipboard } from '@/lib/clipboard-utils';
 import { 
   Upload, 
   Download, 
@@ -110,10 +111,31 @@ export function DataManagementModule({
 
   const handleTemplateCopy = async () => {
     try {
-      await navigator.clipboard.writeText(MarketAnalysisTemplate);
-      // Could add toast notification here
+      const result = await copyTextToClipboard(MarketAnalysisTemplate);
+      
+      if (result.success) {
+        toast({
+          title: "🎉 Template Copied Successfully!",
+          description: "Market analysis template is ready for your AI assistant. Now you can create amazing market research!",
+          variant: "default",
+          duration: 4000,
+        });
+      } else {
+        // Handle manual fallback case
+        toast({
+          title: "Manual Copy Required",
+          description: result.error || "Please manually select and copy the text below.",
+          variant: "default",
+          duration: 6000,
+        });
+      }
     } catch (err) {
       console.error('Failed to copy template:', err);
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy template to clipboard. Please manually select and copy the text.",
+        variant: "destructive",
+      });
     }
   };
 
