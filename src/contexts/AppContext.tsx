@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { setNestedValue, getNestedValue } from '@/lib/utils/nested-operations';
 
 // Simplified data structure interfaces
 export interface BusinessDataSummary {
@@ -9,11 +10,20 @@ export interface BusinessDataSummary {
   [key: string]: any;
 }
 
+export interface MarketDriver {
+  key: string;
+  label: string;
+  path: string;
+  range: number[];
+  rationale: string;
+}
+
 export interface MarketDataSummary {
   meta?: {
     title?: string;
     description?: string;
   };
+  drivers?: MarketDriver[];
   [key: string]: any;
 }
 
@@ -35,6 +45,10 @@ export interface AppContextType {
   switchToLanding: () => void;
   updateBusinessData: (data: BusinessDataSummary) => void;
   updateMarketData: (data: MarketDataSummary) => void;
+  updateMarketAssumption: (path: string, value: any) => void;
+  addMarketDriver: (label: string, path: string, range: number[], rationale: string) => void;
+  removeMarketDriver: (path: string) => void;
+  updateMarketDriverRange: (path: string, range: number[]) => void;
   clearBusinessData: () => void;
   clearMarketData: () => void;
   clearAllData: () => void;
@@ -169,6 +183,91 @@ export function AppProvider({ children }: AppProviderProps) {
     storage.save(STORAGE_KEYS.MARKET_DATA, data);
   };
 
+  const updateMarketAssumption = (path: string, value: any) => {
+    if (!appState.marketData) {
+      console.error('Cannot update market assumption: no market data loaded');
+      return;
+    }
+
+    try {
+      const updatedData = setNestedValue(appState.marketData, path, value);
+      updateMarketData(updatedData);
+      console.log(`Market assumption updated at path: ${path}`, value);
+    } catch (error) {
+      console.error('Error updating market assumption:', error);
+    }
+  };
+
+  const addMarketDriver = (label: string, path: string, range: number[], rationale: string) => {
+    if (!appState.marketData) {
+      console.error('Cannot add market driver: no market data loaded');
+      return;
+    }
+
+    const drivers = appState.marketData.drivers || [];
+    const key = path.replace(/\./g, '_');
+    
+    // Check if driver already exists
+    if (drivers.some(d => d.path === path)) {
+      console.log('Driver already exists for path:', path);
+      return;
+    }
+
+    const newDriver: MarketDriver = {
+      key,
+      label,
+      path,
+      range,
+      rationale
+    };
+
+    const updatedData = {
+      ...appState.marketData,
+      drivers: [...drivers, newDriver]
+    };
+
+    updateMarketData(updatedData);
+    console.log('Market driver added:', newDriver);
+  };
+
+  const removeMarketDriver = (path: string) => {
+    if (!appState.marketData) {
+      console.error('Cannot remove market driver: no market data loaded');
+      return;
+    }
+
+    const drivers = appState.marketData.drivers || [];
+    const updatedDrivers = drivers.filter(d => d.path !== path);
+
+    const updatedData = {
+      ...appState.marketData,
+      drivers: updatedDrivers
+    };
+
+    updateMarketData(updatedData);
+    console.log('Market driver removed:', path);
+  };
+
+  const updateMarketDriverRange = (path: string, range: number[]) => {
+    if (!appState.marketData) {
+      console.error('Cannot update market driver range: no market data loaded');
+      return;
+    }
+
+    const drivers = appState.marketData.drivers || [];
+    const updatedDrivers = drivers.map(d => 
+      d.path === path ? { ...d, range } : d
+    );
+
+    const updatedData = {
+      ...appState.marketData,
+      drivers: updatedDrivers
+    };
+
+    updateMarketData(updatedData);
+    console.log('Market driver range updated:', path, range);
+  };
+
   const clearBusinessData = () => {
     setAppState(prev => ({
       ...prev,
@@ -213,6 +312,10 @@ export function AppProvider({ children }: AppProviderProps) {
     switchToLanding,
     updateBusinessData,
     updateMarketData,
+    updateMarketAssumption,
+    addMarketDriver,
+    removeMarketDriver,
+    updateMarketDriverRange,
     clearBusinessData,
     clearMarketData,
     clearAllData,

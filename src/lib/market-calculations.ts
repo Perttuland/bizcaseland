@@ -11,6 +11,14 @@ export interface ValueWithMeta {
   link?: string; // Optional link for AI to provide source URLs
 }
 
+export interface MarketDriver {
+  key: string;
+  label: string;
+  path: string;
+  range: number[];
+  rationale: string;
+}
+
 export interface MarketData {
   schema_version?: string;
   meta?: {
@@ -22,6 +30,7 @@ export interface MarketData {
     created_date?: string;
     analyst?: string;
   };
+  drivers?: MarketDriver[];
   market_sizing?: {
     total_addressable_market?: {
       base_value: ValueWithMeta;

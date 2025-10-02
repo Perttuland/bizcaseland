@@ -45,6 +45,7 @@ import { CustomerAnalysisModule } from './modules/CustomerAnalysisModule';
 import { StrategicPlanningModule } from './modules/StrategicPlanningModule';
 import { OpportunityAssessmentModule } from './modules/OpportunityAssessmentModule';
 import { DataManagementModule } from './modules/DataManagementModule';
+import { MarketAssumptionsTab } from './MarketAssumptionsTab';
 
 export interface MarketAnalysisSuiteProps {
   onExportResults?: (data: any) => void;
@@ -135,39 +136,39 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
 
   const moduleConfig = [
     {
-      id: 'overview',
-      title: 'Market Overview',
-      icon: BarChart3,
-      description: 'Executive summary and key insights',
-      color: 'bg-blue-500'
-    },
-    {
       id: 'sizing',
-      title: 'Market Sizing',
+      title: 'Market',
       icon: Target,
       description: 'TAM/SAM/SOM analysis and segmentation',
       color: 'bg-green-500'
     },
     {
       id: 'competitive',
-      title: 'Competitive Intelligence',
+      title: 'Competition',
       icon: Trophy,
       description: 'Competitor analysis and positioning',
       color: 'bg-red-500'
     },
     {
       id: 'customer',
-      title: 'Customer Analysis',
+      title: 'Customer',
       icon: Users,
       description: 'Segment scoring and personas',
       color: 'bg-purple-500'
     },
     {
       id: 'strategic',
-      title: 'Strategic Planning',
+      title: 'Strategy',
       icon: Lightbulb,
       description: 'Market entry and growth strategies',
       color: 'bg-orange-500'
+    },
+    {
+      id: 'assumptions',
+      title: 'Assumptions',
+      icon: Calculator,
+      description: 'Edit market analysis assumptions',
+      color: 'bg-indigo-500'
     },
     {
       id: 'data',
@@ -787,6 +788,10 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             onDataUpdate={handleDataUpdate}
             metrics={suiteMetrics}
           />
+        </TabsContent>
+
+        <TabsContent value="assumptions" className="space-y-6">
+          <MarketAssumptionsTab />
         </TabsContent>
 
         <TabsContent value="data" className="space-y-6">
