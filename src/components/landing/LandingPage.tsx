@@ -241,6 +241,7 @@ export function LandingPage() {
           </Card>
         </div>
 
+
         {/* Integration Message */}
         <Card className="max-w-4xl mx-auto bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border-purple-200 dark:border-purple-700 dark:bg-gray-800">
           <CardContent className="p-6 text-center">
@@ -258,10 +259,11 @@ export function LandingPage() {
               then use those insights to build detailed business cases with realistic volume projections.
             </p>
             <div className="flex items-center justify-center gap-4 text-sm text-purple-600 dark:text-purple-400 mb-4">
-              <span>• Switch between tools anytime</span>
-              <span>• Data is automatically saved</span>
-              <span>• Export insights between tools</span>
+              <span>• Switch between tools seamlessly</span>
+              <span>• Edit your data</span>
+              <span>• Develop strategies</span>
             </div>
+            {/*
             <Button 
               onClick={() => navigate('/demo')}
               variant="outline"
@@ -270,10 +272,12 @@ export function LandingPage() {
               <Lightbulb className="h-4 w-4 mr-2" />
               Try Cross-Tool Integration Demo
             </Button>
+            */}
           </CardContent>
         </Card>
 
         {/* Quick Stats */}
+        {/*
         {(hasBusinessData || hasMarketData) && (
           <div className="mt-12 text-center">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Analysis Progress</h3>
@@ -291,8 +295,9 @@ export function LandingPage() {
                 </div>
               )}
             </div>
-          </div>
+          </div>  
         )}
+        */}
       </div>
     </div>
   );
