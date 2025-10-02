@@ -110,6 +110,7 @@ export interface BusinessData {
     path: string;
     range: number[];
     rationale: string;
+    unit?: string;
   }>;
   scenarios?: any[];
   structure?: any;
@@ -120,7 +121,7 @@ interface BusinessDataContextType {
   updateData: (newData: BusinessData | null) => void;
   updateAssumption: (path: string, value: any) => void;
   updateDriver: (driverIndex: number, updates: any) => void;
-  addDriver: (path: string, key: string, range: number[], rationale: string) => void;
+  addDriver: (path: string, key: string, range: number[], rationale: string, unit?: string) => void;
   removeDriver: (path: string) => void;
   updateDriverRange: (path: string, range: number[]) => void;
   exportData: () => string;
@@ -181,7 +182,7 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
     return result.data || '{}';
   }, [data]);
 
-  const addDriver = useCallback((path: string, key: string, range: number[], rationale: string) => {
+  const addDriver = useCallback((path: string, key: string, range: number[], rationale: string, unit?: string) => {
     if (!data) {
       console.warn('addDriver called with no data');
       return;
@@ -200,7 +201,7 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      newData.drivers = [...newData.drivers, { key, path, range, rationale }];
+      newData.drivers = [...newData.drivers, { key, path, range, rationale, unit }];
       setData(newData);
     } catch (error) {
       console.error('Failed to add driver:', error);

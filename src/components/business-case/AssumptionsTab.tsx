@@ -119,7 +119,7 @@ export function AssumptionsTab() {
   };
 
   // Toggle driver status
-  const handleToggleDriver = (path: string, label: string) => {
+  const handleToggleDriver = (path: string, label: string, unit?: string) => {
     if (isDriver(path)) {
       removeDriver(path);
     } else {
@@ -128,7 +128,7 @@ export function AssumptionsTab() {
       // Default range with 5 values
       const defaultRange = [0, 0, 0, 0, 0];
       const rationale = `Sensitivity analysis for ${label.trim()}`;
-      addDriver(path, key, defaultRange, rationale);
+      addDriver(path, key, defaultRange, rationale, unit);
     }
   };
 
@@ -751,7 +751,7 @@ export function AssumptionsTab() {
                               {row.dataPath && row.value !== undefined && (
                                 <Checkbox
                                   checked={isDriver(row.dataPath)}
-                                  onCheckedChange={() => handleToggleDriver(row.dataPath, row.label)}
+                                  onCheckedChange={() => handleToggleDriver(row.dataPath, row.label, row.unit)}
                                   className="cursor-pointer"
                                 />
                               )}
@@ -782,6 +782,7 @@ export function AssumptionsTab() {
                                       currentRange={getDriver(row.dataPath)?.range || [0, 0, 0, 0, 0]}
                                       onUpdateRange={(range) => updateDriverRange(row.dataPath, range)}
                                       onRemove={() => removeDriver(row.dataPath)}
+                                      unit={row.unit}
                                     />
                                   )}
                                 </div>

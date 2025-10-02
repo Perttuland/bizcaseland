@@ -11,6 +11,7 @@ interface Driver {
   path: string;
   rationale: string;
   range: number[];
+  unit?: string;
 }
 
 interface SensitivityAnalysisProps {
@@ -58,6 +59,31 @@ export function SensitivityAnalysis({
             const baseValue = getNestedValue(baselineRef.current || businessData, driver.path);
             const isModified = Math.abs(currentValue - baseValue) > 0.001;
             
+            // Check if this is a percentage-based value
+            const isPercentage = driver.unit === '%' || driver.unit === 'ratio' || driver.unit === 'pct' || driver.unit === 'percentage' || driver.unit?.includes('pct');
+            
+            // Format values for display (percentages: 0.05 -> 5%)
+            const formatDisplayValue = (value: number): string => {
+              if (businessData.meta.currency && driver.path.includes('price')) {
+                return formatCurrency(value, businessData.meta.currency);
+              }
+              if (isPercentage) {
+                return `${(value * 100).toFixed(1)}%`;
+              }
+              return value.toLocaleString();
+            };
+            
+            // Format values for buttons (percentages: 0.05 -> 5)
+            const formatButtonValue = (value: number): string => {
+              if (businessData.meta.currency && driver.path.includes('price')) {
+                return formatCurrency(value, businessData.meta.currency).replace(/[€$£]/g, '').trim();
+              }
+              if (isPercentage) {
+                return (value * 100).toFixed(1);
+              }
+              return value.toLocaleString();
+            };
+            
             return (
               <div key={index} className="space-y-4 p-4 bg-muted/50 dark:bg-muted/50 rounded-lg border-2 border-border">
                 <div className="flex items-center justify-between">
@@ -78,9 +104,7 @@ export function SensitivityAnalysis({
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Current Value:</span>
                     <span className="font-mono font-semibold">
-                      {businessData.meta.currency && driver.path.includes('price') 
-                        ? formatCurrency(currentValue, businessData.meta.currency)
-                        : currentValue.toLocaleString()}
+                      {formatDisplayValue(currentValue)}
                     </span>
                   </div>
                   
@@ -94,13 +118,11 @@ export function SensitivityAnalysis({
                       className="w-full"
                     />
                     <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{minValue.toLocaleString()}</span>
+                      <span>{formatDisplayValue(minValue)}</span>
                       <span className="text-center">
-                        Base: {businessData.meta.currency && driver.path.includes('price') 
-                          ? formatCurrency(baseValue, businessData.meta.currency)
-                          : baseValue.toLocaleString()}
+                        Base: {formatDisplayValue(baseValue)}
                       </span>
-                      <span>{maxValue.toLocaleString()}</span>
+                      <span>{formatDisplayValue(maxValue)}</span>
                     </div>
                   </div>
                   
@@ -115,9 +137,7 @@ export function SensitivityAnalysis({
                           onClick={() => onDriverChange(driver.key, value)}
                           className="text-xs h-8"
                         >
-                          {businessData.meta.currency && driver.path.includes('price') 
-                            ? formatCurrency(value, businessData.meta.currency).replace(/[€$£]/g, '').trim()
-                            : value.toLocaleString()}
+                          {formatButtonValue(value)}
                         </Button>
                       );
                     })}

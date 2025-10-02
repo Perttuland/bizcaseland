@@ -11,19 +11,36 @@ interface SensitivityDriverBadgeProps {
   currentRange?: number[];
   onUpdateRange: (range: number[]) => void;
   onRemove: () => void;
+  unit?: string;
 }
 
 export function SensitivityDriverBadge({
   path,
   currentRange = [0, 0, 0, 0, 0],
   onUpdateRange,
-  onRemove
+  onRemove,
+  unit
 }: SensitivityDriverBadgeProps) {
-  const [range, setRange] = useState<number[]>(currentRange);
+  // Check if this is a percentage-based value
+  const isPercentage = unit === '%' || unit === 'ratio' || unit === 'pct' || unit === 'percentage' || unit?.includes('pct');
+  
+  // Convert stored values to display values (for percentages: 0.05 -> 5)
+  const toDisplayValue = (value: number): number => {
+    return isPercentage ? value * 100 : value;
+  };
+  
+  // Convert display values to storage values (for percentages: 5 -> 0.05)
+  const toStorageValue = (value: number): number => {
+    return isPercentage ? value / 100 : value;
+  };
+  
+  const [range, setRange] = useState<number[]>(currentRange.map(toDisplayValue));
   const [isOpen, setIsOpen] = useState(false);
 
   const handleSave = () => {
-    onUpdateRange(range);
+    // Convert display values back to storage format before saving
+    const storageRange = range.map(toStorageValue);
+    onUpdateRange(storageRange);
     setIsOpen(false);
   };
 
@@ -62,19 +79,24 @@ export function SensitivityDriverBadge({
           
           <p className="text-xs text-muted-foreground">
             Define 5 values for sensitivity analysis. These will be used to test different scenarios.
+            {isPercentage && <span className="block mt-1 text-financial-primary font-medium">Enter values as percentages (e.g., 5 = 5%)</span>}
           </p>
 
           <div className="space-y-2">
             {[0, 1, 2, 3, 4].map((index) => (
               <div key={index} className="flex items-center gap-2">
                 <Label className="text-xs w-16">Value {index + 1}:</Label>
-                <Input
-                  type="number"
-                  value={range[index]}
-                  onChange={(e) => handleRangeChange(index, e.target.value)}
-                  className="h-8 text-sm"
-                  step="any"
-                />
+                <div className="flex-1 flex items-center gap-1">
+                  <Input
+                    type="number"
+                    value={range[index]}
+                    onChange={(e) => handleRangeChange(index, e.target.value)}
+                    className="h-8 text-sm"
+                    step="any"
+                  />
+                  {isPercentage && <span className="text-xs text-muted-foreground whitespace-nowrap">%</span>}
+                  {!isPercentage && unit && <span className="text-xs text-muted-foreground whitespace-nowrap">{unit}</span>}
+                </div>
               </div>
             ))}
           </div>
