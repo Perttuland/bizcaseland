@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,13 +9,35 @@ import { TrendingUp, TrendingDown, DollarSign, Calendar, Target, AlertTriangle, 
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { useToast } from '@/hooks/use-toast';
 import { calculateBusinessMetrics, formatCurrency } from '@/lib/calculations';
+import { setNestedValue } from '@/lib/utils/nested-operations';
+import { SensitivityAnalysis } from './SensitivityAnalysis';
 
 export function CashFlowStatement() {
-  const { data: businessData, updateAssumption } = useBusinessData();
+  const { data: businessData, updateData } = useBusinessData();
   const { toast } = useToast();
   const [hoveredCell, setHoveredCell] = useState<{row: string, month: number} | null>(null);
-  const [hoveredDriver, setHoveredDriver] = useState<string | null>(null);
-  const [sensitivityValues, setSensitivityValues] = useState<{[key: string]: string}>({});
+  const [driverValues, setDriverValues] = useState<{[key: string]: number}>({});
+  const baselineRef = useRef(businessData);
+
+  // Get drivers before early return
+  const drivers = businessData?.drivers || [];
+
+  // Update baseline when a fresh businessData is loaded and there are no active modifications
+  useEffect(() => {
+    if (Object.keys(driverValues).length === 0) {
+      baselineRef.current = businessData;
+    }
+  }, [businessData, driverValues]);
+
+  // Listen for global data refresh events
+  useEffect(() => {
+    const handleDataRefreshed = () => {
+      setDriverValues({});
+      baselineRef.current = businessData;
+    };
+    window.addEventListener('datarefreshed', handleDataRefreshed);
+    return () => window.removeEventListener('datarefreshed', handleDataRefreshed);
+  }, [businessData]);
   
   if (!businessData) {
     return (
@@ -36,21 +58,26 @@ export function CashFlowStatement() {
   const monthlyData = calculatedMetrics.monthlyData;
   const currency = businessData.meta?.currency || 'EUR';
   
-  // Handle sensitivity analysis
-  const handleSensitivityChange = (driverKey: string, value: string) => {
-    const driver = businessData?.drivers?.find(d => d.key === driverKey);
-    if (driver && driver.path) {
-      const numValue = parseFloat(value);
-      if (!isNaN(numValue)) {
-        updateAssumption(driver.path, numValue);
-        
-        // Show toast notification
-        toast({
-          title: "Sensitivity Analysis Updated",
-          description: `${driver.key} updated to ${value}`,
-        });
+  // Handle driver changes with immediate updates
+  const handleDriverChange = (driverKey: string, value: number) => {
+    setDriverValues(prev => {
+      const newValues = {
+        ...prev,
+        [driverKey]: value
+      };
+      
+      // Apply changes immediately to global data
+      let modified = businessData;
+      for (const driver of drivers) {
+        const currentValue = newValues[driver.key];
+        if (currentValue !== undefined) {
+          modified = setNestedValue(modified, driver.path, currentValue);
+        }
       }
-    }
+      updateData(modified);
+      
+      return newValues;
+    });
   };
 
   const formatDecimal = (amount: number) => {
@@ -647,62 +674,13 @@ export function CashFlowStatement() {
       </div>
 
       {/* Sensitivity Analysis */}
-      {businessData?.drivers && businessData.drivers.length > 0 && (
-        <Card className="bg-gradient-card shadow-card">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Target className="h-5 w-5" />
-              <span>Sensitivity Analysis</span>
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Click on driver values to test different scenarios
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {businessData.drivers.map((driver, driverIndex) => (
-                <div key={driver.key} className="grid grid-cols-6 gap-3 items-center">
-                  {/* Title on the left */}
-                  <div className="col-span-1 relative">
-                    <h4 
-                      className="font-medium capitalize cursor-help"
-                      onMouseEnter={() => setHoveredDriver(driver.key)}
-                      onMouseLeave={() => setHoveredDriver(null)}
-                    >
-                      {driver.key}
-                    </h4>
-                    
-                    {/* Tooltip for rationale - always appears above */}
-                    {hoveredDriver === driver.key && driver.rationale && (
-                      <div className="absolute z-[100] bg-card border border-border rounded-lg p-3 shadow-elevation min-w-[250px] bottom-full left-0 mb-1">
-                        <div className="text-sm">
-                          <div className="font-semibold text-foreground mb-1">{driver.key}</div>
-                          <div className="text-xs text-muted-foreground">{driver.rationale}</div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Values on the right - 5 columns */}
-                  <div className="col-span-5 grid grid-cols-5 gap-2">
-                    {driver.range.map((value, index) => (
-                      <Button
-                        key={index}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => handleSensitivityChange(driver.key, value.toString())}
-                      >
-                        {typeof value === 'number' ? value.toLocaleString() : value}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <SensitivityAnalysis
+        drivers={drivers}
+        businessData={businessData}
+        baselineRef={baselineRef}
+        driverValues={driverValues}
+        onDriverChange={handleDriverChange}
+      />
     </div>
   );
 }

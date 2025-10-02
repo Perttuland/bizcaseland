@@ -599,29 +599,32 @@ export function BusinessCaseAnalyzer() {
 
   // Main analysis interface with tabs
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6">
+      {/* Header - Responsive layout */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        {/* Left side: Back button, icon, and title */}
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => navigate('/')}
-            className="mr-2 hover:bg-muted"
+            className="hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Home
+            <span className="hidden sm:inline">Back to Home</span>
+            <span className="sm:hidden">Back</span>
           </Button>
-          <Calculator className="h-8 w-8 text-blue-600" />
+          <Calculator className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold">Business Case Analyzer</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-3xl font-bold">Business Case Analyzer</h1>
+            <p className="text-sm text-muted-foreground">
               {jsonData?.meta?.title || 'Untitled Business Case'}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        {/* Right side: Action buttons - wrap on mobile */}
+        <div className="flex items-center gap-2 flex-wrap">
           <ThemeToggle />
           <AlertDialog>
             <AlertDialogTrigger asChild>
@@ -631,7 +634,8 @@ export function BusinessCaseAnalyzer() {
                 className="hover:bg-red-50 hover:border-red-200 text-red-600 dark:hover:bg-red-900 dark:hover:border-red-700"
               >
                 <RotateCcw className="h-4 w-4 mr-1" />
-                Reset Data
+                <span className="hidden sm:inline">Reset Data</span>
+                <span className="sm:hidden">Reset</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -660,18 +664,16 @@ export function BusinessCaseAnalyzer() {
             className="hover:bg-green-50 hover:border-green-200"
           >
             <Target className="h-4 w-4 mr-1" />
-            Switch to Market Analysis
+            <span className="hidden sm:inline">Switch to Market Analysis</span>
+            <span className="sm:hidden">Market</span>
           </Button>
-          <Badge variant="default" className="bg-green-500">
-            Data Loaded
-          </Badge>
           <Button 
             variant="outline" 
             size="sm"
             onClick={exportData}
           >
             <Download className="h-4 w-4 mr-1" />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
       </div>

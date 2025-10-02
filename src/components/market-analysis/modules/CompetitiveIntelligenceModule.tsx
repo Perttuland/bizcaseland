@@ -23,6 +23,8 @@ import { Trophy, Shield, Zap, AlertTriangle, Target } from 'lucide-react';
 
 import { MarketData } from '@/lib/market-calculations';
 import { MarketSuiteMetrics } from '@/lib/market-suite-calculations';
+import { ModuleDataTools } from './ModuleDataTools';
+import { ValueWithRationale } from '../ValueWithRationale';
 
 interface CompetitiveIntelligenceModuleProps {
   marketData: MarketData;
@@ -128,15 +130,18 @@ export function CompetitiveIntelligenceModule({ marketData, onDataUpdate, metric
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Trophy className="h-6 w-6 text-red-600" />
-          <h2 className="text-2xl font-bold">Competitive Intelligence</h2>
-        </div>
-        <Badge variant="outline" className="bg-red-50">
-          Competitive Analysis
-        </Badge>
+      <div className="flex items-center gap-3">
+        <Trophy className="h-6 w-6 text-red-600" />
+        <h2 className="text-2xl font-bold">Competitive Intelligence</h2>
       </div>
+
+      {/* Module Data Tools */}
+      <ModuleDataTools
+        moduleName="Competitive Intelligence"
+        moduleKey="competitive_landscape"
+        marketData={marketData}
+        onDataUpdate={onDataUpdate}
+      />
 
       {/* Key competitive metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -390,7 +395,12 @@ export function CompetitiveIntelligenceModule({ marketData, onDataUpdate, metric
                     </Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Market Share: {competitor.market_share?.value || 0}%
+                    Market Share: <ValueWithRationale
+                      value={`${competitor.market_share?.value || 0}%`}
+                      rationale={competitor.market_share?.rationale}
+                      link={competitor.market_share?.link}
+                      inline
+                    />
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-3">

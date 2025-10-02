@@ -165,8 +165,10 @@
         "id": "fleet_operators",
         "name": "Commercial Fleet Operators",
         "size_percentage": { "value": 40, "unit": "percentage", "rationale": "Largest revenue opportunity with predictable usage patterns" },
+        "size_value": { "value": 850000000, "unit": "EUR", "rationale": "40% of €2.125B SAM (€8.5B TAM × 25% SAM)" },
         "growth_rate": { "value": 25, "unit": "percentage_per_year", "rationale": "Accelerating fleet electrification driven by TCO advantages" },
-        "target_share": { "value": 15, "unit": "percentage", "rationale": "Achievable through dedicated B2B sales and fleet management solutions" },
+        "demographics": "Commercial fleet operators ranging from last-mile delivery services and logistics companies to taxi and ride-sharing fleets. Primarily B2B customers with 50-500 vehicles, concentrated in urban and peri-urban areas across Germany, France, and Netherlands. Decision-makers are fleet managers and CFOs focused on TCO optimization.",
+        "pain_points": "Fleet operators face critical challenges with range anxiety and charging downtime impacting operations. Current public charging infrastructure is unreliable and doesn't provide the guaranteed uptime needed for commercial operations. There's a significant unmet need for predictable, fleet-dedicated charging with real-time availability, automated billing, and integration with existing fleet management systems. The lack of bulk pricing and priority access makes scaling electric fleets economically challenging.",
         "customer_profile": "Logistics companies, delivery services, taxi/ride-sharing with 50+ vehicle fleets",
         "value_drivers": ["Cost predictability", "Uptime guarantees", "Fleet management integration", "Bulk pricing"],
         "entry_strategy": "Direct enterprise sales with fleet management software integration"
@@ -175,8 +177,10 @@
         "id": "retail_locations", 
         "name": "Retail & Hospitality",
         "size_percentage": { "value": 35, "unit": "percentage", "rationale": "High-traffic locations with extended dwell times" },
+        "size_value": { "value": 743750000, "unit": "EUR", "rationale": "35% of €2.125B SAM" },
         "growth_rate": { "value": 30, "unit": "percentage_per_year", "rationale": "Retail integration becoming customer expectation" },
-        "target_share": { "value": 12, "unit": "percentage", "rationale": "Partnership-based approach with revenue sharing models" },
+        "demographics": "Shopping centers, hotels, restaurants, and entertainment venues seeking to attract EV-driving customers. Property owners and managers of high-footfall retail locations, primarily in major European cities. Decision-makers include property managers, sustainability officers, and customer experience directors who see EV charging as a customer amenity and revenue stream.",
+        "pain_points": "Retail locations want to offer EV charging to attract customers but face barriers around capital investment, installation complexity, and operational overhead. There's an unmet need for turnkey charging solutions with minimal upfront cost, revenue-sharing models, and zero operational burden. Property owners struggle to justify ROI and lack expertise in managing charging infrastructure. They need solutions that enhance customer experience without adding management complexity or financial risk.",
         "customer_profile": "Shopping centers, hotels, restaurants, entertainment venues",
         "value_drivers": ["Customer traffic increase", "Revenue sharing", "Sustainability marketing", "Minimal operating overhead"],
         "entry_strategy": "Partnership development with revenue-sharing and co-marketing agreements"
@@ -185,37 +189,15 @@
         "id": "public_infrastructure",
         "name": "Public Infrastructure",
         "size_percentage": { "value": 25, "unit": "percentage", "rationale": "Government-mandated infrastructure development" },
+        "size_value": { "value": 531250000, "unit": "EUR", "rationale": "25% of €2.125B SAM" },
         "growth_rate": { "value": 20, "unit": "percentage_per_year", "rationale": "Steady growth aligned with public procurement cycles" },
-        "target_share": { "value": 8, "unit": "percentage", "rationale": "Conservative estimate due to public tender competition" },
+        "demographics": "Municipalities, regional transport authorities, and public parking operators across EU countries implementing EV infrastructure mandates. Primarily public sector buyers following procurement regulations, with decision-making involving multiple stakeholders including city councils, transport departments, and sustainability offices. Budget cycles are annual with multi-year planning horizons.",
+        "pain_points": "Public sector buyers must meet EU charging infrastructure mandates but face budget constraints and long procurement cycles. There's an unmet need for cost-effective solutions that meet strict public procurement requirements while delivering reliability and long-term service guarantees. Municipalities struggle with technical specification, ongoing maintenance requirements, and integration with existing urban infrastructure. They need vendors who can navigate public procurement, provide comprehensive service contracts, and demonstrate proven reliability with public sector references.",
         "customer_profile": "Municipalities, transport authorities, public parking operators",
         "value_drivers": ["Regulatory compliance", "Public service mandate", "EU funding access", "Long-term contracts"],
         "entry_strategy": "Public tender participation with emphasis on total cost of ownership and service reliability"
       }
-    ],
-    "customer_economics": {
-      "average_customer_value": {
-        "annual_value": { 
-          "value": 50000, 
-          "unit": "EUR", 
-          "rationale": "Average annual revenue per charging location based on utilization and pricing" 
-        },
-        "lifetime_value": { 
-          "value": 400000, 
-          "unit": "EUR", 
-          "rationale": "8-year contract lifetime with increasing utilization over time" 
-        },
-        "acquisition_cost": { 
-          "value": 25000, 
-          "unit": "EUR", 
-          "rationale": "Sales and marketing costs including site development and partnership setup" 
-        }
-      },
-      "customer_behavior": {
-        "decision_factors": ["Total cost of ownership", "Reliability", "Brand reputation", "Service quality"],
-        "purchasing_process": "6-month B2B sales cycle with technical evaluation and procurement",
-        "retention_factors": ["Service reliability", "Cost competitiveness", "Technology updates"]
-      }
-    }
+    ]
   },
   "strategic_recommendations": {
     "market_entry_timing": "Optimal - Market growth accelerating with regulatory tailwinds",

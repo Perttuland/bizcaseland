@@ -89,48 +89,52 @@ export interface MarketOpportunityMatrix {
  * Calculate comprehensive market suite metrics
  */
 export function calculateSuiteMetrics(marketData: MarketData): MarketSuiteMetrics {
-  // Basic market sizing
-  const tam = marketData?.market_sizing?.total_addressable_market?.base_value?.value || 0;
-  const samPercentage = (marketData?.market_sizing?.serviceable_addressable_market?.percentage_of_tam?.value || 0) / 100;
-  const somPercentage = (marketData?.market_sizing?.serviceable_obtainable_market?.percentage_of_sam?.value || 0) / 100;
+  // Check which modules are present
+  const hasMarketSizing = !!marketData?.market_sizing;
+  const hasCompetitiveLandscape = !!marketData?.competitive_landscape;
+  const hasCustomerAnalysis = !!marketData?.customer_analysis;
+  const hasStrategicPlanning = !!marketData?.strategic_planning;
+  
+  // Basic market sizing (handle missing module)
+  const tam = hasMarketSizing ? (marketData.market_sizing?.total_addressable_market?.base_value?.value || 0) : 0;
+  const samPercentage = hasMarketSizing ? ((marketData.market_sizing?.serviceable_addressable_market?.percentage_of_tam?.value || 0) / 100) : 0;
+  const somPercentage = hasMarketSizing ? ((marketData.market_sizing?.serviceable_obtainable_market?.percentage_of_sam?.value || 0) / 100) : 0;
   
   const sam = tam * samPercentage;
   const som = sam * somPercentage;
   
-  // Growth metrics
-  const marketGrowthRate = marketData?.market_sizing?.total_addressable_market?.growth_rate?.value || 0;
+  // Growth metrics (handle missing module)
+  const marketGrowthRate = hasMarketSizing ? (marketData.market_sizing?.total_addressable_market?.growth_rate?.value || 0) : 0;
   
-  // Competitive metrics
-  const competitors = marketData?.competitive_landscape?.competitors || [];
+  // Competitive metrics (handle missing module)
+  const competitors = hasCompetitiveLandscape ? (marketData.competitive_landscape?.competitors || []) : [];
   const competitorCount = competitors.length;
   const competitorShares = competitors.map(c => (c.market_share?.value || 0) / 100);
   const marketConcentration = competitorShares.reduce((sum, share) => sum + Math.pow(share, 2), 0);
-  const averageCompetitorStrength = competitors.reduce((sum, comp) => {
+  const averageCompetitorStrength = competitorCount > 0 ? competitors.reduce((sum, comp) => {
     const threatLevel = comp.threat_level === 'high' ? 3 : comp.threat_level === 'medium' ? 2 : 1;
     return sum + threatLevel;
-  }, 0) / Math.max(competitorCount, 1);
+  }, 0) / competitorCount : 0;
   
-  // Customer metrics
-  const customerEcon = marketData?.customer_analysis?.customer_economics;
-  const customerAcquisitionCost = customerEcon?.average_customer_value?.acquisition_cost?.value || 0;
-  const customerLifetimeValue = customerEcon?.average_customer_value?.lifetime_value?.value || 0;
+  // Customer economics removed - no longer part of market analysis
+  // Market analysis focuses on segments and opportunity sizing
+  const customerAcquisitionCost = 0;
+  const customerLifetimeValue = 0;
   
   // Current and target market share
   const currentShare = (marketData?.market_share?.current_position?.current_share?.value || 0) / 100;
   const targetShare = (marketData?.market_share?.target_position?.target_share?.value || 0) / 100;
   const marketPenetrationRate = targetShare;
   
-  // Strategic metrics
-  const entryBarriers = marketData?.competitive_landscape?.market_structure?.barriers_to_entry || 'medium';
+  // Strategic metrics (handle missing module)
+  const entryBarriers = hasCompetitiveLandscape ? (marketData.competitive_landscape?.market_structure?.barriers_to_entry || 'medium') : 'medium';
   const entryBarrierScore = entryBarriers === 'low' ? 25 : entryBarriers === 'medium' ? 50 : 75;
   
-  const competitiveAdvantages = marketData?.competitive_landscape?.competitive_advantages || [];
+  const competitiveAdvantages = hasCompetitiveLandscape ? (marketData.competitive_landscape?.competitive_advantages || []) : [];
   const strategicFitScore = Math.min(100, competitiveAdvantages.length * 20);
   
-  // Risk assessment
-  const marketRisks = marketData?.market_dynamics?.market_risks || [];
-  const highRisks = marketRisks.filter(r => r.probability === 'high' && r.impact === 'high').length;
-  const riskScore = Math.min(100, highRisks * 25);
+  // Risk assessment - removed market_dynamics module, setting baseline risk score
+  const riskScore = 50; // Baseline risk score when market_dynamics module is not present
   
   // Opportunity scoring
   const opportunityScore = calculateOpportunityScore({
@@ -149,8 +153,8 @@ export function calculateSuiteMetrics(marketData: MarketData): MarketSuiteMetric
     averageCompetitorStrength
   );
   
-  // Customer segments
-  const customerSegments = marketData?.customer_analysis?.market_segments?.length || 0;
+  // Customer segments (handle missing module)
+  const customerSegments = hasCustomerAnalysis ? (marketData.customer_analysis?.market_segments?.length || 0) : 0;
   
   // Generate summary insights
   const summary = generateSummaryInsights({
@@ -317,11 +321,10 @@ export function analyzeCustomerSegments(marketData: MarketData): CustomerSegment
   return segments.map(segment => {
     const size = segment.size_percentage?.value || 0;
     const growth = segment.growth_rate?.value || 0;
-    const targetShare = segment.target_share?.value || 0;
     
     // Calculate attractiveness factors
-    const attractiveness = Math.min(100, (size + growth * 2 + targetShare) / 3);
-    const accessibility = targetShare > 0 ? Math.min(100, 60 + targetShare) : 30;
+    const attractiveness = Math.min(100, (size + growth * 2) / 2);
+    const accessibility = size > 20 ? Math.min(100, 60 + size / 2) : 30;
     const defensibility = growth > 5 ? 70 : 50; // Simplified calculation
     
     const competitionLevel: 'low' | 'medium' | 'high' = 
@@ -427,11 +430,11 @@ export function createOpportunityMatrix(marketData: MarketData): MarketOpportuni
   const opportunities = segments.map(segment => {
     const size = (segment.size_percentage?.value || 0) / 100 * tam;
     const growthRate = segment.growth_rate?.value || 0;
-    const targetShare = segment.target_share?.value || 0;
+    const segmentShare = segment.size_percentage?.value || 0;
     
-    // Estimate competitive intensity (simplified)
-    const competitiveIntensity = targetShare > 10 ? 0.8 : targetShare > 5 ? 0.6 : 0.4;
-    const accessibility = targetShare > 0 ? 0.8 : 0.3;
+    // Estimate competitive intensity based on segment size (larger = more competitive)
+    const competitiveIntensity = segmentShare > 30 ? 0.8 : segmentShare > 20 ? 0.6 : 0.4;
+    const accessibility = segmentShare > 15 ? 0.8 : 0.5;
     
     // Calculate overall score
     const sizeScore = Math.min(1, size / (tam * 0.1)); // Normalize to 10% of TAM
@@ -469,35 +472,61 @@ export function validateMarketSuiteData(marketData: MarketData): {
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  // Core market sizing validation
-  if (!marketData?.market_sizing?.total_addressable_market?.base_value?.value) {
-    errors.push("Total Addressable Market base value is required");
+  // Check which modules are present
+  const hasMarketSizing = !!marketData?.market_sizing;
+  const hasCompetitiveLandscape = !!marketData?.competitive_landscape;
+  const hasCustomerAnalysis = !!marketData?.customer_analysis;
+  const hasStrategicPlanning = !!marketData?.strategic_planning;
+  
+  // Inform user about missing modules (informational only)
+  if (!hasMarketSizing) {
+    warnings.push("Market Sizing module not configured - add it to analyze TAM/SAM/SOM");
+  }
+  if (!hasCompetitiveLandscape) {
+    warnings.push("Competitive Intelligence module not configured - add it for competitor analysis");
+  }
+  if (!hasCustomerAnalysis) {
+    warnings.push("Customer Analysis module not configured - add it for segment analysis");
+  }
+  if (!hasStrategicPlanning) {
+    warnings.push("Strategic Planning module not configured - add it for execution strategy and projections");
   }
   
-  // Competitive landscape validation
-  const competitors = marketData?.competitive_landscape?.competitors || [];
-  if (competitors.length === 0) {
-    warnings.push("No competitors defined - consider adding competitive analysis");
+  // Validate market sizing module IF it exists
+  if (hasMarketSizing) {
+    if (!marketData.market_sizing?.total_addressable_market?.base_value?.value) {
+      errors.push("Market Sizing: Total Addressable Market base value is missing");
+    }
   }
   
-  // Customer segment validation
-  const segments = marketData?.customer_analysis?.market_segments || [];
-  if (segments.length === 0) {
-    warnings.push("No customer segments defined - segment analysis recommended");
+  // Validate competitive landscape IF it exists
+  if (hasCompetitiveLandscape) {
+    const competitors = marketData.competitive_landscape?.competitors || [];
+    if (competitors.length === 0) {
+      warnings.push("Competitive Intelligence: No competitors defined - add competitor data for better analysis");
+    }
+    
+    const advantages = marketData.competitive_landscape?.competitive_advantages || [];
+    if (advantages.length === 0) {
+      warnings.push("Competitive Intelligence: No competitive advantages defined");
+    }
   }
   
-  // Strategic validation
-  const advantages = marketData?.competitive_landscape?.competitive_advantages || [];
-  if (advantages.length === 0) {
-    warnings.push("No competitive advantages defined - strategic differentiation needed");
+  // Validate customer analysis IF it exists
+  if (hasCustomerAnalysis) {
+    const segments = marketData.customer_analysis?.market_segments || [];
+    if (segments.length === 0) {
+      warnings.push("Customer Analysis: No customer segments defined");
+    }
+    
+    // Data consistency checks for customer segments
+    const totalSegmentPercentage = segments.reduce((sum, seg) => sum + (seg.size_percentage?.value || 0), 0);
+    if (totalSegmentPercentage > 100) {
+      errors.push("Customer Analysis: Total segment percentages exceed 100%");
+    }
   }
   
-  // Data consistency checks
-  const totalSegmentPercentage = segments.reduce((sum, seg) => sum + (seg.size_percentage?.value || 0), 0);
-  if (totalSegmentPercentage > 100) {
-    errors.push("Total customer segment percentages exceed 100%");
-  }
-  
+  // Note: All modules are optional, so no data at all is valid
   return {
     isValid: errors.length === 0,
     errors,

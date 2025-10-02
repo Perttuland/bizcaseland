@@ -58,11 +58,21 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-12">
         {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-3 mb-6 relative">
-            <div className="absolute top-0 right-0 flex items-center gap-2">
+        <div className="text-center mb-8 sm:mb-16">
+          {/* Responsive header: stacks on mobile, horizontal on desktop */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            {/* Title and Logo - centered on mobile, left on desktop */}
+            <div className="flex items-center justify-center md:justify-start gap-3">
+              <div className="p-2 sm:p-3 bg-blue-600 rounded-xl">
+                <BarChart3 className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+              </div>
+              <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 dark:text-white">Bizcaseland</h1>
+            </div>
+            
+            {/* Buttons - centered on mobile, right on desktop */}
+            <div className="flex items-center justify-center md:justify-end gap-2 flex-wrap">
               <ThemeToggle />
               {(hasBusinessData || hasMarketData) && (
                 <AlertDialog>
@@ -73,7 +83,8 @@ export function LandingPage() {
                       className="hover:bg-red-50 hover:border-red-200 text-red-600 dark:hover:bg-red-900 dark:hover:border-red-700"
                     >
                       <RotateCcw className="h-4 w-4 mr-1" />
-                      Reset All Data
+                      <span className="hidden sm:inline">Reset All Data</span>
+                      <span className="sm:hidden">Reset</span>
                     </Button>
                   </AlertDialogTrigger>
                   <AlertDialogContent>
@@ -97,12 +108,9 @@ export function LandingPage() {
                 </AlertDialog>
               )}
             </div>
-            <div className="p-3 bg-blue-600 rounded-xl">
-              <BarChart3 className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Bizcaseland</h1>
           </div>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          
+          <p className="text-base sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto px-4">
             Comprehensive business analysis platform combining market research intelligence 
             with financial modeling for data-driven decision making.
           </p>

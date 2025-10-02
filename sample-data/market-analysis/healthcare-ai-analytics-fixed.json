@@ -165,8 +165,10 @@
         "id": "large_hospital_systems",
         "name": "Large Hospital Systems",
         "size_percentage": { "value": 45, "unit": "percentage", "rationale": "Largest revenue opportunity with complex analytics needs" },
+        "size_value": { "value": 810000000, "unit": "EUR", "rationale": "45% of €1.8B SAM (€12B TAM × 15% SAM)" },
         "growth_rate": { "value": 20, "unit": "percentage_per_year", "rationale": "Accelerating digital transformation and AI adoption" },
-        "target_share": { "value": 8, "unit": "percentage", "rationale": "Achievable through clinical partnerships and proven outcomes" },
+        "demographics": "Academic medical centers and large integrated hospital systems with 500+ beds located primarily in Germany, France, UK, Netherlands, and Nordic countries. These are typically university-affiliated teaching hospitals with research missions. Decision-makers include Chief Medical Information Officers (CMIOs), Chief Innovation Officers, and hospital CEOs, with complex procurement involving clinical, IT, and administrative stakeholders. Budget cycles are annual with multi-year strategic technology planning.",
+        "pain_points": "Large hospital systems face overwhelming data complexity with siloed clinical systems creating fragmented views of patient care. There's a critical unmet need for AI-driven predictive analytics to improve clinical outcomes while reducing costly adverse events and readmissions. Current analytics tools lack the sophistication to handle real-time clinical decision support at scale. Hospitals struggle to demonstrate value-based care performance and need actionable insights from population health data. Integration challenges with legacy EHR systems and lack of interoperability prevent effective data utilization. Regulatory compliance requirements (GDPR, MDR) and clinical validation standards create significant barriers to AI adoption.",
         "customer_profile": "Academic medical centers and large hospital systems with 500+ beds",
         "value_drivers": ["Clinical outcomes improvement", "Operational efficiency", "Research capabilities", "Population health"],
         "entry_strategy": "Clinical partnership approach with pilot programs and outcome-based contracts"
@@ -175,8 +177,10 @@
         "id": "specialty_clinics",
         "name": "Specialty Clinics",
         "size_percentage": { "value": 30, "unit": "percentage", "rationale": "Growing segment with specialized analytics needs" },
+        "size_value": { "value": 540000000, "unit": "EUR", "rationale": "30% of €1.8B SAM" },
         "growth_rate": { "value": 25, "unit": "percentage_per_year", "rationale": "Specialty care digitization and value-based care adoption" },
-        "target_share": { "value": 12, "unit": "percentage", "rationale": "Higher penetration possible with specialized solutions" },
+        "demographics": "Specialty care practices including cardiology, oncology, and radiology groups with 50-200 providers. These are typically physician-owned or private equity-backed specialty clinics concentrated in urban centers across Western Europe. Decision-makers are managing partners, medical directors, and practice administrators focused on clinical differentiation and operational efficiency. They often operate under value-based care contracts and need to demonstrate quality metrics.",
+        "pain_points": "Specialty clinics need highly specialized AI algorithms tailored to their clinical domains but lack the resources to develop them in-house. There's an unmet need for diagnostic decision support that improves accuracy and reduces variation in treatment protocols. Current general-purpose healthcare analytics don't address specialty-specific workflows and clinical nuances. These practices struggle to benchmark performance against peers and demonstrate outcomes to referring physicians and payers. They need risk stratification tools for patient selection and treatment optimization but face challenges integrating with multiple hospital systems and imaging networks.",
         "customer_profile": "Cardiology, oncology, and radiology practices with 50-200 providers",
         "value_drivers": ["Diagnostic accuracy", "Treatment optimization", "Risk stratification", "Quality metrics"],
         "entry_strategy": "Specialty-focused solutions with clinical society partnerships"
@@ -185,36 +189,14 @@
         "id": "public_health_systems",
         "name": "Public Health Systems",
         "size_percentage": { "value": 25, "unit": "percentage", "rationale": "Stable segment with population health focus" },
+        "size_value": { "value": 450000000, "unit": "EUR", "rationale": "25% of €1.8B SAM" },
         "growth_rate": { "value": 15, "unit": "percentage_per_year", "rationale": "Government digitization initiatives and pandemic preparedness" },
-        "target_share": { "value": 6, "unit": "percentage", "rationale": "Conservative estimate due to procurement complexity" },
+        "demographics": "Regional health authorities, public hospital networks, and national health services operating within EU public sector frameworks. These include agencies like NHS trusts, regional health boards, and municipal health departments responsible for population health management. Decision-making involves multiple government levels with procurement governed by EU public tender regulations. Key stakeholders are public health directors, government health officials, and hospital network administrators focused on population outcomes and cost efficiency.",
+        "pain_points": "Public health systems must manage entire population health with limited budgets while meeting government performance targets and quality mandates. There's a critical unmet need for epidemic surveillance and outbreak prediction capabilities, especially post-pandemic. Current systems lack the ability to identify high-risk populations and prevent costly emergency care. Public procurement processes are lengthy and complex, requiring extensive clinical validation and compliance documentation. These organizations struggle with resource allocation across diverse populations and need predictive tools for capacity planning and workforce optimization. Interoperability across fragmented public health IT systems remains a major barrier.",
         "customer_profile": "Regional health authorities and public hospital networks",
         "value_drivers": ["Population health management", "Resource optimization", "Epidemic surveillance", "Cost control"],
         "entry_strategy": "Public procurement participation with emphasis on population health outcomes"
       }
-    ],
-    "customer_economics": {
-      "average_customer_value": {
-        "annual_value": {
-          "value": 150000,
-          "unit": "EUR",
-          "rationale": "Average annual contract value based on hospital size and module deployment"
-        },
-        "lifetime_value": {
-          "value": 1200000,
-          "unit": "EUR",
-          "rationale": "8-year contract lifetime with expansion opportunities and value-based components"
-        },
-        "acquisition_cost": {
-          "value": 75000,
-          "unit": "EUR",
-          "rationale": "Sales cycle including clinical validation, pilot programs, and procurement processes"
-        }
-      },
-      "customer_behavior": {
-        "decision_factors": ["Clinical evidence", "Regulatory compliance", "Integration capabilities", "Total cost of ownership"],
-        "purchasing_process": "12-18 month B2B sales cycle with clinical evaluation, pilot programs, and procurement",
-        "retention_factors": ["Clinical outcomes", "User adoption", "Ongoing support", "Platform evolution"]
-      }
-    }
+    ]
   }
 }

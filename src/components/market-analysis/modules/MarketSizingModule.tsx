@@ -22,6 +22,8 @@ import { Target, TrendingUp, DollarSign, Users } from 'lucide-react';
 
 import { MarketData, formatMarketCurrency, formatMarketPercent } from '@/lib/market-calculations';
 import { MarketSuiteMetrics } from '@/lib/market-suite-calculations';
+import { ModuleDataTools } from './ModuleDataTools';
+import { ValueWithRationale } from '../ValueWithRationale';
 
 interface MarketSizingModuleProps {
   marketData: MarketData;
@@ -79,15 +81,18 @@ export function MarketSizingModule({ marketData, onDataUpdate, metrics }: Market
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Target className="h-6 w-6 text-green-600" />
-          <h2 className="text-2xl font-bold">Market Sizing Analysis</h2>
-        </div>
-        <Badge variant="outline" className="bg-green-50">
-          TAM/SAM/SOM Model
-        </Badge>
+      <div className="flex items-center gap-3">
+        <Target className="h-6 w-6 text-green-600" />
+        <h2 className="text-2xl font-bold">Market Sizing Analysis</h2>
       </div>
+
+      {/* Module Data Tools */}
+      <ModuleDataTools
+        moduleName="Market Sizing"
+        moduleKey="market_sizing"
+        marketData={marketData}
+        onDataUpdate={onDataUpdate}
+      />
 
       {/* Key metrics cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -98,7 +103,13 @@ export function MarketSizingModule({ marketData, onDataUpdate, metrics }: Market
               <span className="text-sm font-medium">Total Addressable Market</span>
             </div>
             <div className="text-2xl font-bold text-blue-600">
-              {formatMarketCurrency(marketSizingData[0]?.value || 0)}
+              <ValueWithRationale
+                value={formatMarketCurrency(marketSizingData[0]?.value || 0)}
+                rationale={marketData?.market_sizing?.total_addressable_market?.base_value?.rationale}
+                link={marketData?.market_sizing?.total_addressable_market?.base_value?.link}
+                label="TAM"
+                inline
+              />
             </div>
             <div className="text-sm text-muted-foreground">
               100% of market opportunity
@@ -113,10 +124,20 @@ export function MarketSizingModule({ marketData, onDataUpdate, metrics }: Market
               <span className="text-sm font-medium">Serviceable Available Market</span>
             </div>
             <div className="text-2xl font-bold text-green-600">
-              {formatMarketCurrency(marketSizingData[1]?.value || 0)}
+              <ValueWithRationale
+                value={formatMarketCurrency(marketSizingData[1]?.value || 0)}
+                rationale={marketData?.market_sizing?.serviceable_addressable_market?.percentage_of_tam?.rationale}
+                label="SAM"
+                inline
+              />
             </div>
             <div className="text-sm text-muted-foreground">
-              {marketSizingData[1]?.percentage.toFixed(1)}% of TAM
+              <ValueWithRationale
+                value={`${marketSizingData[1]?.percentage.toFixed(1)}%`}
+                rationale={marketData?.market_sizing?.serviceable_addressable_market?.percentage_of_tam?.rationale}
+                label="SAM % of TAM"
+                inline
+              /> of TAM
             </div>
           </CardContent>
         </Card>
@@ -128,10 +149,20 @@ export function MarketSizingModule({ marketData, onDataUpdate, metrics }: Market
               <span className="text-sm font-medium">Serviceable Obtainable Market</span>
             </div>
             <div className="text-2xl font-bold text-orange-600">
-              {formatMarketCurrency(marketSizingData[2]?.value || 0)}
+              <ValueWithRationale
+                value={formatMarketCurrency(marketSizingData[2]?.value || 0)}
+                rationale={marketData?.market_sizing?.serviceable_obtainable_market?.percentage_of_sam?.rationale}
+                label="SOM"
+                inline
+              />
             </div>
             <div className="text-sm text-muted-foreground">
-              {marketSizingData[2]?.percentage.toFixed(1)}% of TAM
+              <ValueWithRationale
+                value={`${marketSizingData[2]?.percentage.toFixed(1)}%`}
+                rationale={marketData?.market_sizing?.serviceable_obtainable_market?.percentage_of_sam?.rationale}
+                label="SOM % of TAM"
+                inline
+              /> of TAM
             </div>
           </CardContent>
         </Card>
@@ -143,7 +174,12 @@ export function MarketSizingModule({ marketData, onDataUpdate, metrics }: Market
               <span className="text-sm font-medium">Market Growth Rate</span>
             </div>
             <div className="text-2xl font-bold text-purple-600">
-              {(marketData?.market_sizing?.total_addressable_market?.growth_rate?.value || 0).toFixed(1)}%
+              <ValueWithRationale
+                value={`${(marketData?.market_sizing?.total_addressable_market?.growth_rate?.value || 0).toFixed(1)}%`}
+                rationale={marketData?.market_sizing?.total_addressable_market?.growth_rate?.rationale}
+                label="Growth Rate"
+                inline
+              />
             </div>
             <div className="text-sm text-muted-foreground">
               Annual compound growth

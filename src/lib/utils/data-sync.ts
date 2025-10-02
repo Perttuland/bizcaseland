@@ -93,24 +93,8 @@ export function syncMarketToBusinessVolume(
         }
       }
       
-      // Sync pricing from customer economics
-      if (marketData.customer_analysis?.customer_economics?.average_customer_value?.annual_value?.value) {
-        if (!updates.assumptions) updates.assumptions = {};
-        if (!updates.assumptions.pricing) updates.assumptions.pricing = {};
-        
-        const avgCustomerValue = marketData.customer_analysis.customer_economics.average_customer_value.annual_value.value;
-        updates.assumptions.pricing.avg_unit_price = {
-          value: avgCustomerValue,
-          unit: marketData.meta?.currency || 'EUR',
-          rationale: `Derived from market analysis average customer value: ${avgCustomerValue}`
-        };
-        
-        result.changesApplied++;
-        
-        if (opts.logChanges) {
-          result.warnings.push(`Updated pricing based on market customer value analysis`);
-        }
-      }
+      // Customer economics sync removed - no longer part of market analysis
+      // Pricing data should come from business case assumptions or competitive analysis
       
     } else {
       result.warnings.push('Could not calculate meaningful market-based volume - insufficient market data');

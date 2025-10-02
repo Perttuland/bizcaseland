@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { copyTextToClipboard } from '@/lib/clipboard-utils';
 import { 
@@ -21,7 +23,7 @@ import {
 } from 'lucide-react';
 
 import { MarketData } from '@/lib/market-calculations';
-import { MarketAnalysisTemplate } from '../MarketAnalysisTemplate';
+import { MarketAnalysisTemplate, generateModularTemplate } from '../MarketAnalysisTemplate';
 import { ExampleMarketAnalyses } from '../ExampleMarketAnalyses';
 
 interface DataManagementModuleProps {
@@ -47,6 +49,7 @@ export function DataManagementModule({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('examples');
+  const [selectedModules, setSelectedModules] = useState<string[]>(['market_sizing']); // Market Sizing checked by default
   const { toast } = useToast();
 
   const handleLoadExample = async (caseId: string) => {
@@ -105,13 +108,21 @@ export function DataManagementModule({
   };
 
   const handleTemplateLoad = () => {
-    setJsonInput(MarketAnalysisTemplate);
+    // Generate template based on selected modules
+    const template = selectedModules.length > 0 
+      ? generateModularTemplate(selectedModules)
+      : MarketAnalysisTemplate;
+    setJsonInput(template);
     setActiveTab('import');
   };
 
   const handleTemplateCopy = async () => {
     try {
-      const result = await copyTextToClipboard(MarketAnalysisTemplate);
+      // Generate template based on selected modules
+      const template = selectedModules.length > 0 
+        ? generateModularTemplate(selectedModules)
+        : MarketAnalysisTemplate;
+      const result = await copyTextToClipboard(template);
       
       if (result.success) {
         toast({
@@ -167,6 +178,75 @@ export function DataManagementModule({
 
           <TabsContent value="import" className="mt-6">
             <div className="space-y-4">
+              {/* Module Selection */}
+              <Card className="border-2 border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Select Modules to Include
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Choose which analysis modules you want to include in your template. 
+                      This generates a smaller, focused template based on your needs.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { id: 'market_sizing', label: 'Market Sizing', description: 'TAM/SAM/SOM analysis' },
+                        { id: 'competitive_intelligence', label: 'Competitive Intelligence', description: 'Competitor analysis' },
+                        { id: 'customer_analysis', label: 'Customer Analysis', description: 'Segment scoring' },
+                        { id: 'strategic_planning', label: 'Strategic Planning', description: 'Market entry strategies' }
+                      ].map((module) => (
+                        <div key={module.id} className="flex items-start space-x-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+                          <Checkbox
+                            id={module.id}
+                            checked={selectedModules.includes(module.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedModules([...selectedModules, module.id]);
+                              } else {
+                                setSelectedModules(selectedModules.filter(m => m !== module.id));
+                              }
+                            }}
+                          />
+                          <div className="grid gap-1 leading-none">
+                            <Label
+                              htmlFor={module.id}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {module.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {module.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedModules.length === 0 && (
+                      <Alert variant="destructive" className="mt-3">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Please select at least one module to generate a template.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {selectedModules.length > 0 && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg">
+                        <p className="text-sm">
+                          <strong>Selected:</strong> {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} 
+                          <span className="text-muted-foreground ml-2">
+                            (≈{selectedModules.length * 60} lines of JSON)
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <Alert>
                 <Sparkles className="h-4 w-4" />
                 <AlertDescription>
@@ -175,11 +255,21 @@ export function DataManagementModule({
               </Alert>
 
               <div className="flex gap-3">
-                <Button onClick={handleTemplateLoad} variant="outline" className="flex items-center gap-2">
+                <Button 
+                  onClick={handleTemplateLoad} 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  disabled={selectedModules.length === 0}
+                >
                   <FileText className="h-4 w-4" />
                   Load Template
                 </Button>
-                <Button onClick={handleTemplateCopy} variant="outline" className="flex items-center gap-2">
+                <Button 
+                  onClick={handleTemplateCopy} 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  disabled={selectedModules.length === 0}
+                >
                   <Copy className="h-4 w-4" />
                   Copy Template
                 </Button>
@@ -249,14 +339,9 @@ export function DataManagementModule({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <FileText className="h-6 w-6 text-gray-600" />
           <h2 className="text-2xl font-bold">Data Management</h2>
-        </div>
-        <Badge variant="outline" className="bg-gray-50">
-          Import/Export Tools
-        </Badge>
       </div>
 
       {/* Validation status */}

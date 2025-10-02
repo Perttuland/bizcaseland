@@ -21,6 +21,8 @@ import { Lightbulb, Rocket, Clock, DollarSign, TrendingUp, AlertTriangle } from 
 
 import { MarketData } from '@/lib/market-calculations';
 import { MarketSuiteMetrics, StrategicOption, generateStrategicOptions } from '@/lib/market-suite-calculations';
+import { ModuleDataTools } from './ModuleDataTools';
+import { ValueWithRationale } from '../ValueWithRationale';
 
 interface StrategicPlanningModuleProps {
   marketData: MarketData;
@@ -60,7 +62,7 @@ export function StrategicPlanningModule({ marketData, onDataUpdate, metrics }: S
 
   // Key strategic drivers
   const penetrationDrivers = useMemo(() => {
-    const drivers = marketData?.market_share?.penetration_drivers || [];
+    const drivers = marketData?.strategic_planning?.execution_strategy?.penetration_drivers || [];
     return drivers.map(driver => ({
       ...driver,
       impactScore: driver.impact === 'high' ? 80 : driver.impact === 'medium' ? 50 : 20
@@ -70,15 +72,18 @@ export function StrategicPlanningModule({ marketData, onDataUpdate, metrics }: S
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Lightbulb className="h-6 w-6 text-orange-600" />
-          <h2 className="text-2xl font-bold">Strategic Planning</h2>
-        </div>
-        <Badge variant="outline" className="bg-orange-50">
-          Market Entry Strategy
-        </Badge>
+      <div className="flex items-center gap-3">
+        <Lightbulb className="h-6 w-6 text-orange-600" />
+        <h2 className="text-2xl font-bold">Strategic Planning</h2>
       </div>
+
+      {/* Module Data Tools */}
+      <ModuleDataTools
+        moduleName="Strategic Planning"
+        moduleKey="strategic_planning"
+        marketData={marketData}
+        onDataUpdate={onDataUpdate}
+      />
 
       {/* Strategic metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -313,13 +313,21 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             { year: 4, milestone: "Market consolidation", target_share: 2.5, rationale: "Acquire smaller competitors and strengthen market position" },
             { year: 5, milestone: "Market leadership", target_share: 3.5, rationale: "Establish as top-3 player in target segment" }
           ]
-        },
-        penetration_drivers: [
-          { driver: "AI technology advancement", impact: "high", description: "Superior NLP and machine learning capabilities", timeline: "Ongoing throughout 5-year period" },
-          { driver: "Customer success program", impact: "high", description: "Proven ROI demonstration and customer advocacy", timeline: "Years 2-5" },
-          { driver: "Strategic partnerships", impact: "medium", description: "Integration with CRM and business platforms", timeline: "Years 1-3" },
-          { driver: "Pricing strategy", impact: "medium", description: "Competitive pricing with transparent ROI metrics", timeline: "Ongoing" }
-        ]
+        }
+      },
+      strategic_planning: {
+        execution_strategy: {
+          go_to_market_approach: "Platform-led growth with strategic partnerships",
+          penetration_strategy: "s_curve",
+          penetration_strategy_rationale: "S-curve approach reflects initial adoption phase, followed by rapid growth as reputation builds, then market saturation",
+          penetration_drivers: [
+            { driver: "AI technology advancement", impact: "high", description: "Superior NLP and machine learning capabilities", timeline: "Ongoing throughout 5-year period" },
+            { driver: "Customer success program", impact: "high", description: "Proven ROI demonstration and customer advocacy", timeline: "Years 2-5" },
+            { driver: "Strategic partnerships", impact: "medium", description: "Integration with CRM and business platforms", timeline: "Years 1-3" },
+            { driver: "Pricing strategy", impact: "medium", description: "Competitive pricing with transparent ROI metrics", timeline: "Ongoing" }
+          ],
+          competitive_response_plan: "Monitor competitor moves and maintain technology leadership through continuous R&D investment"
+        }
       },
       competitive_landscape: {
         market_structure: {
@@ -381,9 +389,11 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             id: "mid_market_saas",
             name: "Mid-Market SaaS Companies",
             size_percentage: { value: 35, unit: "percentage", rationale: "Largest addressable segment with high growth potential" },
+            size_value: { value: 17500000, unit: "EUR", rationale: "35% of €50M SAM" },
             growth_rate: { value: 15, unit: "percentage_per_year", rationale: "SaaS companies growing rapidly and scaling customer support" },
-            target_share: { value: 8, unit: "percentage", rationale: "High affinity for AI solutions and modern tooling" },
-            customer_profile: "Software companies with 100-500 employees, 10,000-100,000 end customers",
+            demographics: "Software companies with 100-500 employees, 10,000-100,000 end customers",
+            pain_points: "Scaling customer support while maintaining quality",
+            customer_profile: "Mid-market SaaS companies with high growth and modern tech stack",
             value_drivers: ["Scalability", "Automation", "Customer satisfaction metrics", "Cost reduction"],
             entry_strategy: "Product-led growth with freemium tier and self-service onboarding"
           },
@@ -391,9 +401,11 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             id: "ecommerce_retailers",
             name: "E-commerce Retailers",
             size_percentage: { value: 30, unit: "percentage", rationale: "Large segment with high support volume needs" },
+            size_value: { value: 15000000, unit: "EUR", rationale: "30% of €50M SAM" },
             growth_rate: { value: 18, unit: "percentage_per_year", rationale: "E-commerce growth driving increased support needs" },
-            target_share: { value: 6, unit: "percentage", rationale: "Seasonal nature requires flexible, scalable solutions" },
-            customer_profile: "Online retailers with €10M-€100M annual revenue",
+            demographics: "Online retailers with €10M-€100M annual revenue",
+            pain_points: "Handling peak season volumes and multi-channel support",
+            customer_profile: "E-commerce retailers with seasonal demand spikes",
             value_drivers: ["Peak season handling", "Multi-channel support", "Order management integration"],
             entry_strategy: "Partnership with e-commerce platforms and integrations"
           },
@@ -401,9 +413,11 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             id: "financial_services",
             name: "Financial Services",
             size_percentage: { value: 20, unit: "percentage", rationale: "High-value segment with strict compliance needs" },
+            size_value: { value: 10000000, unit: "EUR", rationale: "20% of €50M SAM" },
             growth_rate: { value: 8, unit: "percentage_per_year", rationale: "Steady growth with digital transformation focus" },
-            target_share: { value: 4, unit: "percentage", rationale: "Longer sales cycles but higher contract values" },
-            customer_profile: "Banks, insurance companies, fintech with 200-2000 employees",
+            demographics: "Banks, insurance companies, fintech with 200-2000 employees",
+            pain_points: "Maintaining compliance while improving customer experience",
+            customer_profile: "Financial institutions requiring high security and compliance",
             value_drivers: ["Compliance", "Security", "Regulatory reporting", "Customer trust"],
             entry_strategy: "Enterprise sales with compliance-first positioning"
           }
@@ -492,29 +506,32 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
 
   // Main analysis interface with tabs
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6">
+      {/* Header - Responsive layout */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+        {/* Left side: Back button, icon, and title */}
         <div className="flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="sm"
             onClick={() => navigate('/')}
-            className="mr-2 hover:bg-muted"
+            className="hover:bg-muted"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Home
+            <span className="hidden sm:inline">Back to Home</span>
+            <span className="sm:hidden">Back</span>
           </Button>
-          <Target className="h-8 w-8 text-blue-600" />
+          <Target className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold">Market Research & Analysis</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-xl sm:text-3xl font-bold">Market Research & Analysis</h1>
+            <p className="text-sm text-muted-foreground">
               {marketData?.meta?.title || 'Untitled Market Analysis'}
             </p>
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        {/* Right side: Action buttons - wrap on mobile */}
+        <div className="flex items-center gap-2 flex-wrap">
           <ThemeToggle />
           <Button 
             variant="outline" 
@@ -523,18 +540,16 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             className="hover:bg-blue-50 hover:border-blue-200"
           >
             <Calculator className="h-4 w-4 mr-1" />
-            Switch to Business Case
+            <span className="hidden sm:inline">Switch to Business Case</span>
+            <span className="sm:hidden">Business</span>
           </Button>
-          <Badge variant="default" className="bg-green-500">
-            📊 Charts Active
-          </Badge>
           <Button 
             variant="outline" 
             size="sm"
             onClick={exportData}
           >
             <Download className="h-4 w-4 mr-1" />
-            Export
+            <span className="hidden sm:inline">Export</span>
           </Button>
           
           {/* Reset Button with Confirmation */}
@@ -542,7 +557,8 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="hover:bg-red-50 hover:border-red-200">
                 <RefreshCw className="h-4 w-4 mr-1" />
-                Reset Data
+                <span className="hidden sm:inline">Reset Data</span>
+                <span className="sm:hidden">Reset</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>

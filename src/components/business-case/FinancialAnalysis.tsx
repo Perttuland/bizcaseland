@@ -1,12 +1,11 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { TrendingUp, TrendingDown, DollarSign, Calendar, Users, Target, AlertCircle, BarChart3 } from 'lucide-react';
 import { useBusinessData, BusinessData } from '@/contexts/BusinessDataContext';
 import { calculateBusinessMetrics, formatCurrency, formatPercent, calculateBreakEven } from '@/lib/calculations';
 import { setNestedValue, getNestedValue } from '@/lib/utils/nested-operations';
+import { SensitivityAnalysis } from './SensitivityAnalysis';
 
 // Helper functions for driver manipulation - now using safe utilities
 // Note: The imported getNestedValue and setNestedValue from utils should be used instead
@@ -84,24 +83,25 @@ export function FinancialAnalysis() {
     );
   }
 
-  // Persist driver changes only when user explicitly applies them
-  const applyDriverChanges = () => {
-    if (modifiedBusinessData) {
-      updateData(modifiedBusinessData);
-    }
-  };
-
   const handleDriverChange = (driverKey: string, value: number) => {
-    setDriverValues(prev => ({
-      ...prev,
-      [driverKey]: value
-    }));
-  };
-  
-  const getDriverCurrentValue = (driver: any) => {
-    return driverValues[driver.key] !== undefined 
-      ? driverValues[driver.key] 
-      : getNestedValue(businessData, driver.path);
+    setDriverValues(prev => {
+      const newValues = {
+        ...prev,
+        [driverKey]: value
+      };
+      
+      // Apply changes immediately to global data
+      let modified = businessData;
+      for (const driver of drivers) {
+        const currentValue = newValues[driver.key];
+        if (currentValue !== undefined) {
+          modified = setNestedValue(modified, driver.path, currentValue);
+        }
+      }
+      updateData(modified);
+      
+      return newValues;
+    });
   };
 
   const getArchetypeColor = (archetype: string) => {
@@ -216,102 +216,13 @@ export function FinancialAnalysis() {
 
 
       {/* Interactive Sensitivity Drivers */}
-      {drivers.length > 0 && (
-        <Card className="bg-gradient-card shadow-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Sensitivity Drivers</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Adjust key drivers to see real-time impact on your business case.
-                </p>
-              </div>
-              <div>
-                <Button onClick={applyDriverChanges} size="sm" className="mr-2">Apply Drivers</Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {drivers.map((driver, index) => {
-                const currentValue = getDriverCurrentValue(driver);
-                const minValue = Math.min(...driver.range);
-                const maxValue = Math.max(...driver.range);
-                const baseValue = getNestedValue(baselineRef.current || businessData, driver.path);
-                const isModified = Math.abs(currentValue - baseValue) > 0.001;
-                
-                return (
-                  <div key={index} className="space-y-4 p-4 bg-muted/50 rounded-lg border">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-sm">
-                          {driver.key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">{driver.rationale}</p>
-                      </div>
-                      {isModified && (
-                        <Badge variant="outline" className="text-xs bg-financial-primary text-financial-primary-foreground">
-                          Modified
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Current Value:</span>
-                        <span className="font-mono font-semibold">
-                          {businessData.meta.currency && driver.path.includes('price') 
-                            ? formatCurrency(currentValue, businessData.meta.currency)
-                            : currentValue.toLocaleString()}
-                        </span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Slider
-                          value={[currentValue]}
-                          onValueChange={(values) => handleDriverChange(driver.key, values[0])}
-                          min={minValue}
-                          max={maxValue}
-                          step={(maxValue - minValue) / 100}
-                          className="w-full"
-                        />
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>{minValue.toLocaleString()}</span>
-                          <span className="text-center">
-                            Base: {businessData.meta.currency && driver.path.includes('price') 
-                              ? formatCurrency(baseValue, businessData.meta.currency)
-                              : baseValue.toLocaleString()}
-                          </span>
-                          <span>{maxValue.toLocaleString()}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="grid grid-cols-5 gap-1">
-                        {driver.range.map((value, i) => {
-                          const isSelected = Math.abs(currentValue - value) < 0.001; // Handle floating point precision
-                          return (
-                            <Button
-                              key={i}
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => handleDriverChange(driver.key, value)}
-                              className="text-xs h-8"
-                            >
-                              {businessData.meta.currency && driver.path.includes('price') 
-                                ? formatCurrency(value, businessData.meta.currency).replace(/[€$£]/g, '').trim()
-                                : value.toLocaleString()}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <SensitivityAnalysis
+        drivers={drivers}
+        businessData={businessData}
+        baselineRef={baselineRef}
+        driverValues={driverValues}
+        onDriverChange={handleDriverChange}
+      />
 
       {/* Volume & Customer Metrics */}
       <Card className="bg-gradient-card shadow-card">

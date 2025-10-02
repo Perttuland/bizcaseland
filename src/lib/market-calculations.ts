@@ -3,6 +3,14 @@
  * Separated from business case calculations for independent market analysis
  */
 
+// Reusable type for values with rationales and optional links
+export interface ValueWithMeta {
+  value: number;
+  unit: string;
+  rationale: string;
+  link?: string; // Optional link for AI to provide source URLs
+}
+
 export interface MarketData {
   schema_version?: string;
   meta?: {
@@ -16,19 +24,19 @@ export interface MarketData {
   };
   market_sizing?: {
     total_addressable_market?: {
-      base_value: { value: number; unit: string; rationale: string };
-      growth_rate: { value: number; unit: string; rationale: string };
+      base_value: ValueWithMeta;
+      growth_rate: ValueWithMeta;
       market_definition: string;
       data_sources: string[];
     };
     serviceable_addressable_market?: {
-      percentage_of_tam: { value: number; unit: string; rationale: string };
+      percentage_of_tam: ValueWithMeta;
       geographic_constraints: string;
       regulatory_constraints: string;
       capability_constraints: string;
     };
     serviceable_obtainable_market?: {
-      percentage_of_sam: { value: number; unit: string; rationale: string };
+      percentage_of_sam: ValueWithMeta;
       resource_constraints: string;
       competitive_barriers: string;
       time_constraints: string;
@@ -36,13 +44,13 @@ export interface MarketData {
   };
   market_share?: {
     current_position?: {
-      current_share: { value: number; unit: string; rationale: string };
+      current_share: ValueWithMeta;
       market_entry_date: string;
-      current_revenue: { value: number; unit: string; rationale: string };
+      current_revenue: ValueWithMeta;
     };
     target_position?: {
-      target_share: { value: number; unit: string; rationale: string };
-      target_timeframe: { value: number; unit: string; rationale: string };
+      target_share: ValueWithMeta;
+      target_timeframe: ValueWithMeta;
       penetration_strategy: 'linear' | 'exponential' | 's_curve';
       key_milestones: Array<{
         year: number;
@@ -51,12 +59,6 @@ export interface MarketData {
         rationale: string;
       }>;
     };
-    penetration_drivers?: Array<{
-      driver: string;
-      impact: 'high' | 'medium' | 'low';
-      description: string;
-      timeline: string;
-    }>;
   };
   competitive_landscape?: {
     market_structure?: {
@@ -67,7 +69,7 @@ export interface MarketData {
     };
     competitors?: Array<{
       name: string;
-      market_share: { value: number; unit: string; rationale: string };
+      market_share: ValueWithMeta;
       positioning: string;
       strengths: string[];
       weaknesses: string[];
@@ -84,60 +86,63 @@ export interface MarketData {
     market_segments?: Array<{
       id: string;
       name: string;
-      size_percentage: { value: number; unit: string; rationale: string };
-      growth_rate: { value: number; unit: string; rationale: string };
-      target_share: { value: number; unit: string; rationale: string };
+      size_percentage: ValueWithMeta;
+      size_value: ValueWithMeta;
+      growth_rate: ValueWithMeta;
+      demographics: string;
+      pain_points: string;
       customer_profile: string;
       value_drivers: string[];
       entry_strategy: string;
     }>;
-    customer_economics?: {
-      average_customer_value: {
-        annual_value: { value: number; unit: string; rationale: string };
-        lifetime_value: { value: number; unit: string; rationale: string };
-        acquisition_cost: { value: number; unit: string; rationale: string };
-      };
-      customer_behavior: {
-        purchase_frequency: { value: number; unit: string; rationale: string };
-        loyalty_rate: { value: number; unit: string; rationale: string };
-        referral_rate: { value: number; unit: string; rationale: string };
-      };
-    };
   };
-  market_dynamics?: {
-    growth_drivers?: Array<{
-      driver: string;
-      impact: 'high' | 'medium' | 'low';
-      timeline: string;
-      description: string;
-    }>;
-    market_risks?: Array<{
-      risk: string;
-      probability: 'high' | 'medium' | 'low';
-      impact: 'high' | 'medium' | 'low';
-      mitigation: string;
-    }>;
-    technology_trends?: Array<{
-      trend: string;
-      relevance: 'high' | 'medium' | 'low';
-      impact_timeline: string;
-      strategic_response: string;
-    }>;
-  };
-  volume_projections?: {
-    calculation_method: string;
-    assumptions: {
-      market_growth_compounds: boolean;
-      share_growth_independent: boolean;
-      customer_value_stable: boolean;
+  strategic_planning?: {
+    note?: string;
+    execution_strategy?: {
+      go_to_market_approach: string;
+      penetration_strategy: 'linear' | 'exponential' | 's_curve';
+      penetration_strategy_rationale: string;
+      penetration_definitions?: {
+        linear: string;
+        exponential: string;
+        s_curve: string;
+      };
+      key_tactics?: Array<{
+        tactic: string;
+        timeline: string;
+        expected_impact: string;
+        resources_required: string;
+      }>;
+      penetration_drivers?: Array<{
+        driver: string;
+        impact: 'high' | 'medium' | 'low';
+        description: string;
+        timeline: string;
+      }>;
+      competitive_response_plan: string;
     };
-    sensitivity_factors: Array<{
-      factor: string;
-      base_case: any;
-      optimistic: any;
-      pessimistic: any;
+    execution_milestones?: Array<{
+      year: number;
+      milestone: string;
+      target_metrics: string;
       rationale: string;
     }>;
+    volume_projections?: {
+      calculation_method: string;
+      note?: string;
+      assumptions: {
+        market_growth_compounds: boolean;
+        share_growth_independent: boolean;
+        customer_value_stable: boolean;
+      };
+      sensitivity_analysis: Array<{
+        factor: string;
+        base_case: any;
+        optimistic: any;
+        pessimistic: any;
+        rationale: string;
+      }>;
+    };
   };
 }
 
@@ -241,18 +246,16 @@ export function calculateMarketShareProgression(marketData: MarketData, monthInd
 
 /**
  * Calculate market-based volume for a specific month
+ * Note: Volume calculations now require integration with business case data
  */
 export function calculateMarketBasedVolumeProjection(marketData: MarketData, monthIndex: number): number {
   const year = Math.floor(monthIndex / 12) + (marketData?.meta?.base_year || 2024);
   const marketShare = calculateMarketShareProgression(marketData, monthIndex);
   const som = calculateMarketSOM(marketData, year);
   
-  const avgCustomerValue = marketData?.customer_analysis?.customer_economics?.average_customer_value?.annual_value?.value;
-  if (!avgCustomerValue || avgCustomerValue === 0) return 0;
-  
-  // Calculate monthly volume from annual market size
-  const annualMarketVolume = (som * marketShare) / avgCustomerValue;
-  return annualMarketVolume / 12; // Convert to monthly
+  // Volume calculation removed - customer_economics no longer part of market analysis
+  // Market analysis focuses on opportunity sizing, not unit economics
+  return 0;
 }
 
 /**
@@ -367,11 +370,6 @@ export function validateMarketAnalysis(marketData: MarketData): {
   
   if (targetShare > 50) {
     warnings.push("Target market share above 50% may be unrealistic in competitive markets");
-  }
-  
-  // Check customer value data
-  if (!marketData?.customer_analysis?.customer_economics?.average_customer_value?.annual_value?.value) {
-    errors.push("Average customer annual value is required for volume calculations");
   }
   
   // Check competitive analysis
