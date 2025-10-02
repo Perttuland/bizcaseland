@@ -120,6 +120,9 @@ interface BusinessDataContextType {
   updateData: (newData: BusinessData | null) => void;
   updateAssumption: (path: string, value: any) => void;
   updateDriver: (driverIndex: number, updates: any) => void;
+  addDriver: (path: string, key: string, range: number[], rationale: string) => void;
+  removeDriver: (path: string) => void;
+  updateDriverRange: (path: string, range: number[]) => void;
   exportData: () => string;
 }
 
@@ -178,11 +181,77 @@ export function BusinessDataProvider({ children }: { children: React.ReactNode }
     return result.data || '{}';
   }, [data]);
 
+  const addDriver = useCallback((path: string, key: string, range: number[], rationale: string) => {
+    if (!data) {
+      console.warn('addDriver called with no data');
+      return;
+    }
+
+    try {
+      const newData = { ...data };
+      if (!newData.drivers) {
+        newData.drivers = [];
+      }
+
+      // Check if driver already exists
+      const existingIndex = newData.drivers.findIndex((d: any) => d.path === path);
+      if (existingIndex >= 0) {
+        console.warn('Driver already exists for path:', path);
+        return;
+      }
+
+      newData.drivers = [...newData.drivers, { key, path, range, rationale }];
+      setData(newData);
+    } catch (error) {
+      console.error('Failed to add driver:', error);
+    }
+  }, [data]);
+
+  const removeDriver = useCallback((path: string) => {
+    if (!data || !data.drivers) {
+      console.warn('removeDriver called with no data or drivers');
+      return;
+    }
+
+    try {
+      const newData = { ...data };
+      newData.drivers = data.drivers.filter((d: any) => d.path !== path);
+      setData(newData);
+    } catch (error) {
+      console.error('Failed to remove driver:', error);
+    }
+  }, [data]);
+
+  const updateDriverRange = useCallback((path: string, range: number[]) => {
+    if (!data || !data.drivers) {
+      console.warn('updateDriverRange called with no data or drivers');
+      return;
+    }
+
+    try {
+      const driverIndex = data.drivers.findIndex((d: any) => d.path === path);
+      if (driverIndex < 0) {
+        console.warn('Driver not found for path:', path);
+        return;
+      }
+
+      const newData = { ...data };
+      newData.drivers = [...data.drivers];
+      newData.drivers[driverIndex] = { ...newData.drivers[driverIndex], range };
+      setData(newData);
+    } catch (error) {
+      console.error('Failed to update driver range:', error);
+    }
+  }, [data]);
+
   const value = {
     data,
     updateData,
     updateAssumption,
     updateDriver,
+    addDriver,
+    removeDriver,
+    updateDriverRange,
     exportData
   };
 

@@ -58,6 +58,8 @@ All colors MUST be HSL.
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 70% 60%));
     --gradient-success: linear-gradient(135deg, hsl(120 60% 50%), hsl(120 60% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(240 70% 50%), hsl(240 70% 60%));
+    --gradient-accent: linear-gradient(135deg, hsl(280 70% 50%), hsl(280 70% 60%));
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 72% 61%));
     --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(220 13% 98%));
     
@@ -115,6 +117,8 @@ All colors MUST be HSL.
     /* Gradients - Dark */
     --gradient-primary: linear-gradient(135deg, hsl(220 70% 50%), hsl(220 70% 40%));
     --gradient-success: linear-gradient(135deg, hsl(120 50% 45%), hsl(120 50% 35%));
+    --gradient-secondary: linear-gradient(135deg, hsl(240 70% 50%), hsl(240 70% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(280 70% 50%), hsl(280 70% 40%));
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 72% 41%));
     --gradient-card: linear-gradient(145deg, hsl(240 6% 8%), hsl(240 6% 10%));
     

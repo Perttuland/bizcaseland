@@ -104,39 +104,14 @@ export function FinancialAnalysis() {
     });
   };
 
-  const getArchetypeColor = (archetype: string) => {
-    const colors = {
-      subscription: 'bg-gradient-primary text-white',
-      transactional: 'bg-gradient-success text-white',
-      licensing: 'bg-financial-warning text-financial-warning-foreground',
-      profit_share: 'bg-financial-danger text-financial-danger-foreground',
-      hybrid: 'bg-gradient-card text-foreground'
-    };
-    return colors[archetype as keyof typeof colors] || 'bg-muted text-muted-foreground';
-  };
-
   return (
     <div className="space-y-6">
       {/* Business Case Overview */}
-      <Card className="bg-gradient-card shadow-elevation relative">
-        {/* Business Model Badge in top-right corner */}
-        <Badge variant="outline" className="absolute top-4 right-4 bg-financial-primary text-financial-primary-foreground">
-          {businessData.meta.business_model === 'recurring' ? 'Recurring Revenue' : 
-           businessData.meta.business_model === 'unit_sales' ? 'Unit Sales' : 'Cost Savings'}
-        </Badge>
-        
+      <Card className="bg-gradient-card shadow-elevation">
         <CardHeader>
-          <div className="flex items-center justify-between pr-32">
-            <CardTitle className="text-xl">{businessData.meta.title}</CardTitle>
-            <Badge className={getArchetypeColor(businessData.meta.archetype)}>
-              {businessData.meta.archetype}
-            </Badge>
-          </div>
+          <CardTitle className="text-xl">{businessData.meta.title}</CardTitle>
           <p className="text-muted-foreground">{businessData.meta.description}</p>
         </CardHeader>
-        <CardContent>
-          {/* Removed Time Horizon, Frequency, and Currency UI elements */}
-        </CardContent>
       </Card>
 
       {/* Key Financial Metrics */}

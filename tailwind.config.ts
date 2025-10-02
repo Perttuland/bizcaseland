@@ -72,6 +72,8 @@ export default {
 			backgroundImage: {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-success': 'var(--gradient-success)',
+				'gradient-secondary': 'var(--gradient-secondary)',
+				'gradient-accent': 'var(--gradient-accent)',
 				'gradient-danger': 'var(--gradient-danger)',
 				'gradient-card': 'var(--gradient-card)'
 			},

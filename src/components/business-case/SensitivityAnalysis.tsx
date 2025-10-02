@@ -59,7 +59,7 @@ export function SensitivityAnalysis({
             const isModified = Math.abs(currentValue - baseValue) > 0.001;
             
             return (
-              <div key={index} className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+              <div key={index} className="space-y-4 p-4 bg-muted/50 dark:bg-muted/50 rounded-lg border-2 border-border">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-semibold text-sm">

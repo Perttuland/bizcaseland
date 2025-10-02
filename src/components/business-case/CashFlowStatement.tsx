@@ -265,14 +265,9 @@ export function CashFlowStatement() {
 
   return (
     <div className="space-y-6">
-      <Card className="bg-gradient-card shadow-card relative">
-        {/* Business Model Badge in top-right corner */}
-        <Badge variant="outline" className="absolute top-4 right-4 bg-financial-primary text-financial-primary-foreground">
-          {isCostSavingsModel ? 'Cost Savings' : isRecurringModel ? 'Recurring Revenue' : 'Unit Sales'}
-        </Badge>
-        
+      <Card className="bg-gradient-card shadow-card">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2 pr-24">
+          <CardTitle className="flex items-center space-x-2">
             <Calendar className="h-5 w-5" />
             <span>{businessData.meta?.title || 'Profit & Loss Statement'}</span>
           </CardTitle>

@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrendingUp, TrendingDown, DollarSign, Users, Settings, Info, Calculator, Target, Clock, Zap, BarChart3 } from 'lucide-react';
 import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { EditableValueCell } from './EditableValueCell';
+import { EditableRationaleCell } from './EditableRationaleCell';
+import { SensitivityDriverBadge } from './SensitivityDriverBadge';
 
 interface SensitivityDriver {
   key: string;
@@ -29,8 +33,9 @@ interface AssumptionRow {
 }
 
 export function AssumptionsTab() {
-  const { data } = useBusinessData();
+  const { data, updateAssumption, addDriver, removeDriver, updateDriverRange } = useBusinessData();
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+  const [changedValuePaths, setChangedValuePaths] = useState<Set<string>>(new Set());
 
   if (!data) {
     return (
@@ -72,6 +77,59 @@ export function AssumptionsTab() {
       return value.toLocaleString();
     }
     return String(value);
+  };
+
+  // Handle value updates
+  const handleValueUpdate = (path: string, value: any) => {
+    updateAssumption(path, value);
+    // Mark the value path as changed (so rationale shows red)
+    const valuePath = path.replace('.value', ''); // Get base path without .value
+    setChangedValuePaths(prev => new Set(prev).add(valuePath));
+  };
+
+  // Handle rationale updates
+  const handleRationaleUpdate = (path: string, value: string) => {
+    updateAssumption(path, value);
+    // Remove from changed paths when rationale is updated
+    const valuePath = path.replace('.rationale', ''); // Get base path without .rationale
+    setChangedValuePaths(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(valuePath);
+      return newSet;
+    });
+  };
+
+  // Helper to check if rationale needs update
+  const rationaleNeedsUpdate = (dataPath: string | undefined): boolean => {
+    if (!dataPath) return false;
+    const basePath = dataPath.replace('.value', '').replace('.rationale', '');
+    return changedValuePaths.has(basePath);
+  };
+
+  // Check if a path is a sensitivity driver
+  const isDriver = (path: string | undefined): boolean => {
+    if (!path || !data?.drivers) return false;
+    return data.drivers.some((d: any) => d.path === path);
+  };
+
+  // Get driver for a path
+  const getDriver = (path: string | undefined) => {
+    if (!path || !data?.drivers) return undefined;
+    return data.drivers.find((d: any) => d.path === path);
+  };
+
+  // Toggle driver status
+  const handleToggleDriver = (path: string, label: string) => {
+    if (isDriver(path)) {
+      removeDriver(path);
+    } else {
+      // Create a key from the label
+      const key = label.trim().toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+      // Default range with 5 values
+      const defaultRange = [0, 0, 0, 0, 0];
+      const rationale = `Sensitivity analysis for ${label.trim()}`;
+      addDriver(path, key, defaultRange, rationale);
+    }
   };
 
   // Determine business model type
@@ -609,9 +667,8 @@ export function AssumptionsTab() {
             <span>Business Case Assumptions</span>
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Key assumptions and datapoints organized by cash flow statement categories. 
-            Each assumption includes its value, unit, and underlying rationale. 
-            Hover over any row to see detailed explanations.
+            Click any value or rationale to edit inline. Changes save automatically and update all calculations.
+            When you edit a value, its rationale will turn <span className="text-red-600 font-medium">red</span> to remind you to update it too.
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
             <Badge variant="outline" className="text-xs">
@@ -630,9 +687,14 @@ export function AssumptionsTab() {
       {/* Assumptions Table */}
       <Card className="bg-gradient-card shadow-card">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <BarChart3 className="h-5 w-5" />
-            <span>Assumption Details</span>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <BarChart3 className="h-5 w-5" />
+              <span>Assumption Details</span>
+            </div>
+            <p className="text-xs text-muted-foreground font-normal">
+              Click values or rationales to edit • Changes save automatically
+            </p>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -640,6 +702,14 @@ export function AssumptionsTab() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/10">
+                  <th className="text-center px-2 py-3 font-medium text-xs w-12">
+                    <Tooltip>
+                      <TooltipTrigger>Driver</TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Check to include in sensitivity analysis</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </th>
                   <th className="text-left px-4 py-3 font-medium text-sm">Assumption</th>
                   <th className="text-center px-4 py-3 font-medium text-sm">Value</th>
                   <th className="text-center px-4 py-3 font-medium text-sm">Unit</th>
@@ -651,14 +721,14 @@ export function AssumptionsTab() {
                   const rowClasses = getRowClasses(row);
                   
                   if (row.category === 'spacer') {
-                    return <tr key={index} className={rowClasses}><td colSpan={4}></td></tr>;
+                    return <tr key={index} className={rowClasses}><td colSpan={5}></td></tr>;
                   }
 
                   if (row.category === 'header') {
                     const Icon = row.icon;
                     return (
                       <tr key={index} className={rowClasses}>
-                        <td colSpan={4} className="px-4 py-3">
+                        <td colSpan={5} className="px-4 py-3">
                           <div className="flex items-center space-x-2">
                             <Icon className={`h-4 w-4 ${row.color}`} />
                             <span className="font-semibold text-base">{row.label}</span>
@@ -677,22 +747,44 @@ export function AssumptionsTab() {
                             onMouseEnter={() => setHoveredCell(`row-${index}`)}
                             onMouseLeave={() => setHoveredCell(null)}
                           >
+                            <td className="px-2 py-3 text-center">
+                              {row.dataPath && row.value !== undefined && (
+                                <Checkbox
+                                  checked={isDriver(row.dataPath)}
+                                  onCheckedChange={() => handleToggleDriver(row.dataPath, row.label)}
+                                  className="cursor-pointer"
+                                />
+                              )}
+                            </td>
                             <td className="px-4 py-3 font-medium text-sm">
                               <div className="flex items-center space-x-2">
                                 <span className="text-sm">{row.label}</span>
-                                {row.sensitivityDriver && (
-                                  <div className="flex items-center space-x-1">
-                                    <TrendingUp className="h-3 w-3 text-orange-500" />
-                                    <span className="text-xs text-orange-500">S</span>
-                                  </div>
-                                )}
                               </div>
                             </td>
                             <td className="px-4 py-3 text-center">
                               {row.value !== undefined ? (
-                                <span className="font-mono text-sm font-medium">
-                                  {formatValue(row.value, row.unit)}
-                                </span>
+                                <div className="flex items-center justify-center gap-2">
+                                  <EditableValueCell
+                                    value={row.value}
+                                    unit={row.unit}
+                                    dataPath={row.dataPath || null}
+                                    formatValue={formatValue}
+                                    onUpdate={handleValueUpdate}
+                                    onValueChanged={(path) => {
+                                      // Track that this value was changed
+                                      const basePath = path.replace('.value', '');
+                                      setChangedValuePaths(prev => new Set(prev).add(basePath));
+                                    }}
+                                  />
+                                  {isDriver(row.dataPath) && row.dataPath && (
+                                    <SensitivityDriverBadge
+                                      path={row.dataPath}
+                                      currentRange={getDriver(row.dataPath)?.range || [0, 0, 0, 0, 0]}
+                                      onUpdateRange={(range) => updateDriverRange(row.dataPath, range)}
+                                      onRemove={() => removeDriver(row.dataPath)}
+                                    />
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-muted-foreground text-sm">-</span>
                               )}
@@ -705,9 +797,12 @@ export function AssumptionsTab() {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm text-muted-foreground max-w-md">
-                              <div className="truncate">
-                                {row.rationale || 'No rationale provided'}
-                              </div>
+                              <EditableRationaleCell
+                                value={row.rationale || 'No rationale provided'}
+                                dataPath={row.dataPath ? row.dataPath.replace('.value', '.rationale') : null}
+                                onUpdate={handleRationaleUpdate}
+                                needsUpdate={rationaleNeedsUpdate(row.dataPath)}
+                              />
                             </td>
                           </tr>
                         </TooltipTrigger>
@@ -753,24 +848,13 @@ export function AssumptionsTab() {
       </Card>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="bg-gradient-success shadow-card">
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-sm text-white/80 mb-1">Total Assumptions</p>
               <p className="text-2xl font-bold text-white">
                 {assumptionRows.filter(r => r.value !== undefined).length}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-primary shadow-card">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-sm text-white/80 mb-1">Business Model</p>
-              <p className="text-lg font-bold text-white">
-                {data.meta?.business_model?.replace('_', ' ').toUpperCase()}
               </p>
             </div>
           </CardContent>
