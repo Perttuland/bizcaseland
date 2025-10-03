@@ -153,11 +153,24 @@ export function DataManagementModule({
 
   const handleTemplateCopy = async () => {
     try {
-      // Generate template based on selected modules
-      const template = selectedModules.length > 0 
-        ? generateModularTemplate(selectedModules)
-        : MarketAnalysisTemplate;
+      console.log('Copy template clicked. Selected modules:', selectedModules);
+      
+      // Generate template based on selected modules with error handling
+      let template: string;
+      try {
+        template = selectedModules.length > 0 
+          ? generateModularTemplate(selectedModules)
+          : MarketAnalysisTemplate;
+        console.log('Template generated successfully, length:', template.length);
+      } catch (genError) {
+        console.error('Template generation failed, using full template:', genError);
+        // Fallback to full template if module selection fails
+        template = MarketAnalysisTemplate;
+      }
+      
       const result = await copyTextToClipboard(template);
+      
+      console.log('Copy result:', result);
       
       if (result.success) {
         toast({
@@ -176,10 +189,11 @@ export function DataManagementModule({
         });
       }
     } catch (err) {
-      console.error('Failed to copy template:', err);
+      console.error('Failed to copy template - full error:', err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
       toast({
         title: "Copy Failed",
-        description: "Failed to copy template to clipboard. Please manually select and copy the text.",
+        description: `Error: ${errorMessage}. Please try again or manually copy the template.`,
         variant: "destructive",
       });
     }
@@ -475,6 +489,10 @@ export function DataManagementModule({
               </Alert>
 
               <div className="flex gap-3">
+                <Button onClick={handleTemplateCopy} variant="outline" className="flex items-center gap-2">
+                  <Copy className="h-4 w-4" />
+                  Copy Template
+                </Button>
                 <Button onClick={handleTemplateLoad} variant="outline" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   Load Template
