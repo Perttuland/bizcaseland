@@ -31,7 +31,8 @@ import {
   PieChart,
   DollarSign,
   Activity,
-  RotateCcw
+  RotateCcw,
+  FileDown
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -45,6 +46,8 @@ import { useApp } from '@/contexts/AppContext';
 import { ThemeToggle } from '../shared/ThemeToggle';
 import { BUSINESS_CASE_SAMPLE_DATA } from './SampleData';
 import { ExampleBusinessCases } from './ExampleBusinessCases';
+import { exportBusinessCaseToPDF } from '@/lib/pdf-export-business';
+import { calculateBusinessMetrics } from '@/lib/calculations';
 
 export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData } = useBusinessData();
@@ -396,7 +399,7 @@ export function BusinessCaseAnalyzer() {
     });
   };
 
-  const exportData = () => {
+  const exportDataAsJSON = () => {
     if (!jsonData) {
       toast({
         title: "No Data",
@@ -419,9 +422,46 @@ export function BusinessCaseAnalyzer() {
 
     toast({
       title: "Export Successful",
-      description: "Business case data exported successfully.",
+      description: "Business case data exported as JSON successfully.",
       variant: "default",
     });
+  };
+
+  const exportDataAsPDF = async () => {
+    if (!jsonData) {
+      toast({
+        title: "No Data",
+        description: "No data available to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating PDF Report...",
+        description: "Creating your comprehensive business case analysis.",
+      });
+
+      // Calculate metrics to include in the PDF
+      const calculations = calculateBusinessMetrics(jsonData);
+      
+      // Generate the PDF with all calculations
+      await exportBusinessCaseToPDF(jsonData, calculations);
+
+      toast({
+        title: "PDF Export Successful ✓",
+        description: "Your professional business case report has been downloaded.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF report. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const ValidationBadge = () => {
@@ -670,10 +710,11 @@ export function BusinessCaseAnalyzer() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={exportData}
+            onClick={exportDataAsPDF}
           >
-            <Download className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Export</span>
+            <FileDown className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">Export PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
         </div>
       </div>
@@ -717,7 +758,7 @@ export function BusinessCaseAnalyzer() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2 mb-4">
+              <div className="flex flex-wrap gap-2 mb-4">
                 <JSONTemplateComponent />
                 <Button 
                   variant="outline" 
@@ -730,10 +771,19 @@ export function BusinessCaseAnalyzer() {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={exportData}
+                  onClick={exportDataAsJSON}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Export Current Data
+                  Export as JSON
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={exportDataAsPDF}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <FileDown className="h-4 w-4 mr-2" />
+                  Export as PDF
                 </Button>
               </div>
 

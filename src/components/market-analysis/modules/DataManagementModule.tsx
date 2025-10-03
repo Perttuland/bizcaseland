@@ -19,12 +19,14 @@ import {
   Copy,
   ExternalLink,
   Sparkles,
-  Brain
+  Brain,
+  FileDown
 } from 'lucide-react';
 
 import { MarketData } from '@/lib/market-calculations';
 import { MarketAnalysisTemplate, generateModularTemplate } from '../MarketAnalysisTemplate';
 import { ExampleMarketAnalyses } from '../ExampleMarketAnalyses';
+import { exportMarketAnalysisToPDF } from '@/lib/pdf-export-market';
 
 interface DataManagementModuleProps {
   marketData?: MarketData | null;
@@ -105,6 +107,39 @@ export function DataManagementModule({
     a.download = `market-analysis-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handlePDFExport = async () => {
+    if (!marketData) {
+      toast({
+        title: "No Data Available",
+        description: "Please load market analysis data before exporting to PDF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      toast({
+        title: "Generating PDF...",
+        description: "Please wait while we create your market analysis report.",
+      });
+
+      await exportMarketAnalysisToPDF(marketData);
+
+      toast({
+        title: "PDF Export Successful",
+        description: "Your market analysis report has been downloaded.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to generate PDF report. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTemplateLoad = () => {
@@ -536,17 +571,18 @@ export function DataManagementModule({
 
                 <Card className="border">
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-2">Business Case Integration</h4>
+                    <h4 className="font-semibold mb-2">Professional PDF Report</h4>
                     <p className="text-sm text-muted-foreground mb-3">
-                      Export volume projections and key insights for business case analysis.
+                      Generate a comprehensive PDF report with market sizing, competitive analysis, and customer insights.
                     </p>
                     <Button 
+                      onClick={handlePDFExport}
                       disabled={!marketData}
-                      variant="outline"
-                      className="w-full"
+                      variant="default"
+                      className="w-full bg-green-600 hover:bg-green-700"
                     >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Export for Business Case
+                      <FileDown className="h-4 w-4 mr-2" />
+                      Export as PDF
                     </Button>
                   </CardContent>
                 </Card>
