@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "meta": {
     "title": "AI-Powered Healthcare Analytics Market",
-    "description": "Market opportunity analysis for AI-driven healthcare analytics platform targeting European healthcare providers",
+    "description": "B Market opportunity analysis for AI-driven healthcare analytics platform targeting European healthcare providers",
     "analyst": "Healthcare Technology Research",
     "currency": "EUR",
     "base_year": 2025,
@@ -100,6 +100,14 @@
       "barriers_to_entry": "high",
       "barriers_description": "Clinical validation requirements, regulatory compliance, and established healthcare relationships create high barriers"
     },
+    "positioning_axes": {
+      "x_axis_label": "AI/Clinical Innovation (0-100)",
+      "y_axis_label": "Market Presence/Scale (0-100)"
+    },
+    "our_position": {
+      "x": 75,
+      "y": 15
+    },
     "competitors": [
       {
         "name": "IBM Watson Health",
@@ -112,7 +120,9 @@
         "strengths": ["AI expertise", "Enterprise relationships", "Comprehensive platform", "Research partnerships"],
         "weaknesses": ["High complexity", "Implementation challenges", "Cost", "Generic AI approach"],
         "threat_level": "high",
-        "competitive_response": "Focus on clinical specialization and ease of implementation"
+        "x_position": 65,
+        "y_position": 85,
+        "competitive_response": "IBM Watson Health represents the incumbent leader with massive brand recognition and enterprise AI capabilities. Their comprehensive platform approach and research partnerships create strong network effects, particularly with large academic medical centers. However, their generic AI approach lacks the clinical specialization we're developing, and their implementations are notoriously complex and expensive.\n\nOur response focuses on clinical specialization and rapid deployment. We're building purpose-built clinical AI models that outperform Watson's generic algorithms in specific use cases like predictive analytics for sepsis and readmission risk. Our streamlined implementation methodology delivers clinical value in weeks versus Watson's months-long deployments. We'll target mid-market hospital systems frustrated with Watson's complexity and cost, demonstrating superior clinical outcomes at lower total cost of ownership."
       },
       {
         "name": "Philips Healthcare Informatics",
@@ -125,7 +135,9 @@
         "strengths": ["Medical device integration", "Clinical workflow", "European presence", "Hospital relationships"],
         "weaknesses": ["Limited AI capabilities", "Legacy technology", "Slow innovation"],
         "threat_level": "medium",
-        "competitive_response": "Differentiate through advanced AI and faster innovation cycles"
+        "x_position": 45,
+        "y_position": 70,
+        "competitive_response": "Philips leverages strong European presence and medical device integration to maintain market position, but their AI capabilities lag significantly behind pure-play analytics competitors. Their legacy technology stack and slower innovation cycles create opportunities for disruption, particularly as hospitals seek modern cloud-based AI solutions.\n\nWe'll differentiate through advanced AI capabilities and integration flexibility. While Philips requires their proprietary medical devices, our platform integrates with any FHIR-compliant system and medical device ecosystem. We'll partner with hospital IT departments to demonstrate how our modern architecture complements existing Philips infrastructure while delivering superior predictive analytics. Our open platform approach appeals to hospitals seeking to avoid vendor lock-in."
       },
       {
         "name": "Epic Systems",
@@ -138,7 +150,9 @@
         "strengths": ["EHR integration", "Data access", "Clinical adoption", "Workflow integration"],
         "weaknesses": ["Limited AI sophistication", "Vendor lock-in concerns", "Innovation pace"],
         "threat_level": "medium",
-        "competitive_response": "Focus on interoperability and superior AI capabilities"
+        "x_position": 40,
+        "y_position": 60,
+        "competitive_response": "Epic's EHR dominance provides privileged data access and workflow integration advantages that create natural analytics extension opportunities. Their installed base gives them immediate market access, but their AI sophistication lags and vendor lock-in concerns limit their appeal, especially in multi-EHR environments common in Europe.\n\nOur interoperability-first approach directly counters Epic's lock-in strategy. We'll emphasize our ability to work across Epic, Cerner, and European EHR systems, positioning ourselves as the vendor-neutral analytics layer. We'll target hospital systems with heterogeneous EHR environments and academic medical centers requiring research-grade AI that Epic can't deliver. Our superior AI algorithms and open architecture appeal to CIOs seeking best-of-breed solutions over Epic's adequate-but-not-exceptional analytics."
       }
     ],
     "competitive_advantages": [

@@ -1,226 +1,226 @@
-## Copilot instructions for Bizcaseland
+## Copilot Instructions for Bizcaseland
 
-Purpose: help an AI coding agent become productive quickly in this repo by describing the architecture, data model, conventions, developer workflows, integration points and a few project-specific gotchas.
+**Purpose:** Help AI coding agents become productive quickly in this repo.
 
-**IMPORTANT**: Avoid using terminal commands. When you do use `;` instead of `&&` as we are in VSCode.
+**IMPORTANT**: Use `;` instead of `&&` when chaining terminal commands (VSCode environment).
 
-## Big Picture Architecture
+---
 
-- **Dual-Purpose Application**: React + Vite + TypeScript app with two main analysis suites:
-  1. **Business Case Analyzer**: Financial modeling and business case development
-  2. **Market Analysis Suite**: Comprehensive market research with interactive visualizations
+## 📚 Core Documentation (Read These First!)
 
-- **Entry Points**: `src/main.tsx` -> `App` (`src/App.tsx`) -> routes:
-  - `/` - Landing page (`src/pages/Index.tsx`)
-  - `/business` - Business Case Analyzer
-  - `/market` - Market Analysis Suite
+Before making changes, consult these master documents:
 
-- **State Management**: 
-  - **Global App State**: `AppContext` (`src/contexts/AppContext.tsx`) - unified state with localStorage persistence
-  - **Business Case State**: `BusinessDataContext` (`src/contexts/BusinessDataContext.tsx`) - legacy, being migrated to AppContext
-  - **Market Analysis State**: Uses AppContext with `MarketData` interface
+1. **[docs/SPECIFICATIONS.md](../docs/SPECIFICATIONS.md)** - Product specs, user journey, UX principles, JSON templates
+2. **[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - Technical architecture, component structure, state management, calculations
+3. **[docs/TEST_ARCHITECTURE.md](../docs/TEST_ARCHITECTURE.md)** - Testing strategy, test patterns, coverage requirements
 
-- **Component Organization** (reorganized for maintainability):
-  ```
-  src/components/
-  ├── business-case/     # Business case analysis components
-  ├── market-analysis/   # Market research suite with 6 specialized modules
-  ├── landing/          # Landing page components
-  ├── shared/           # Reusable components across both suites
-  └── ui/              # shadcn/ui base components
-  ```
+**Rule:** If specs/architecture docs conflict with this file, the docs/ files are the source of truth.
 
-## Data Models & Contracts
+---
 
-### Business Case Data (`BusinessData` interface)
-- **Location**: `src/contexts/BusinessDataContext.tsx` and `src/types/business-data.ts`
-- **Financial Engine**: `src/lib/calculations.ts` — canonical source for all financial calculations
-- **Key Rules**:
-  - Every numeric datum: `{ value: number, unit: string, rationale: string }`
-  - Drivers use `path` strings (e.g., `assumptions.pricing.avg_unit_price.value`)
-  - Driver `range` is array of numeric test points
-  - Only one growth pattern per segment (geom_growth, seasonal_growth, or linear_growth)
-  - Default horizon: 60 periods unless overridden in `meta.periods`
+## 🎯 Quick Start
 
-### Market Analysis Data (`MarketData` interface)
-- **Location**: `src/lib/market-calculations.ts` and `src/lib/market-suite-calculations.ts`
-- **Key Structure**:
-  ```typescript
-  interface MarketData {
-    schema_version: string;
-    meta: ProjectMetadata;
-    market_sizing: { tam, sam, som };
-    market_share: MarketShareData;
-    competitive_landscape: CompetitiveLandscapeData;
-    customer_analysis: CustomerAnalysisData;
-  }
-  ```
-- **Calculations**: `calculateSuiteMetrics()` and `validateMarketSuiteData()` in `market-suite-calculations.ts`
+**What is Bizcaseland?**  
+An AI-first business analysis platform where users:
+1. Export JSON templates from our tool
+2. Populate them with AI (ChatGPT/Claude) with rationale
+3. Import back to visualize and analyze
+4. Edit inline, run sensitivity analysis
+5. Export as JSON or PDF
 
-### Test Data Locations
-- **Business Case**: `Bizcase analyst/Test data/0.62/`
-- **Market Analysis**: Sample data embedded in DataManagementModule and MarketAnalysisTemplate.ts
+**Two Main Tools:**
+- **Business Case Analyzer** (`/business`) - Financial modeling with NPV, IRR, sensitivity analysis
+- **Market Analysis Suite** (`/market`) - Market sizing, competitive analysis, customer segmentation
 
-## Market Analysis Suite Architecture
+**Entry Point:** `src/main.tsx` → `App.tsx` → React Router → `pages/Index.tsx` (landing) or tool pages
 
-The Market Analysis Suite is a comprehensive market research tool with 6 specialized modules:
+**State:** Global `AppContext` + localStorage persistence (no backend)
 
-### Core Components
-- **Main Orchestrator**: `src/components/market-analysis/MarketAnalysisSuite.tsx`
-- **Integration Wrapper**: `src/components/MarketAnalysis.tsx` (used by BusinessCaseAnalyzer)
-- **Data Templates**: `src/components/market-analysis/MarketAnalysisTemplate.ts`
+---
 
-### Six Specialized Modules (all in `src/components/market-analysis/modules/`)
-1. **MarketSizingModule.tsx** - TAM/SAM/SOM analysis with PieChart, BarChart, LineChart, AreaChart
-2. **CompetitiveIntelligenceModule.tsx** - Competitor analysis with ScatterChart, RadarChart, BarChart
-3. **CustomerAnalysisModule.tsx** - Customer segmentation with BarChart, LineChart
-4. **StrategicPlanningModule.tsx** - Strategic planning with AreaChart, LineChart
-5. **OpportunityAssessmentModule.tsx** - Market opportunity assessment with custom visualizations
-6. **DataManagementModule.tsx** - JSON import/export, templates, validation
+## 🏗️ Architecture Quick Reference
 
-### Chart Technology
-- **Library**: Recharts for all visualizations
-- **Pattern**: All modules use ResponsiveContainer with consistent styling
-- **Integration**: Charts automatically update when data changes via AppContext
+**Full details:** See [docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)
 
-## Project-Specific Conventions & Patterns
-### Design & UI Patterns
-- **Design Tokens**: HSL CSS variables in `src/index.css` — avoid hard-coded hex colors
-- **UI Components**: shadcn-ui patterns in `src/components/ui/` (button.tsx, card.tsx, etc.)
-- **Styling**: Tailwind CSS with HSL color system wired through `tailwind.config.ts`
-- **Responsive**: Mobile-first approach with Tailwind breakpoints
+### Component Structure
+```
+src/
+├── components/
+│   ├── business-case/      # Business Case Analyzer tabs
+│   ├── market-analysis/    # Market Analysis Suite modules
+│   ├── shared/             # Reusable cross-tool components
+│   └── ui/                 # shadcn/ui base components
+├── lib/                    # Business logic
+│   ├── calculations.ts              # Business case financial engine
+│   ├── market-calculations.ts       # Market analysis calculations
+│   └── market-suite-calculations.ts # Market suite metrics
+├── contexts/               # React Context providers
+│   ├── AppContext.tsx              # Global state + localStorage
+│   └── BusinessDataContext.tsx     # Legacy (being migrated)
+└── types/                  # TypeScript interfaces
+```
 
-### Component Organization
-- **Barrel Exports**: Each folder has `index.ts` for clean imports
-- **Shared Components**: Reusable components in `src/components/shared/`
-- **Module Pattern**: Market analysis modules follow standard interface: `{ marketData, onDataUpdate, metrics }`
+### Key Data Interfaces
 
-### State Management Patterns
-- **AppContext**: Global state with localStorage persistence for both suites
-- **BusinessDataContext**: Legacy context being gradually migrated to AppContext
-- **Data Flow**: Props down, callbacks up pattern with centralized state updates
-- **Persistence**: Automatic localStorage sync with selective updates for performance
+**Business Case:**
+- Location: `src/types/business-data.ts`
+- Pattern: Every number = `{ value, unit, rationale }`
+- Calculations: `src/lib/calculations.ts`
 
-### Routing & Navigation
-- **Router**: React Router in `src/App.tsx`
-- **Add Routes**: Place new routes above the catch-all `*` route
-- **Navigation**: Consistent navigation patterns with back buttons and breadcrumbs
+**Market Analysis:**
+- Location: `src/lib/market-calculations.ts`
+- Structure: `{ meta, market_sizing, competitive_landscape, customer_analysis }`
+- Calculations: `src/lib/market-suite-calculations.ts`
 
-## Integration Points & External Dependencies
+### State Management
+- **AppContext**: Global state for both tools + localStorage persistence
+- **BusinessDataContext**: Legacy (being migrated to AppContext)
+- **Pattern**: Props down, callbacks up
 
-- **No Server API**: Pure client-side app with JSON import/export for data persistence
-- **Data Ingestion**: UI-based (paste JSON, load samples) with client-side persistence
-- **External Integration**: Lovable.dev integration mentioned in `README.md` for auto-commits
+---
 
-### Key Libraries & Versions (see `package.json`)
-- **Core**: React 18, Vite, TypeScript
-- **UI**: Tailwind CSS, shadcn-ui, Radix primitives
-- **Charts**: Recharts for all data visualizations
-- **Routing**: React Router for SPA navigation
-- **State**: React Context + localStorage (no external state libraries)
-- **Testing**: Vitest for unit tests
+## 🔧 Development Patterns
 
-## Important Gotchas (Do Not Change Lightly)
+### Tech Stack
+- **Core**: React 18 + Vite + TypeScript
+- **UI**: Tailwind CSS + shadcn/ui + Radix primitives
+- **Charts**: Recharts (all visualizations)
+- **State**: React Context + localStorage (no backend)
+- **Testing**: Vitest
 
-### Business Case Engine
-- **Date Logic**: `src/lib/calculations.ts` uses default start date `new Date('2026-01-01')` for monthly timelines — tests and UI assume consistent periods
-- **IRR Calculations**: Returns magic error codes (`IRR_ERROR_CODES`) — use `isIRRError()` and `getIRRErrorMessage()` when exposing results
-- **JSON Template Rules**: Missing `rationale` or wrong data shapes will break calculations (see test data structure)
+### Code Style
+- **Language**: TypeScript for all new code
+- **Components**: Functional components with typed props
+- **Types**: Prefer `interface` over `type` for public shapes
+- **Naming**: Descriptive booleans (`isLoading`, `hasError`)
+- **Exports**: Named exports for components and helpers
+- **Functions**: Use `function` keyword (better stack traces)
 
-### Market Analysis Engine
-- **Data Validation**: `validateMarketSuiteData()` enforces strict schema compliance
-- **Chart Integration**: All modules expect data via props, not direct context access
-- **Module Interface**: Standard props: `{ marketData, onDataUpdate, metrics }` — don't break this contract
+### UI Patterns
+- **Design System**: HSL CSS variables in `src/index.css` (don't use hard-coded hex)
+- **Components**: Reuse `src/components/ui/*` (shadcn/ui) over raw HTML
+- **Responsive**: Mobile-first with Tailwind breakpoints
+- **Charts**: Always wrap Recharts in `ResponsiveContainer`
 
-### Styling System
-- **HSL Variables**: System expects HSL color values — non-HSL colors will break theming
-- **Responsive Design**: Mobile-first Tailwind patterns — don't use fixed pixel sizes
-- **Component Isolation**: shadcn/ui components should not be modified directly
+### State & Data Flow
+- **Global State**: Use `AppContext` for cross-tool state
+- **Data Updates**: Use context methods, not direct mutation
+- **Persistence**: Auto-saves to localStorage (no manual save needed)
+- **Pattern**: Props down, callbacks up
 
-### Performance Considerations
-- **Bundle Size**: ~911KB minified due to chart libraries — avoid adding heavy dependencies
-- **Chart Rendering**: Recharts components wrapped in ResponsiveContainer for performance
-- **State Updates**: localStorage persistence is throttled — don't trigger excessive updates
+---
 
-## Where to Change Behavior
+## ⚠️ Critical Rules (Don't Break These!)
 
-### Business Case Functionality
-- **Financial Logic**: Edit `src/lib/calculations.ts` and add tests in `src/lib/calculations.test.ts`
-- **Data Types**: Update `src/contexts/BusinessDataContext.tsx` and `src/types/business-data.ts` in tandem
-- **UI Components**: `src/components/business-case/BusinessCaseAnalyzer.tsx` orchestrates tabs
-- **State Updates**: Use `BusinessDataContext.updateAssumption` / `updateDriver` and helpers in `src/lib/utils/*`
+### Financial Calculations
+- **IRR Error Codes**: Use `isIRRError()` and `getIRRErrorMessage()` — don't expose raw error codes
+- **Date Logic**: Default start date is `2026-01-01` — tests assume this
+- **Rationale Required**: Every number needs `{ value, unit, rationale }` — missing rationale breaks calculations
 
-### Market Analysis Functionality  
-- **Market Logic**: Edit `src/lib/market-calculations.ts` and `src/lib/market-suite-calculations.ts`
-- **Data Types**: Update `MarketData` interface in `src/lib/market-calculations.ts`
-- **UI Components**: `src/components/market-analysis/MarketAnalysisSuite.tsx` orchestrates modules
-- **Chart Modules**: Individual modules in `src/components/market-analysis/modules/`
-- **State Updates**: Use AppContext `updateMarketData()` method
+### Data Validation
+- **JSON Schema**: Both tools enforce strict schema validation — test before committing
+- **Market Analysis**: `validateMarketSuiteData()` is the authority
+- **Business Case**: All paths must resolve (e.g., `assumptions.pricing.avg_unit_price.value`)
 
-### Global App Behavior
-- **Unified State**: Edit `src/contexts/AppContext.tsx` for cross-suite state management
-- **Routing**: Add routes in `src/App.tsx` above the catch-all route
-- **Shared Components**: Reusable components in `src/components/shared/`
-- **UI Primitives**: Base components in `src/components/ui/` (shadcn/ui)
+### UI & Styling
+- **HSL Colors Only**: Use CSS variables from `src/index.css` — hex colors break theming
+- **ResponsiveContainer**: Always wrap Recharts components
+- **Mobile-First**: Use Tailwind breakpoints, not fixed pixels
+- **Don't Modify**: shadcn/ui components in `src/components/ui/` should not be edited
 
-## Helpful Examples & Patterns
+### Performance
+- **Bundle Size**: ~911KB — avoid heavy dependencies
+- **Chart Performance**: Use ResponsiveContainer + memoization
+- **localStorage**: Auto-throttled — don't trigger excessive updates
 
-### Business Case Examples
-- **Driver Path**: `assumptions.pricing.avg_unit_price.value` (see test data in `Bizcase analyst/Test data/0.62/`)
-- **Revenue Calculation Flow**: `generateMonthlyData()` -> `calculateDynamicTotalVolumeForMonth()` -> `calculateDynamicUnitPrice()` in `src/lib/calculations.ts`
-- **Data Update Pattern**: `BusinessDataContext.updateAssumption(path, newValue)` 
+---
 
-### Market Analysis Examples
-- **Module Development**: See existing modules in `src/components/market-analysis/modules/` for standard patterns
-- **Chart Integration**: All charts use Recharts with ResponsiveContainer wrapper
-- **Data Flow**: `AppContext.updateMarketData()` -> props to modules -> chart re-render
-- **Sample Data**: Comprehensive examples in `MarketAnalysisTemplate.ts` and DataManagementModule
+## 📝 Making Changes
 
-### Common Patterns
-- **Component Structure**: Export main component, subcomponents, helpers, types (in that order)
-- **Error Handling**: Use ErrorBoundary components and proper loading states
-- **State Management**: Props down, callbacks up with centralized state updates
-- **Import Organization**: Barrel exports in index.ts files for clean imports
+### Business Case Changes
+- **Calculations**: Edit `src/lib/calculations.ts` (add tests!)
+- **Data Model**: Update `src/types/business-data.ts`
+- **UI**: Main orchestrator is `src/components/business-case/BusinessCaseAnalyzer.tsx`
+- **State**: Use `AppContext.updateBusinessData()` or legacy `BusinessDataContext` methods
+
+### Market Analysis Changes
+- **Calculations**: Edit `src/lib/market-calculations.ts` or `market-suite-calculations.ts`
+- **Data Model**: Update `MarketData` interface in `src/lib/market-calculations.ts`
+- **UI**: Main orchestrator is `src/components/market-analysis/MarketAnalysisSuite.tsx`
+- **Modules**: Individual modules in `src/components/market-analysis/modules/`
+- **State**: Use `AppContext.updateMarketData()`
+
+### Global Changes
+- **Routing**: Add routes in `src/App.tsx` (above catch-all `*` route)
+- **Shared UI**: Add to `src/components/shared/`
+- **Global State**: Edit `src/contexts/AppContext.tsx`
 
 ### Adding New Features
-1. **New Business Case Tab**: Add to BusinessCaseAnalyzer tabs, implement calculation logic in calculations.ts
-2. **New Market Module**: Create in modules/ folder, follow existing interface pattern, add to MarketAnalysisSuite moduleConfig
-3. **New Chart Type**: Use Recharts components, wrap in ResponsiveContainer, follow color scheme
-4. **New Shared Component**: Add to shared/ folder with proper TypeScript interfaces
 
-## Agent Coding Rules & Standards
+**New Business Case Tab:**
+1. Add tab to `BusinessCaseAnalyzer.tsx`
+2. Implement calculations in `calculations.ts`
+3. Add tests
+4. Update TypeScript interfaces
 
-### Code Style & Structure
-- **Language**: Concise, technical TypeScript with accurate examples
-- **Paradigm**: Prefer functional, declarative patterns; avoid classes
-- **File Structure**: Exported component, subcomponents, helpers, static content, types (in that order)
-- **Naming**: Descriptive boolean/flag names: `isLoading`, `hasError`, `isValid`
-- **Directories**: lowercase with dashes (e.g., `components/auth-wizard`)
-- **Exports**: Favor named exports for components and helpers
+**New Market Module:**
+1. Create in `src/components/market-analysis/modules/`
+2. Follow pattern: `{ marketData, onDataUpdate, metrics }` props
+3. Wrap charts in `ResponsiveContainer`
+4. Add to `MarketAnalysisSuite.tsx` module config
 
-### TypeScript Standards
-- **New Code**: Use TypeScript for all new code
-- **Types vs Interfaces**: Prefer `interface` over `type` for public shapes
-- **Enums**: Avoid `enum`; use maps/objects instead
-- **Components**: Functional components with interface-typed props
-- **Functions**: Use `function` keyword for pure functions (better stack traces and testing)
+**New Shared Component:**
+1. Add to `src/components/shared/`
+2. Create TypeScript interfaces
+3. Use shadcn/ui primitives
+4. Export via barrel file
 
-### UI & Styling Standards
-- **Components**: Use Shadcn UI + Radix primitives with Tailwind utilities
-- **Responsive**: Mobile-first implementation with Tailwind breakpoints
-- **Primitives**: Reuse `src/components/ui/*` rather than raw HTML + Tailwind
-- **Colors**: Preserve HSL token system in `src/index.css` and `tailwind.config.ts`
-- **Conditionals**: Favor concise conditionals and declarative JSX
+---
 
-### Performance & Architecture
-- **State Management**: Minimize `useEffect` and client state when possible
-- **Loading Strategy**: Use `Suspense` with fallback and dynamic imports for non-critical code
-- **Images**: Optimize with WebP, size attributes, lazy loading when adding assets
-- **Bundle Size**: Be mindful of dependency weight (current bundle ~911KB)
+## 🧪 Testing
 
-### Project-Specific Rules
-- **Chart Integration**: Always wrap Recharts components in ResponsiveContainer
-- **Error Handling**: Use established error boundary patterns and IRR error codes
-- **Data Validation**: Follow established validation patterns for both business and market data
-- **State Updates**: Use established context methods rather than direct state mutation
-- **Terminal Usage**: Use `;` instead of `&&` when chaining commands (VSCode environment)
+**Full details:** See [docs/TEST_ARCHITECTURE.md](../docs/TEST_ARCHITECTURE.md)
+
+- **Framework**: Vitest
+- **Run Tests**: `npm test`
+- **Coverage**: `npm run test:coverage`
+- **Key Tests**: `src/lib/calculations.test.ts`, `src/lib/market-calculations.test.ts`
+- **Pattern**: Test pure functions, mock React hooks, use realistic data
+
+---
+
+## 🚀 Common Tasks
+
+**Run Development Server:**
+```bash
+npm run dev
+```
+
+**Run Tests:**
+```bash
+npm test
+```
+
+**Build for Production:**
+```bash
+npm run build
+```
+
+**Type Check:**
+```bash
+npm run type-check
+```
+
+---
+
+## 📖 When in Doubt
+
+1. Check **[docs/SPECIFICATIONS.md](../docs/SPECIFICATIONS.md)** for product/UX questions
+2. Check **[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)** for technical questions
+3. Check **[docs/TEST_ARCHITECTURE.md](../docs/TEST_ARCHITECTURE.md)** for testing questions
+4. Look at existing code for patterns (especially in `src/components/market-analysis/modules/`)
+5. Verify JSON schema compliance before committing
+
+---
+
+**Last Updated:** October 3, 2025

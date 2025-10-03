@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
   "meta": {
-    "title": "AI-Powered Healthcare Analytics Market",
-    "description": "Market opportunity analysis for AI-driven healthcare analytics platform targeting European healthcare providers",
+    "title": "a AI-Powered Healthcare Analytics Market",
+    "description": "A Market opportunity analysis for AI-driven healthcare analytics platform targeting European healthcare providers",
     "analyst": "Healthcare Technology Research",
     "currency": "EUR",
     "base_year": 2025,
@@ -14,7 +14,8 @@
       "base_value": {
         "value": 12000000000,
         "unit": "EUR",
-        "rationale": "Total European healthcare IT market with focus on analytics and AI applications"
+        "rationale": "Total European healthcare IT market with focus on analytics and AI applications based on [IDC Healthcare IT Report 2024](https://www.idc.com/)",
+        "link": "https://www.idc.com/getdoc.jsp?containerId=IDC_P33198"
       },
       "growth_rate": {
         "value": 18,
@@ -22,7 +23,11 @@
         "rationale": "Healthcare AI market growing at 18% CAGR driven by digital transformation"
       },
       "market_definition": "AI-powered healthcare analytics including predictive analytics, clinical decision support, and population health management",
-      "data_sources": ["IDC Healthcare IT", "Frost & Sullivan", "EU Digital Health Strategy"]
+      "data_sources": [
+        "IDC Healthcare IT Spending Guide - https://www.idc.com/getdoc.jsp?containerId=IDC_P33198",
+        "Frost & Sullivan Digital Health Analysis - https://www.frost.com/",
+        "EU Digital Health Strategy 2024 - https://health.ec.europa.eu/ehealth-digital-health-and-care/eu-digital-health-strategy_en"
+      ]
     },
     "serviceable_addressable_market": {
       "percentage_of_tam": {
@@ -157,6 +162,10 @@
         "sustainability": "medium",
         "rationale": "Streamlined implementation process reduces time-to-value for healthcare systems"
       }
+    ],
+    "data_sources": [
+      "HIMSS Analytics Europe Report - https://www.himss.org/",
+      "European Healthcare IT Market Analysis - https://www.marketsandmarkets.com/"
     ]
   },
   "customer_analysis": {
@@ -197,6 +206,10 @@
         "value_drivers": ["Population health management", "Resource optimization", "Epidemic surveillance", "Cost control"],
         "entry_strategy": "Public procurement participation with emphasis on population health outcomes"
       }
+    ],
+    "data_sources": [
+      "European Patient Survey Data - https://www.euro.who.int/",
+      "Healthcare Demographics Report - https://ec.europa.eu/eurostat"
     ]
   }
 }

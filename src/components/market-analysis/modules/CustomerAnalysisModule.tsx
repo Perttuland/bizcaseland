@@ -18,8 +18,35 @@ import { Users, DollarSign } from 'lucide-react';
 
 import { MarketData } from '@/lib/market-calculations';
 import { MarketSuiteMetrics } from '@/lib/market-suite-calculations';
-import { ModuleDataTools } from './ModuleDataTools';
 import { ValueWithRationale } from '../ValueWithRationale';
+import { ModuleImportCard } from '../shared/ModuleImportCard';
+import { mergeMarketData } from '@/lib/market-data-utils';
+
+// Simple component to render data source with clickable link
+const DataSourceLink = ({ source }: { source: string }) => {
+  const urlMatch = source.match(/(https?:\/\/[^\s]+)/);
+  
+  if (!urlMatch) {
+    return <span>{source}</span>;
+  }
+  
+  const url = urlMatch[0];
+  const text = source.replace(url, '').trim().replace(/^-\s*/, '').replace(/\s*-\s*$/, '');
+  
+  return (
+    <>
+      {text && <span>{text} - </span>}
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:text-blue-600 underline"
+      >
+        {url}
+      </a>
+    </>
+  );
+};
 
 interface CustomerAnalysisModuleProps {
   marketData: MarketData;
@@ -71,30 +98,8 @@ export function CustomerAnalysisModule({ marketData, onDataUpdate, metrics }: Cu
         <h2 className="text-2xl font-bold">Customer Analysis</h2>
       </div>
 
-      <ModuleDataTools
-        moduleName="Customer Analysis"
-        moduleKey="customer_analysis"
-        marketData={marketData}
-        onDataUpdate={onDataUpdate}
-      />
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <DollarSign className="h-4 w-4 text-purple-500" />
-            <span className="text-sm font-medium">Total Market Size</span>
-          </div>
-          <div className="text-2xl font-bold text-purple-600">
-            {formatCurrency(totalMarketSize)}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Combined value across all segments
-          </div>
-        </CardContent>
-      </Card>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle>Segment Size (Market Value)</CardTitle>
           </CardHeader>
@@ -102,21 +107,36 @@ export function CustomerAnalysisModule({ marketData, onDataUpdate, metrics }: Cu
             {segmentValueData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={segmentValueData}>
-                  <CartesianGrid strokeDasharray="3 3" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis 
                     dataKey="name" 
                     angle={-45}
                     textAnchor="end"
                     height={100}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
                   />
                   <YAxis 
                     tickFormatter={(value) => formatCurrency(value)}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={12}
                   />
                   <Tooltip 
-                    formatter={(value: number) => formatCurrency(value)}
-                    labelStyle={{ color: '#000' }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                            <p className="font-semibold">{label}</p>
+                            <p style={{ color: payload[0].color }}>
+                              {`Market Value: ${formatCurrency(payload[0].value as number)}`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
-                  <Bar dataKey="value" name="Market Value">
+                  <Bar dataKey="value" name="Market Value" radius={[4, 4, 0, 0]}>
                     {segmentValueData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
@@ -133,7 +153,7 @@ export function CustomerAnalysisModule({ marketData, onDataUpdate, metrics }: Cu
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-card shadow-card">
           <CardHeader>
             <CardTitle>Market Split by Segment</CardTitle>
           </CardHeader>
@@ -148,14 +168,33 @@ export function CustomerAnalysisModule({ marketData, onDataUpdate, metrics }: Cu
                     cx="50%"
                     cy="50%"
                     outerRadius={80}
-                    label={(entry) => `${entry.name}: ${entry.value.toFixed(1)}%`}
+                    label={(entry) => `${entry.value.toFixed(1)}%`}
+                    labelLine={false}
                   >
                     {marketSplitData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
-                  <Legend />
+                  <Tooltip 
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="bg-card border border-border rounded-lg p-3 shadow-md">
+                            <p className="font-semibold">{payload[0].name}</p>
+                            <p style={{ color: payload[0].payload.color }}>
+                              {`${(payload[0].value as number).toFixed(1)}%`}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Legend 
+                    formatter={(value: string) => {
+                      return value.length > 30 ? `${value.substring(0, 30)}...` : value;
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -179,39 +218,28 @@ export function CustomerAnalysisModule({ marketData, onDataUpdate, metrics }: Cu
               {segments.map((segment, index) => (
                 <Card key={segment.id} className="border-l-4" style={{ borderLeftColor: COLORS[index % COLORS.length] }}>
                   <CardHeader className="pb-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{segment.name}</CardTitle>
-                        <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>Size: <ValueWithRationale
-                            value={formatCurrency(segment.size_value?.value || 0)}
-                            rationale={segment.size_value?.rationale}
-                            link={segment.size_value?.link}
-                            inline
-                          /></span>
-                          <span>Growth: <ValueWithRationale
-                            value={`${segment.growth_rate?.value || 0}%`}
-                            rationale={segment.growth_rate?.rationale}
-                            link={segment.growth_rate?.link}
-                            inline
-                          /> annually</span>
-                          <span>Share: <ValueWithRationale
-                            value={`${segment.size_percentage?.value || 0}%`}
-                            rationale={segment.size_percentage?.rationale}
-                            link={segment.size_percentage?.link}
-                            inline
-                          /> of market</span>
-                        </div>
+                    <div>
+                      <CardTitle className="text-lg">{segment.name}</CardTitle>
+                      <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
+                        <span>Size: <ValueWithRationale
+                          value={formatCurrency(segment.size_value?.value || 0)}
+                          rationale={segment.size_value?.rationale}
+                          link={segment.size_value?.link}
+                          inline
+                        /></span>
+                        <span>Growth: <ValueWithRationale
+                          value={`${segment.growth_rate?.value || 0}%`}
+                          rationale={segment.growth_rate?.rationale}
+                          link={segment.growth_rate?.link}
+                          inline
+                        /> annually</span>
+                        <span>Share: <ValueWithRationale
+                          value={`${segment.size_percentage?.value || 0}%`}
+                          rationale={segment.size_percentage?.rationale}
+                          link={segment.size_percentage?.link}
+                          inline
+                        /> of market</span>
                       </div>
-                      <Badge 
-                        variant="outline"
-                        style={{ 
-                          backgroundColor: `${COLORS[index % COLORS.length]}15`,
-                          borderColor: COLORS[index % COLORS.length]
-                        }}
-                      >
-                        Segment {index + 1}
-                      </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -271,17 +299,39 @@ export function CustomerAnalysisModule({ marketData, onDataUpdate, metrics }: Cu
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-muted-foreground">
-              <Users className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No Customer Segments Defined</h3>
-              <p className="text-sm mb-4">Add customer segments to understand your target market</p>
-              <p className="text-xs">
-                Use the template or import tools above to add segment data with demographics, pain points, and market value
-              </p>
-            </div>
+            <ModuleImportCard
+              moduleId="customer_analysis"
+              moduleName="Customer Analysis"
+              icon="Users"
+              description="Define customer segments with demographics, pain points, and market value analysis"
+              onDataUpload={(newData) => {
+                if (onDataUpdate && marketData) {
+                  const merged = mergeMarketData(marketData, newData);
+                  onDataUpdate(merged as MarketData);
+                } else if (onDataUpdate) {
+                  onDataUpdate(newData as MarketData);
+                }
+              }}
+            />
           )}
         </CardContent>
       </Card>
+
+      {/* Data Sources */}
+      {marketData?.customer_analysis?.data_sources && marketData.customer_analysis.data_sources.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Sources</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              {marketData.customer_analysis.data_sources.map((source, index) => (
+                <li key={index}>• <DataSourceLink source={source} /></li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

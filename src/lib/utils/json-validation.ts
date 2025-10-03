@@ -62,6 +62,22 @@ export function safeJSONParse<T = any>(
       };
     }
 
+    // Check for JavaScript expressions in JSON (common AI mistake)
+    const jsExpressionPatterns = [
+      { pattern: /"value"\s*:\s*[0-9_]+\s*[\*\+\-\/]/i, message: 'Arithmetic expressions found (e.g., "value": 123 * 456)' },
+      { pattern: /"value"\s*:\s*\([^)]+\)/i, message: 'Parenthetical expressions found (e.g., "value": (2.18e9 * 0.10))' },
+      { pattern: /"value"\s*:\s*\d+_\d+/i, message: 'Numeric underscores found (e.g., "value": 2_370_000)' }
+    ];
+
+    for (const { pattern, message } of jsExpressionPatterns) {
+      if (pattern.test(jsonString)) {
+        return { 
+          success: false, 
+          error: `Invalid JSON format: ${message}. JSON does not support JavaScript expressions. Please calculate the values first and use plain numbers only. Example: use 2180400000 instead of 2_370_000_000 * 0.92` 
+        };
+      }
+    }
+
     // Check for dangerous patterns
     const dangerousPatterns = [
       /__proto__/i,

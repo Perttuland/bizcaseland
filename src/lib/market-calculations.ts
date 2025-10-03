@@ -70,6 +70,14 @@ export interface MarketData {
     };
   };
   competitive_landscape?: {
+    positioning_axes?: {
+      x_axis_label: string;
+      y_axis_label: string;
+    };
+    our_position?: {
+      x: number;
+      y: number;
+    };
     market_structure?: {
       concentration_level: 'fragmented' | 'moderately_concentrated' | 'highly_concentrated';
       concentration_rationale: string;
@@ -84,12 +92,15 @@ export interface MarketData {
       weaknesses: string[];
       threat_level: 'high' | 'medium' | 'low';
       competitive_response: string;
+      x_position?: number;
+      y_position?: number;
     }>;
     competitive_advantages?: Array<{
       advantage: string;
       sustainability: 'high' | 'medium' | 'low';
       rationale: string;
     }>;
+    data_sources?: string[];
   };
   customer_analysis?: {
     market_segments?: Array<{
@@ -104,54 +115,17 @@ export interface MarketData {
       value_drivers: string[];
       entry_strategy: string;
     }>;
+    data_sources?: string[];
   };
   strategic_planning?: {
     note?: string;
-    execution_strategy?: {
-      go_to_market_approach: string;
-      penetration_strategy: 'linear' | 'exponential' | 's_curve';
-      penetration_strategy_rationale: string;
-      penetration_definitions?: {
-        linear: string;
-        exponential: string;
-        s_curve: string;
-      };
-      key_tactics?: Array<{
-        tactic: string;
-        timeline: string;
-        expected_impact: string;
-        resources_required: string;
-      }>;
-      penetration_drivers?: Array<{
-        driver: string;
-        impact: 'high' | 'medium' | 'low';
-        description: string;
-        timeline: string;
-      }>;
-      competitive_response_plan: string;
-    };
-    execution_milestones?: Array<{
-      year: number;
-      milestone: string;
-      target_metrics: string;
+    market_entry_strategies?: Array<{
+      name: string;
+      type?: 'partnership' | 'direct' | 'platform' | 'gradual' | string;
+      essence: string;
       rationale: string;
     }>;
-    volume_projections?: {
-      calculation_method: string;
-      note?: string;
-      assumptions: {
-        market_growth_compounds: boolean;
-        share_growth_independent: boolean;
-        customer_value_stable: boolean;
-      };
-      sensitivity_analysis: Array<{
-        factor: string;
-        base_case: any;
-        optimistic: any;
-        pessimistic: any;
-        rationale: string;
-      }>;
-    };
+    data_sources?: string[];
   };
 }
 

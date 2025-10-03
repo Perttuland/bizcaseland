@@ -87,10 +87,51 @@ export function DataManagementModule({
     
     try {
       const parsedData = JSON.parse(jsonInput);
-      onDataLoad(parsedData as MarketData);
+      
+      // Check if this is a partial import (has some but not all modules)
+      const hasMarketSizing = !!parsedData.market_sizing;
+      const hasCompetitive = !!parsedData.competitive_landscape;
+      const hasCustomer = !!parsedData.customer_analysis;
+      const hasStrategic = !!parsedData.strategic_planning;
+      const moduleCount = [hasMarketSizing, hasCompetitive, hasCustomer, hasStrategic].filter(Boolean).length;
+      
+      // If existing data and partial import, merge; otherwise replace
+      if (marketData && moduleCount > 0 && moduleCount < 4) {
+        const mergedData: any = {
+          ...marketData,
+          schema_version: parsedData.schema_version || marketData.schema_version,
+          meta: parsedData.meta || marketData.meta
+        };
+        
+        // Merge only present modules
+        if (parsedData.market_sizing) mergedData.market_sizing = parsedData.market_sizing;
+        if (parsedData.market_share) mergedData.market_share = parsedData.market_share;
+        if (parsedData.competitive_landscape) mergedData.competitive_landscape = parsedData.competitive_landscape;
+        if (parsedData.customer_analysis) mergedData.customer_analysis = parsedData.customer_analysis;
+        if (parsedData.strategic_planning) mergedData.strategic_planning = parsedData.strategic_planning;
+        
+        onDataLoad(mergedData as MarketData);
+        toast({
+          title: "Partial Data Merged",
+          description: `Updated ${moduleCount} module(s) while preserving other data.`,
+        });
+      } else {
+        // Full import - replace all data
+        onDataLoad(parsedData as MarketData);
+        toast({
+          title: "Data Imported",
+          description: "Market analysis data loaded successfully.",
+        });
+      }
+      
       setJsonInput('');
     } catch (err) {
       setError('Invalid JSON format. Please check your input and try again.');
+      toast({
+        title: "Import Failed",
+        description: "Invalid JSON format. Please check your input.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -107,6 +148,59 @@ export function DataManagementModule({
     a.download = `market-analysis-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleModularExport = () => {
+    if (!marketData || selectedModules.length === 0) {
+      toast({
+        title: "No Modules Selected",
+        description: "Please select at least one module to export.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create export object with only selected modules
+    const exportData: any = {
+      schema_version: marketData.schema_version || "1.0",
+      meta: {
+        ...marketData.meta,
+        title: `${marketData.meta?.title || 'Market Analysis'} (Partial Export)`,
+        description: `Exported modules: ${selectedModules.join(', ')}`
+      }
+    };
+
+    // Add only selected modules
+    if (selectedModules.includes('market_sizing')) {
+      exportData.market_sizing = marketData.market_sizing;
+      if (marketData.market_share) {
+        exportData.market_share = marketData.market_share;
+      }
+    }
+    if (selectedModules.includes('competitive_intelligence') && marketData.competitive_landscape) {
+      exportData.competitive_landscape = marketData.competitive_landscape;
+    }
+    if (selectedModules.includes('customer_analysis') && marketData.customer_analysis) {
+      exportData.customer_analysis = marketData.customer_analysis;
+    }
+    if (selectedModules.includes('strategic_planning') && marketData.strategic_planning) {
+      exportData.strategic_planning = marketData.strategic_planning;
+    }
+
+    // Download the partial export
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `market-analysis-partial-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Partial Export Successful",
+      description: `Exported ${selectedModules.length} module(s) successfully.`,
+    });
   };
 
   const handlePDFExport = async () => {
@@ -488,12 +582,91 @@ export function DataManagementModule({
                 </AlertDescription>
               </Alert>
 
+              {/* Module Selection */}
+              <Card className="border-2 border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Select Modules to Include
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Choose which analysis modules you want to include in your template. 
+                      This generates a smaller, focused template based on your needs.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { id: 'market_sizing', label: 'Market Sizing', description: 'TAM/SAM/SOM analysis' },
+                        { id: 'competitive_intelligence', label: 'Competitive Intelligence', description: 'Competitor analysis' },
+                        { id: 'customer_analysis', label: 'Customer Analysis', description: 'Segment scoring' },
+                        { id: 'strategic_planning', label: 'Strategic Planning', description: 'Market entry strategies' }
+                      ].map((module) => (
+                        <div key={module.id} className="flex items-start space-x-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+                          <Checkbox
+                            id={`import-${module.id}`}
+                            checked={selectedModules.includes(module.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedModules([...selectedModules, module.id]);
+                              } else {
+                                setSelectedModules(selectedModules.filter(m => m !== module.id));
+                              }
+                            }}
+                          />
+                          <div className="grid gap-1 leading-none">
+                            <Label
+                              htmlFor={`import-${module.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {module.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {module.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedModules.length === 0 && (
+                      <Alert variant="destructive" className="mt-3">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Please select at least one module to generate a template.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {selectedModules.length > 0 && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg">
+                        <p className="text-sm">
+                          <strong>Selected:</strong> {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} 
+                          <span className="text-muted-foreground ml-2">
+                            (≈{selectedModules.length * 60} lines of JSON)
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="flex gap-3">
-                <Button onClick={handleTemplateCopy} variant="outline" className="flex items-center gap-2">
+                <Button 
+                  onClick={handleTemplateCopy} 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  disabled={selectedModules.length === 0}
+                >
                   <Copy className="h-4 w-4" />
                   Copy Template
                 </Button>
-                <Button onClick={handleTemplateLoad} variant="outline" className="flex items-center gap-2">
+                <Button 
+                  onClick={handleTemplateLoad} 
+                  variant="outline" 
+                  className="flex items-center gap-2"
+                  disabled={selectedModules.length === 0}
+                >
                   <FileText className="h-4 w-4" />
                   Load Template
                 </Button>
@@ -568,10 +741,87 @@ export function DataManagementModule({
                 </AlertDescription>
               </Alert>
 
+              {/* Module Selection for Modular Export */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-blue-900">Select Modules to Export</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={selectedModules.includes('market_sizing')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedModules([...selectedModules, 'market_sizing']);
+                          } else {
+                            setSelectedModules(selectedModules.filter(m => m !== 'market_sizing'));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="font-medium">Market Sizing</span>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={selectedModules.includes('competitive_intelligence')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedModules([...selectedModules, 'competitive_intelligence']);
+                          } else {
+                            setSelectedModules(selectedModules.filter(m => m !== 'competitive_intelligence'));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="font-medium">Competitive Intelligence</span>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={selectedModules.includes('customer_analysis')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedModules([...selectedModules, 'customer_analysis']);
+                          } else {
+                            setSelectedModules(selectedModules.filter(m => m !== 'customer_analysis'));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="font-medium">Customer Analysis</span>
+                    </label>
+                    
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input 
+                        type="checkbox"
+                        checked={selectedModules.includes('strategic_planning')}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedModules([...selectedModules, 'strategic_planning']);
+                          } else {
+                            setSelectedModules(selectedModules.filter(m => m !== 'strategic_planning'));
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <span className="font-medium">Strategic Planning</span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-3">
+                    💡 Use modular export to work on individual sections with AI, then import to merge updates.
+                  </p>
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="border">
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-2">Raw Data Export</h4>
+                    <h4 className="font-semibold mb-2">Full Export</h4>
                     <p className="text-sm text-muted-foreground mb-3">
                       Export the complete market analysis dataset as JSON for backup or modification.
                     </p>
@@ -582,7 +832,25 @@ export function DataManagementModule({
                       className="w-full"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Export JSON
+                      Export All Modules
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                <Card className="border">
+                  <CardContent className="p-4">
+                    <h4 className="font-semibold mb-2">Modular Export</h4>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Export only specific modules for AI research or partial updates.
+                    </p>
+                    <Button 
+                      onClick={handleModularExport}
+                      disabled={!marketData || selectedModules.length === 0}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export Selected ({selectedModules.length})
                     </Button>
                   </CardContent>
                 </Card>
@@ -639,10 +907,80 @@ export function DataManagementModule({
                 </AlertDescription>
               </Alert>
 
+              {/* Module Selection */}
+              <Card className="border-2 border-dashed">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    Select Modules to Include
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Choose which analysis modules you want to include in your template. 
+                      This generates a smaller, focused template based on your needs.
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {[
+                        { id: 'market_sizing', label: 'Market Sizing', description: 'TAM/SAM/SOM analysis' },
+                        { id: 'competitive_intelligence', label: 'Competitive Intelligence', description: 'Competitor analysis' },
+                        { id: 'customer_analysis', label: 'Customer Analysis', description: 'Segment scoring' },
+                        { id: 'strategic_planning', label: 'Strategic Planning', description: 'Market entry strategies' }
+                      ].map((module) => (
+                        <div key={module.id} className="flex items-start space-x-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors">
+                          <Checkbox
+                            id={`template-${module.id}`}
+                            checked={selectedModules.includes(module.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedModules([...selectedModules, module.id]);
+                              } else {
+                                setSelectedModules(selectedModules.filter(m => m !== module.id));
+                              }
+                            }}
+                          />
+                          <div className="grid gap-1 leading-none">
+                            <Label
+                              htmlFor={`template-${module.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {module.label}
+                            </Label>
+                            <p className="text-xs text-muted-foreground">
+                              {module.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedModules.length === 0 && (
+                      <Alert variant="destructive" className="mt-3">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                          Please select at least one module to generate a template.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    {selectedModules.length > 0 && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg">
+                        <p className="text-sm">
+                          <strong>Selected:</strong> {selectedModules.length} module{selectedModules.length !== 1 ? 's' : ''} 
+                          <span className="text-muted-foreground ml-2">
+                            (≈{selectedModules.length * 60} lines of JSON)
+                          </span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="space-y-4">
                 <div>
                   <h4 className="font-semibold mb-2">AI-Powered Workflow</h4>
                   <ol className="text-sm space-y-2 list-decimal list-inside text-muted-foreground">
+                    <li>Select which modules you need above</li>
                     <li>Copy the JSON template below</li>
                     <li>Provide it to an AI assistant with your market research context</li>
                     <li>Ask the AI to populate the template with your specific market data</li>
@@ -652,11 +990,21 @@ export function DataManagementModule({
                 </div>
 
                 <div className="flex gap-3">
-                  <Button onClick={handleTemplateCopy} variant="outline" className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleTemplateCopy} 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    disabled={selectedModules.length === 0}
+                  >
                     <Copy className="h-4 w-4" />
                     Copy Template
                   </Button>
-                  <Button onClick={handleTemplateLoad} variant="outline" className="flex items-center gap-2">
+                  <Button 
+                    onClick={handleTemplateLoad} 
+                    variant="outline" 
+                    className="flex items-center gap-2"
+                    disabled={selectedModules.length === 0}
+                  >
                     <Upload className="h-4 w-4" />
                     Load into Editor
                   </Button>

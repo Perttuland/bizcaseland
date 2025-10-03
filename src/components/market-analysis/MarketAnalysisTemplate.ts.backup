@@ -1,0 +1,381 @@
+export const MarketAnalysisTemplate = `{
+  "schema_version": "2.0",
+  "instructions": {
+    "purpose": "AI-Human collaborative market analysis. Complete any module independently or build a comprehensive analysis. All modules are optional and can be filled in any order.",
+    "ai_workflow_protocol": {
+      "initial_prompt": "Upon receiving this template, ask the user: 'Would you like to work through this collaboratively (I'll present each data point for your validation) or should I complete the analysis autonomously?'",
+      "collaborative_mode": {
+        "process": [
+          "1. AI researches and presents one data point at a time with value and rationale",
+          "2. AI asks: 'Does this look correct, or would you like me to revise it?'",
+          "3. User responds with: 'looks good' OR 'too high/low, reconsider' OR specific correction",
+          "4. AI adjusts if needed, then proceeds to next data point",
+          "5. User can say 'finish the rest' anytime to switch to autonomous mode"
+        ],
+        "presentation_order": {
+          "market_sizing": "TAM base_value → TAM growth_rate → SAM percentage → SOM percentage",
+          "competitive_intelligence": "positioning_axes → our_position → competitors (one at a time with x/y positions) → 2-paragraph competitive_response",
+          "customer_analysis": "market_segments (one at a time, 2-3 sentences per field)",
+          "strategic_planning": "market_entry_strategies (one at a time with multi-paragraph essence and rationale)"
+        }
+      },
+      "autonomous_mode": "AI completes all selected modules independently using available research, then presents final JSON",
+      "mode_switching": "User can switch between modes anytime during the process"
+    },
+    "module_independence": {
+      "note": "Each module can be completed independently in any order",
+      "modules": {
+        "market_sizing": "Defines the market opportunity (TAM/SAM/SOM) with growth projections",
+        "competitive_intelligence": "Positioning matrix (2x2) + competitor analysis with 2-paragraph memos",
+        "customer_analysis": "3-5 customer segments with demographics, pain points, profiles, value drivers, entry strategy (2-3 sentences each)",
+        "strategic_planning": "2-4 market entry strategies with multi-paragraph essence (150-300 words) and rationale (100-200 words)"
+      },
+      "cross_references": "Strategic planning can reference market_sizing if available, but each module works standalone"
+    },
+    "rationale_requirements": {
+      "mandatory_elements": [
+        "Specific data sources (reports, databases, studies)",
+        "Calculation methodology or estimation approach",
+        "Key assumptions made",
+        "Confidence level indicators when uncertain"
+      ],
+      "quality_standards": {
+        "good_rationale": "TAM €50M based on Gartner 2024 report, assumes 5% CAGR from historical 2020-2023 growth of 4.8-5.2%",
+        "poor_rationale": "Market is growing so I estimated 5%",
+        "validation": "Rationales should be specific enough for a human to verify the source and reasoning"
+      },
+      "ai_research_guidance": {
+        "primary_sources": "Government data, financial reports, regulatory filings (highest reliability)",
+        "secondary_sources": "Industry reports, analyst estimates, market research firms (verify multiple sources)",
+        "ai_synthesis": "When primary/secondary unavailable, clearly state it's AI-synthesized and recommend validation",
+        "uncertainty_handling": "Use phrases like 'estimated based on...', 'assuming...', 'requires validation' when confidence is lower"
+      },
+      "link_support": {
+        "purpose": "Provide clickable source URLs for data validation and transparency",
+        "usage": "Add optional 'link' field to any value object alongside value, unit, and rationale",
+        "example": { "value": 50000000, "unit": "EUR", "rationale": "Market size from [Gartner Report 2024](https://gartner.com/report)", "link": "https://gartner.com/report" },
+        "in_text_links": "Rationales can include markdown-style links [text](url) that will be rendered as clickable in the UI",
+        "best_practices": [
+          "Always include publicly accessible links when possible",
+          "Use direct links to reports or data pages, not just homepages",
+          "Include both a direct 'link' field for primary source AND markdown links in rationale text for additional references"
+        ]
+      },
+      "json_value_format": {
+        "CORRECT_EXAMPLES": [
+          { "value": 2180400000, "unit": "EUR", "rationale": "Calculated as USD 2.37B × 0.92 EUR/USD = €2.18B" },
+          { "value": 65400000, "unit": "EUR", "rationale": "30% of SAM (€218M × 0.30 = €65.4M)" },
+          { "value": 0.214, "unit": "percentage_per_year", "rationale": "21.4% CAGR (expressed as decimal 0.214)" }
+        ],
+        "INCORRECT_EXAMPLES_DO_NOT_USE": [
+          { "value": "2_370_000_000 * 0.92", "ERROR": "JavaScript expression - NOT valid JSON" },
+          { "value": "(2.18e9 * 0.10) * 0.30", "ERROR": "Arithmetic in JSON - NOT allowed" },
+          { "value": "2_180_400_000", "ERROR": "Numeric underscores - NOT valid JSON" }
+        ],
+        "rule": "Always calculate the final number first, then put ONLY that number in the value field. Show your work in the rationale."
+      }
+    },
+    "data_format_rules": [
+      "Replace all TODO- placeholders with actual values",
+      "Every numeric value must include: value, unit, and detailed rationale",
+      "Use clear, specific rationales with sources and methodology",
+      "Maintain JSON structure exactly as provided",
+      "CRITICAL: All 'value' fields MUST contain ONLY plain numbers (e.g., 2180400000), NOT JavaScript expressions (e.g., 2_370_000_000 * 0.92)",
+      "CRITICAL: Calculate all math expressions BEFORE putting them in JSON. JSON does not support arithmetic operations or numeric underscores",
+      "If you need to show your calculation, put it in the 'rationale' field as text, but 'value' must be the final calculated number"
+    ]
+  },
+  "meta": {
+    "title": "TODO-Market Analysis Title",
+    "description": "TODO-Market analysis description",
+    "currency": "EUR",
+    "base_year": 2024,
+    "analysis_horizon_years": 5,
+    "created_date": "TODO-YYYY-MM-DD",
+    "analyst": "TODO-Analyst Name"
+  },
+  "market_sizing": {
+    "total_addressable_market": {
+      "base_value": { "value": 0.0, "unit": "EUR", "rationale": "TODO-Total market size in base year with supporting data sources", "link": "TODO-Optional URL to source report" },
+      "growth_rate": { "value": 0.0, "unit": "percentage_per_year", "rationale": "TODO-Annual market growth rate with historical trends and forecasts", "link": "TODO-Optional URL to source" },
+      "market_definition": "TODO-Clear definition of what constitutes the total addressable market",
+      "data_sources": [
+        "TODO-Source 1 (e.g., Industry reports, government data)",
+        "TODO-Source 2 (e.g., Company research, analyst reports)"
+      ]
+    },
+    "serviceable_addressable_market": {
+      "percentage_of_tam": { "value": 0.0, "unit": "percentage", "rationale": "TODO-Portion of TAM that is addressable given geographic, regulatory, or capability constraints" },
+      "geographic_constraints": "TODO-Geographic limitations",
+      "regulatory_constraints": "TODO-Regulatory or compliance limitations",
+      "capability_constraints": "TODO-Technical or operational capability limitations"
+    },
+    "serviceable_obtainable_market": {
+      "percentage_of_sam": { "value": 0.0, "unit": "percentage", "rationale": "TODO-Realistic obtainable portion considering competition and resources" },
+      "resource_constraints": "TODO-Financial, human, or operational resource limitations",
+      "competitive_barriers": "TODO-Competitive barriers to market entry or expansion",
+      "time_constraints": "TODO-Time-to-market or timing considerations"
+    }
+  },
+  "market_share": {
+    "current_position": {
+      "current_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-Current market position with supporting data" },
+      "market_entry_date": "TODO-When did you enter this market",
+      "current_revenue": { "value": 0.0, "unit": "EUR_per_year", "rationale": "TODO-Current annual revenue from this market" }
+    },
+    "target_position": {
+      "target_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-Target market share with justification for achievability" },
+      "target_timeframe": { "value": 5, "unit": "years", "rationale": "TODO-Timeframe to reach target with supporting strategy" },
+      "penetration_strategy": "linear",
+      "key_milestones": [
+        {
+          "year": 1,
+          "milestone": "TODO-Year 1 milestone",
+          "target_share": 0.0,
+          "rationale": "TODO-Why this milestone is achievable"
+        },
+        {
+          "year": 3,
+          "milestone": "TODO-Year 3 milestone", 
+          "target_share": 0.0,
+          "rationale": "TODO-Mid-term progress expectations"
+        }
+      ]
+    }
+  },
+  "competitive_landscape": {
+    "positioning_axes": {
+      "_instructions": "SELECT 2 most relevant competitive dimensions. Examples: Market Share vs Innovation, Price vs Quality, Geographic Reach vs Service Level",
+      "x_axis_label": "TODO-X Dimension (e.g., Innovation Level, Market Share, Price Point)",
+      "y_axis_label": "TODO-Y Dimension (e.g., Service Quality, Market Presence, Customer Focus)"
+    },
+    "our_position": {
+      "_instructions": "Position YOUR business idea on the matrix (0-100 scale for both X and Y). Axes centered at 50 create 2x2 quadrants.",
+      "x": 50,
+      "y": 50
+    },
+    "market_structure": {
+      "concentration_level": "fragmented|moderately_concentrated|highly_concentrated",
+      "concentration_rationale": "TODO-Explanation of market concentration level",
+      "barriers_to_entry": "low|medium|high",
+      "barriers_description": "TODO-Description of entry barriers"
+    },
+    "competitors": [
+      {
+        "name": "TODO-Competitor name",
+        "x_position": 50,
+        "y_position": 50,
+        "_positioning_instructions": "Position this competitor on matrix (0-100 scale). Ensure competitors are spread across quadrants for meaningful differentiation.",
+        "market_share": { "value": 0.0, "unit": "percentage", "rationale": "TODO-Competitor's market position and trend" },
+        "positioning": "TODO-Competitor's positioning strategy and value proposition",
+        "strengths": ["TODO-Key strength 1", "TODO-Key strength 2"],
+        "weaknesses": ["TODO-Key weakness 1", "TODO-Key weakness 2"],
+        "threat_level": "high|medium|low",
+        "competitive_response": "TODO-PARAGRAPH 1: 2-3 sentences on competitor's market position, strengths, and overall threat level.\n\nTODO-PARAGRAPH 2: 2-3 sentences on expected competitive response to our entry and vulnerabilities we can exploit."
+      }
+    ],
+    "competitive_advantages": [
+      {
+        "advantage": "TODO-Your competitive advantage",
+        "sustainability": "high|medium|low",
+        "rationale": "TODO-Why this advantage is sustainable and valuable"
+      }
+    ],
+    "data_sources": ["TODO-Competitive intelligence sources with URLs like https://example.com/report"]
+  },
+  "customer_analysis": {
+    "market_segments": [
+      {
+        "id": "segment_1",
+        "name": "TODO-Market segment name",
+        "size_percentage": { "value": 0.0, "unit": "percentage", "rationale": "TODO-Segment size as % of TAM" },
+        "size_value": { "value": 0.0, "unit": "EUR", "rationale": "TODO-Absolute market size in EUR for this segment" },
+        "growth_rate": { "value": 0.0, "unit": "percentage_per_year", "rationale": "TODO-Segment-specific growth rate" },
+        "demographics": "TODO-Paragraph describing who makes up this segment, their characteristics, and firmographics",
+        "pain_points": "TODO-Detailed paragraph on customer needs, pain points, and especially unmet needs in this segment",
+        "customer_profile": "TODO-Description of typical customers in this segment",
+        "value_drivers": ["TODO-What drives value for these customers"],
+        "entry_strategy": "TODO-How you plan to enter/expand in this segment"
+      }
+    ],
+    "data_sources": ["TODO-Customer research sources with URLs like https://example.com/research"]
+  },
+  "strategic_planning": {
+    "_instructions": "Provide 2-4 distinct market entry strategies. Each should be comprehensive with multi-paragraph essence and rationale.",
+    "market_entry_strategies": [
+      {
+        "name": "TODO-Strategy Name (e.g., Partnership Strategy, Direct Sales Approach, Platform Model)",
+        "type": "partnership|direct|platform|gradual",
+        "_type_guidance": "partnership=strategic alliances, direct=build own channels, platform=marketplace model, gradual=phased rollout",
+        "essence": "TODO-PARAGRAPH 1: 2-4 sentences describing the core approach and key activities.\n\nTODO-PARAGRAPH 2: 2-4 sentences explaining required resources and capabilities.\n\nTODO-PARAGRAPH 3: 2-4 sentences outlining timeline and expected outcomes.\n\nTODO-OPTIONAL PARAGRAPH 4: Additional implementation details if needed.\n\n_Format: Multiple paragraphs (2-4) describing HOW the strategy works. Total 150-300 words. Be specific and actionable.",
+        "rationale": "TODO-PARAGRAPH 1: 2-4 sentences explaining WHY this strategy is appropriate for market conditions.\n\nTODO-PARAGRAPH 2: 2-4 sentences describing advantages and differentiation this creates.\n\nTODO-PARAGRAPH 3: 2-4 sentences addressing risks and how they are mitigated.\n\n_Format: Multiple paragraphs (2-3) explaining WHY appropriate. Total 100-200 words. Connect to market, competition, customers, and capabilities."
+      }
+    ],
+    "data_sources": ["TODO-Strategic planning sources with URLs like https://example.com/strategy"]
+  }
+}`;
+
+/**
+ * Module key mappings for template generation
+ */
+const MODULE_KEYS = {
+  market_sizing: ['market_sizing', 'market_share'],
+  competitive_intelligence: ['competitive_landscape'],
+  customer_analysis: ['customer_analysis'],
+  strategic_planning: ['strategic_planning']
+};
+
+/**
+ * Generate a modular template based on selected modules
+ * @param selectedModules Array of module IDs (e.g., ['market_sizing', 'competitive_intelligence'])
+ * @returns JSON string with only selected modules
+ */
+export function generateModularTemplate(selectedModules: string[]): string {
+  // Parse the full template
+  const fullTemplate = JSON.parse(MarketAnalysisTemplate);
+  
+  // Always include these base sections
+  const modularTemplate: any = {
+    schema_version: fullTemplate.schema_version,
+    meta: fullTemplate.meta
+  };
+  
+  // Update instructions based on selected modules
+  const moduleNames = selectedModules.map(id => {
+    const nameMap: { [key: string]: string } = {
+      market_sizing: 'market sizing',
+      competitive_intelligence: 'competitive intelligence',
+      customer_analysis: 'customer analysis',
+      strategic_planning: 'strategic planning'
+    };
+    return nameMap[id] || id;
+  });
+  
+  // Create filtered instructions object
+  const filteredInstructions: any = {
+    purpose: fullTemplate.instructions.purpose,
+    ai_workflow_protocol: {
+      initial_prompt: fullTemplate.instructions.ai_workflow_protocol.initial_prompt,
+      collaborative_mode: {
+        process: fullTemplate.instructions.ai_workflow_protocol.collaborative_mode.process,
+        presentation_order: {}
+      },
+      autonomous_mode: fullTemplate.instructions.ai_workflow_protocol.autonomous_mode,
+      mode_switching: fullTemplate.instructions.ai_workflow_protocol.mode_switching
+    },
+    module_independence: {
+      note: `This template includes: ${moduleNames.join(', ')}`,
+      modules: {},
+      cross_references: fullTemplate.instructions.module_independence.cross_references
+    },
+    rationale_requirements: fullTemplate.instructions.rationale_requirements,
+    rules: [
+      "Replace TODOs with actual values.",
+      "Every numeric datum must have value, unit, and rationale.",
+      `Focus on ${moduleNames.join(', ')}.`,
+      "The output volume estimates can be used to validate business case assumptions."
+    ]
+  };
+  
+  // Filter presentation_order to only include selected modules
+  selectedModules.forEach(moduleId => {
+    if (fullTemplate.instructions.ai_workflow_protocol.collaborative_mode.presentation_order[moduleId]) {
+      filteredInstructions.ai_workflow_protocol.collaborative_mode.presentation_order[moduleId] = 
+        fullTemplate.instructions.ai_workflow_protocol.collaborative_mode.presentation_order[moduleId];
+    }
+  });
+  
+  // Filter module_independence.modules to only include selected modules
+  selectedModules.forEach(moduleId => {
+    if (fullTemplate.instructions.module_independence.modules[moduleId]) {
+      filteredInstructions.module_independence.modules[moduleId] = 
+        fullTemplate.instructions.module_independence.modules[moduleId];
+    }
+  });
+  
+  // Add filtered instructions to template
+  modularTemplate.instructions = filteredInstructions;
+  
+  // Add selected module sections
+  selectedModules.forEach(moduleId => {
+    const keys = MODULE_KEYS[moduleId as keyof typeof MODULE_KEYS] || [];
+    keys.forEach(key => {
+      if (fullTemplate[key]) {
+        modularTemplate[key] = fullTemplate[key];
+      }
+    });
+  });
+  
+  return JSON.stringify(modularTemplate, null, 2);
+}
+
+/**
+ * Generate a single module template with minimal context
+ * @param moduleName Module identifier (e.g., 'market_sizing', 'competitive_intelligence')
+ * @returns JSON string with just that module's data
+ */
+export function generateSingleModuleTemplate(moduleName: string): string {
+  const fullTemplate = JSON.parse(MarketAnalysisTemplate);
+  
+  // Module name mapping for display
+  const moduleNameMap: { [key: string]: string } = {
+    market_sizing: 'Market Sizing',
+    competitive_intelligence: 'Competitive Intelligence',
+    customer_analysis: 'Customer Analysis',
+    strategic_planning: 'Strategic Planning'
+  };
+  const displayName = moduleNameMap[moduleName] || moduleName.replace(/_/g, ' ');
+  
+  const singleModuleTemplate: any = {
+    schema_version: fullTemplate.schema_version,
+    meta: {
+      title: `TODO-${displayName} Analysis`,
+      description: `TODO-Description for ${displayName}`,
+      currency: "EUR",
+      base_year: 2024,
+      created_date: "TODO-YYYY-MM-DD"
+    }
+  };
+  
+  // Add filtered instructions - only include relevant parts for this module
+  if (fullTemplate.instructions) {
+    singleModuleTemplate.instructions = {
+      purpose: `AI-Human collaborative ${displayName.toLowerCase()} analysis. Complete this module independently.`,
+      ai_workflow_protocol: {
+        initial_prompt: fullTemplate.instructions.ai_workflow_protocol.initial_prompt,
+        collaborative_mode: {
+          process: fullTemplate.instructions.ai_workflow_protocol.collaborative_mode.process,
+          presentation_order: {
+            [moduleName]: fullTemplate.instructions.ai_workflow_protocol.collaborative_mode.presentation_order[moduleName]
+          }
+        },
+        autonomous_mode: fullTemplate.instructions.ai_workflow_protocol.autonomous_mode,
+        mode_switching: fullTemplate.instructions.ai_workflow_protocol.mode_switching
+      },
+      module_independence: {
+        note: `This template contains only the ${displayName} module`,
+        modules: {
+          [moduleName]: fullTemplate.instructions.module_independence.modules[moduleName]
+        },
+        cross_references: fullTemplate.instructions.module_independence.cross_references
+      },
+      rationale_requirements: fullTemplate.instructions.rationale_requirements,
+      rules: [
+        "Replace TODOs with actual values.",
+        "Every numeric datum must have value, unit, and rationale.",
+        `Focus on ${displayName.toLowerCase()}.`,
+        "The analysis should be self-contained within this module."
+      ]
+    };
+  }
+  
+  // Add the specific module sections
+  const keys = MODULE_KEYS[moduleName as keyof typeof MODULE_KEYS] || [];
+  keys.forEach(key => {
+    if (fullTemplate[key]) {
+      singleModuleTemplate[key] = fullTemplate[key];
+    }
+  });
+  
+  return JSON.stringify(singleModuleTemplate, null, 2);
+}

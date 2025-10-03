@@ -317,18 +317,20 @@ export function MarketAnalysisSuite({ onExportResults, onImportData, className }
         }
       },
       strategic_planning: {
-        execution_strategy: {
-          go_to_market_approach: "Platform-led growth with strategic partnerships",
-          penetration_strategy: "s_curve",
-          penetration_strategy_rationale: "S-curve approach reflects initial adoption phase, followed by rapid growth as reputation builds, then market saturation",
-          penetration_drivers: [
-            { driver: "AI technology advancement", impact: "high", description: "Superior NLP and machine learning capabilities", timeline: "Ongoing throughout 5-year period" },
-            { driver: "Customer success program", impact: "high", description: "Proven ROI demonstration and customer advocacy", timeline: "Years 2-5" },
-            { driver: "Strategic partnerships", impact: "medium", description: "Integration with CRM and business platforms", timeline: "Years 1-3" },
-            { driver: "Pricing strategy", impact: "medium", description: "Competitive pricing with transparent ROI metrics", timeline: "Ongoing" }
-          ],
-          competitive_response_plan: "Monitor competitor moves and maintain technology leadership through continuous R&D investment"
-        }
+        market_entry_strategies: [
+          {
+            name: "Platform-Led Growth",
+            type: "platform",
+            essence: "Adopt a platform-led growth strategy that leverages strategic partnerships and ecosystem development. Build integrations with major CRM and business platforms to embed our solution within existing customer workflows. Create a marketplace for third-party extensions to expand functionality without internal development costs.\n\nFocus on self-service onboarding and product-led growth mechanics that reduce customer acquisition costs. Implement viral loops through team collaboration features and referral incentives. Develop comprehensive API documentation and developer resources to encourage platform adoption.",
+            rationale: "Platform strategy aligns with the SaaS industry trend toward ecosystem plays and reduces go-to-market costs through organic growth channels. The mid-market segment responds well to self-service models, allowing us to scale efficiently. Strategic partnerships with established platforms provide instant credibility and distribution channels that would take years to build independently."
+          },
+          {
+            name: "AI Technology Leadership",
+            type: "direct",
+            essence: "Differentiate through superior AI and NLP capabilities that deliver measurably better customer service outcomes. Invest heavily in continuous AI model improvement and maintain a 12-18 month technology lead over competitors. Build proprietary training data sets from customer interactions to create defensible moats.\n\nDemonstrate clear ROI through transparent analytics and benchmarking against industry standards. Position as the premium solution for companies that prioritize quality over cost.",
+            rationale: "Technology leadership justifies premium pricing and attracts high-value customers who will pay for superior results. The AI advantage compounds over time as we collect more training data. This strategy protects against commoditization and creates sustainable competitive advantages that are difficult to replicate."
+          }
+        ]
       },
       competitive_landscape: {
         market_structure: {

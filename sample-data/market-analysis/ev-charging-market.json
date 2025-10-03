@@ -14,7 +14,8 @@
       "base_value": {
         "value": 8500000000,
         "unit": "EUR",
-        "rationale": "Total European EV charging market based on EU transportation electrification goals and infrastructure investment plans"
+        "rationale": "Total European EV charging market based on [EU Green Deal 2024](https://ec.europa.eu/info/strategy/priorities-2019-2024/european-green-deal) and infrastructure investment plans",
+        "link": "https://ec.europa.eu/info/strategy/priorities-2019-2024/european-green-deal"
       },
       "growth_rate": {
         "value": 15,
@@ -22,7 +23,11 @@
         "rationale": "EV adoption driving 15% annual growth in charging infrastructure"
       },
       "market_definition": "Electric vehicle charging infrastructure market including public, commercial, and destination charging",
-      "data_sources": ["EU Green Deal", "BloombergNEF", "McKinsey Energy Transition Report"]
+      "data_sources": [
+        "EU Green Deal 2024 - https://ec.europa.eu/info/strategy/priorities-2019-2024/european-green-deal",
+        "BloombergNEF Electric Vehicle Outlook - https://about.bnef.com/electric-vehicle-outlook/",
+        "McKinsey Energy Transition Report - https://www.mckinsey.com/industries/oil-and-gas/our-insights"
+      ]
     },
     "serviceable_addressable_market": {
       "percentage_of_tam": {
@@ -100,6 +105,14 @@
       "barriers_to_entry": "high",
       "barriers_description": "High capital requirements, grid access permissions, and location partnerships create significant barriers"
     },
+    "positioning_axes": {
+      "x_axis_label": "Technology Innovation (0-100)",
+      "y_axis_label": "Market Coverage/Scale (0-100)"
+    },
+    "our_position": {
+      "x": 80,
+      "y": 20
+    },
     "competitors": [
       {
         "name": "Ionity",
@@ -112,7 +125,9 @@
         "strengths": ["Premium brand", "Fast charging", "OEM partnerships", "High-quality locations"],
         "weaknesses": ["High pricing", "Limited network density", "Premium focus only"],
         "threat_level": "high",
-        "competitive_response": "Focus on commercial segments and competitive pricing"
+        "x_position": 70,
+        "y_position": 85,
+        "competitive_response": "Ionity dominates the premium fast-charging segment with strong backing from major European OEMs (BMW, Mercedes, Ford, VW Group, Hyundai). Their highway corridor focus and 350kW ultra-fast charging capabilities set the technical benchmark. However, their premium pricing strategy (€0.79/kWh) and limited network density outside highways create significant market gaps, particularly in urban commercial and retail segments.\n\nWe'll avoid direct competition in the premium highway segment and instead focus on underserved commercial fleet and retail destination charging markets where Ionity has minimal presence. Our competitive pricing (targeting €0.45-0.55/kWh) and revenue-sharing partnerships enable profitable operation in locations where Ionity's premium model doesn't work. We'll position as the smart, affordable alternative for everyday charging versus Ionity's premium long-distance positioning."
       },
       {
         "name": "Allego",
@@ -125,7 +140,9 @@
         "strengths": ["Wide coverage", "Commercial focus", "Software platform", "B2B relationships"],
         "weaknesses": ["Variable charging speeds", "User experience gaps", "Brand recognition"],
         "threat_level": "medium",
-        "competitive_response": "Differentiate through superior technology and user experience"
+        "x_position": 55,
+        "y_position": 65,
+        "competitive_response": "Allego has built substantial commercial charging presence through B2B relationships and software platform capabilities. Their wide coverage across multiple European markets and established fleet relationships represent their core strength. However, their user experience significantly lags consumer expectations, with inconsistent charging speeds and complex payment processes creating friction.\n\nOur differentiation focuses on superior technology and user experience while matching their commercial focus. Our advanced grid integration technology delivers consistent charging performance and lower operational costs. We'll target Allego's commercial customers with demonstrated TCO advantages and seamless fleet management integration. Our consumer-grade mobile app experience appeals to retail partners seeking to enhance customer satisfaction, an area where Allego's B2B-first approach shows clear weaknesses."
       },
       {
         "name": "Shell Recharge",
@@ -138,7 +155,9 @@
         "strengths": ["Brand recognition", "Retail integration", "Payment systems", "Location network"],
         "weaknesses": ["Late market entry", "Technology gaps", "Legacy fuel focus"],
         "threat_level": "medium",
-        "competitive_response": "Focus on technology innovation and customer experience"
+        "x_position": 45,
+        "y_position": 75,
+        "competitive_response": "Shell brings massive brand recognition and an existing network of 46,000+ retail locations across Europe, providing immediate scale advantages. Their integrated payment systems and retail customer relationships offer natural EV charging extension opportunities. However, their late market entry and legacy fossil fuel focus create technology gaps and cultural challenges in embracing pure-play electric mobility innovation.\n\nWe'll exploit Shell's technology weaknesses through superior smart charging capabilities and pure-play EV focus. While Shell treats charging as an adjacency to fuel retail, we're building EV charging as core business with purpose-built technology. Our flexible partnership model allows us to move faster than Shell's corporate bureaucracy. We'll target innovative retail and hospitality partners who want cutting-edge charging solutions rather than Shell's adequate-but-unexceptional offering. Our EV-native culture and rapid innovation cycles appeal to forward-thinking partners frustrated with Shell's legacy energy company pace."
       }
     ],
     "competitive_advantages": [
@@ -157,6 +176,10 @@
         "sustainability": "medium",
         "rationale": "Superior mobile app and user experience drives customer loyalty"
       }
+    ],
+    "data_sources": [
+      "IEA Global EV Outlook 2024 - https://www.iea.org/reports/global-ev-outlook-2024",
+      "European Alternative Fuels Observatory - https://alternative-fuels-observatory.ec.europa.eu/"
     ]
   },
   "customer_analysis": {
@@ -197,6 +220,10 @@
         "value_drivers": ["Regulatory compliance", "Public service mandate", "EU funding access", "Long-term contracts"],
         "entry_strategy": "Public tender participation with emphasis on total cost of ownership and service reliability"
       }
+    ],
+    "data_sources": [
+      "European EV Consumer Study 2024 - https://www.transportenvironment.org/",
+      "Deloitte EV Market Analysis - https://www2.deloitte.com/global/en/pages/energy-and-resources.html"
     ]
   },
   "strategic_recommendations": {
