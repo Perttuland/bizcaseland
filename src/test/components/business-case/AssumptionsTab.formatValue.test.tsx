@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AssumptionsTab } from '../../../components/business-case/AssumptionsTab';
+import { TooltipProvider } from '../../../components/ui/tooltip';
 
 // Mock the hook
 const mockUseBusinessData = vi.fn();
@@ -77,7 +78,11 @@ describe('AssumptionsTab formatValue Bug Fix', () => {
   });
 
   it('should format per_month units without Month prefix (bug fix verification)', () => {
-    render(<AssumptionsTab />);
+    render(
+      <TooltipProvider>
+        <AssumptionsTab />
+      </TooltipProvider>
+    );
     
     // Critical test: ensure "50" appears without "Month" prefix
     expect(screen.getByText('50')).toBeInTheDocument();
@@ -90,7 +95,11 @@ describe('AssumptionsTab formatValue Bug Fix', () => {
   });
 
   it('should handle actual month units with Month prefix correctly', () => {
-    render(<AssumptionsTab />);
+    render(
+      <TooltipProvider>
+        <AssumptionsTab />
+      </TooltipProvider>
+    );
     
     // The analysis_period with unit 'month' should still show "Month 12"
     expect(screen.getByText('Month 12')).toBeInTheDocument();

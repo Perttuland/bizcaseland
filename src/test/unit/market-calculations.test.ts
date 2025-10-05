@@ -157,47 +157,30 @@ describe('Market Calculations Engine', () => {
   });
 
   describe('calculateMarketBasedVolumeProjection', () => {
-    it('should calculate volume based on market value and customer value', () => {
+    it('should return zero as volume calculations moved to business case integration', () => {
+      // Volume calculations now require integration with business case data
+      // Market analysis focuses on opportunity sizing, not unit economics
       const volume = calculateMarketBasedVolumeProjection(mockMarketData, 0);
-      
-      const som = calculateMarketSOM(mockMarketData, 2024);
-      const marketShare = calculateMarketShareProgression(mockMarketData, 0);
-      const marketValue = som * marketShare;
-      const avgCustomerValue = 2500; // From mock data
-      
-      const expectedVolume = (marketValue / avgCustomerValue) / 12; // Monthly
-      expect(volume).toBeCloseTo(expectedVolume);
-    });
-
-    it('should return zero when average customer value is zero', () => {
-      const invalidData = createMockMarketData({
-        customer_analysis: {
-          customer_economics: {
-            average_customer_value: {
-              annual_value: { value: 0, unit: 'EUR_per_customer_per_year', rationale: 'Test' },
-              lifetime_value: { value: 0, unit: 'EUR_per_customer', rationale: 'Test' },
-              acquisition_cost: { value: 0, unit: 'EUR_per_customer', rationale: 'Test' }
-            },
-            customer_behavior: {
-              purchase_frequency: { value: 1, unit: 'purchases_per_year', rationale: 'Test' },
-              loyalty_rate: { value: 85, unit: 'percentage', rationale: 'Test' },
-              referral_rate: { value: 15, unit: 'percentage', rationale: 'Test' }
-            }
-          }
-        }
-      });
-      
-      const volume = calculateMarketBasedVolumeProjection(invalidData, 0);
       expect(volume).toBe(0);
     });
 
-    it('should increase over time as market share grows', () => {
+    it('should return zero regardless of market data', () => {
+      // Function intentionally returns 0 as volume calculations were removed
+      const emptyData = createMockMarketData({});
+      
+      const volume = calculateMarketBasedVolumeProjection(emptyData, 0);
+      expect(volume).toBe(0);
+    });
+
+    it('should return zero for all time periods', () => {
+      // Function now returns 0 - volume projection moved to business case calculations
       const volume0 = calculateMarketBasedVolumeProjection(mockMarketData, 0);
       const volume12 = calculateMarketBasedVolumeProjection(mockMarketData, 12);
       const volume24 = calculateMarketBasedVolumeProjection(mockMarketData, 24);
       
-      expect(volume12).toBeGreaterThan(volume0);
-      expect(volume24).toBeGreaterThan(volume12);
+      expect(volume0).toBe(0);
+      expect(volume12).toBe(0);
+      expect(volume24).toBe(0);
     });
   });
 
@@ -388,14 +371,15 @@ describe('Market Calculations Engine', () => {
       expect(validation.warnings).toContain('Total market share (including competitors) exceeds 100%');
     });
 
-    it('should require customer value for volume calculations', () => {
+    it('should allow market analysis without customer analysis module', () => {
+      // Customer analysis is now optional - market analysis can be done independently
       const invalidData = createMockMarketData({
         customer_analysis: undefined
       });
       
       const validation = validateMarketAnalysis(invalidData);
-      expect(validation.isValid).toBe(false);
-      expect(validation.errors).toContain('Average customer annual value is required for volume calculations');
+      // Should be valid - customer_analysis is optional
+      expect(validation.isValid).toBe(true);
     });
   });
 

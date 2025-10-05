@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { vi, describe, it, beforeEach, expect } from 'vitest';
 import { AssumptionsTab } from '@/components/business-case/AssumptionsTab';
 import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock the context
 vi.mock('@/contexts/BusinessDataContext');
@@ -98,10 +99,13 @@ describe('AssumptionsTab - Quantity Display with Geom Growth Pattern', () => {
       updateData: vi.fn(),
       updateAssumption: vi.fn(),
       updateDriver: vi.fn(),
+      addDriver: vi.fn(),
+      removeDriver: vi.fn(),
+      updateDriverRange: vi.fn(),
       exportData: vi.fn()
     });
 
-    render(<AssumptionsTab />);
+    render(<TooltipProvider><AssumptionsTab /></TooltipProvider>);
 
     // Check that customer segment volume information is displayed
     expect(screen.getByText(/Consumer Subscriptions - Base Volume/)).toBeInTheDocument();
@@ -122,10 +126,13 @@ describe('AssumptionsTab - Quantity Display with Geom Growth Pattern', () => {
       updateData: vi.fn(),
       updateAssumption: vi.fn(),
       updateDriver: vi.fn(),
+      addDriver: vi.fn(),
+      removeDriver: vi.fn(),
+      updateDriverRange: vi.fn(),
       exportData: vi.fn()
     });
 
-    render(<AssumptionsTab />);
+    render(<TooltipProvider><AssumptionsTab /></TooltipProvider>);
 
     // Should show the pattern type
     expect(screen.getByText(/Growth Pattern/)).toBeInTheDocument();
@@ -138,10 +145,13 @@ describe('AssumptionsTab - Quantity Display with Geom Growth Pattern', () => {
       updateData: vi.fn(),
       updateAssumption: vi.fn(),
       updateDriver: vi.fn(),
+      addDriver: vi.fn(),
+      removeDriver: vi.fn(),
+      updateDriverRange: vi.fn(),
       exportData: vi.fn()
     });
 
-    render(<AssumptionsTab />);
+    render(<TooltipProvider><AssumptionsTab /></TooltipProvider>);
 
     // Base volume should come from growth_settings.geom_growth.start.value when series is present
     // Should find multiple instances (value and rationale)
@@ -157,10 +167,13 @@ describe('AssumptionsTab - Quantity Display with Geom Growth Pattern', () => {
       updateData: vi.fn(),
       updateAssumption: vi.fn(),
       updateDriver: vi.fn(),
+      addDriver: vi.fn(),
+      removeDriver: vi.fn(),
+      updateDriverRange: vi.fn(),
       exportData: vi.fn()
     });
 
-    render(<AssumptionsTab />);
+    render(<TooltipProvider><AssumptionsTab /></TooltipProvider>);
 
     // Check that rationale from series[0] is displayed
     expect(screen.getByText(/Initial base of 10,000 paying customers at launch/)).toBeInTheDocument();
@@ -172,10 +185,13 @@ describe('AssumptionsTab - Quantity Display with Geom Growth Pattern', () => {
       updateData: vi.fn(),
       updateAssumption: vi.fn(),
       updateDriver: vi.fn(),
+      addDriver: vi.fn(),
+      removeDriver: vi.fn(),
+      updateDriverRange: vi.fn(),
       exportData: vi.fn()
     });
 
-    render(<AssumptionsTab />);
+    render(<TooltipProvider><AssumptionsTab /></TooltipProvider>);
 
     // Check that units are displayed correctly
     expect(screen.getByText(/accounts/)).toBeInTheDocument(); // from series[0].unit
@@ -211,10 +227,13 @@ describe('AssumptionsTab - Quantity Display with Geom Growth Pattern', () => {
       updateData: vi.fn(),
       updateAssumption: vi.fn(),
       updateDriver: vi.fn(),
+      addDriver: vi.fn(),
+      removeDriver: vi.fn(),
+      updateDriverRange: vi.fn(),
       exportData: vi.fn()
     });
 
-    render(<AssumptionsTab />);
+    render(<TooltipProvider><AssumptionsTab /></TooltipProvider>);
 
     // Should still work with legacy structure - expect multiple matches
     expect(screen.getAllByText(/Legacy Segment/).length).toBeGreaterThan(0);

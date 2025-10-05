@@ -20,14 +20,11 @@ describe('Modular Template Generation', () => {
     expect(parsed.customer_analysis).toBeUndefined();
     expect(parsed.strategic_planning).toBeUndefined();
     
-    // Instructions should be filtered
-    const modulesInInstructions = Object.keys(parsed.instructions.module_independence.modules);
-    expect(modulesInInstructions).toHaveLength(1);
-    expect(modulesInInstructions).toContain('market_sizing');
-    
-    const presentationOrder = Object.keys(parsed.instructions.ai_workflow_protocol.collaborative_mode.presentation_order);
-    expect(presentationOrder).toHaveLength(1);
-    expect(presentationOrder).toContain('market_sizing');
+    // Instructions should indicate selected modules
+    expect(parsed.instructions.selected_modules).toBeDefined();
+    expect(parsed.instructions.selected_modules).toContain('Market opportunity');
+    expect(parsed.instructions.purpose).toBeDefined();
+    expect(parsed.instructions.ai_workflow_protocol).toBeDefined();
   });
   
   it('should generate template with market_sizing and competitive_intelligence', () => {
@@ -43,14 +40,13 @@ describe('Modular Template Generation', () => {
     expect(parsed.customer_analysis).toBeUndefined();
     expect(parsed.strategic_planning).toBeUndefined();
     
-    // Instructions should be filtered to 2 modules
-    const modulesInInstructions = Object.keys(parsed.instructions.module_independence.modules);
-    expect(modulesInInstructions).toHaveLength(2);
-    expect(modulesInInstructions).toContain('market_sizing');
-    expect(modulesInInstructions).toContain('competitive_intelligence');
+    // Instructions should indicate selected modules
+    expect(parsed.instructions.selected_modules).toContain('Market opportunity');
+    expect(parsed.instructions.selected_modules).toContain('Positioning matrix');
     
-    const presentationOrder = Object.keys(parsed.instructions.ai_workflow_protocol.collaborative_mode.presentation_order);
-    expect(presentationOrder).toHaveLength(2);
+    // Should have instructions structure
+    expect(parsed.instructions.ai_workflow_protocol).toBeDefined();
+    expect(parsed.instructions.ai_workflow_protocol.collaborative_mode).toBeDefined();
   });
   
   it('should generate full template with all modules', () => {
@@ -69,12 +65,8 @@ describe('Modular Template Generation', () => {
     expect(parsed.customer_analysis).toBeDefined();
     expect(parsed.strategic_planning).toBeDefined();
     
-    // Instructions should include all 4 modules
-    const modulesInInstructions = Object.keys(parsed.instructions.module_independence.modules);
-    expect(modulesInInstructions).toHaveLength(4);
-    
-    const presentationOrder = Object.keys(parsed.instructions.ai_workflow_protocol.collaborative_mode.presentation_order);
-    expect(presentationOrder).toHaveLength(4);
+    // Instructions should indicate all modules
+    expect(parsed.instructions.selected_modules).toBe('All modules included');
   });
   
   it('should generate smaller templates for fewer modules', () => {
@@ -97,23 +89,21 @@ describe('Modular Template Generation', () => {
   it('should update instructions note to reflect selected modules', () => {
     const template1 = generateModularTemplate(['market_sizing']);
     const parsed1 = JSON.parse(template1);
-    expect(parsed1.instructions.module_independence.note).toContain('market sizing');
+    expect(parsed1.instructions.selected_modules).toContain('Market opportunity');
     
     const template2 = generateModularTemplate(['market_sizing', 'customer_analysis']);
     const parsed2 = JSON.parse(template2);
-    expect(parsed2.instructions.module_independence.note).toContain('market sizing');
-    expect(parsed2.instructions.module_independence.note).toContain('customer analysis');
+    expect(parsed2.instructions.selected_modules).toContain('Market opportunity');
+    expect(parsed2.instructions.selected_modules).toContain('Customer segments');
   });
   
-  it('should update rules to focus on selected modules', () => {
+  it('should update instructions to focus on selected modules', () => {
     const template = generateModularTemplate(['competitive_intelligence']);
     const parsed = JSON.parse(template);
     
-    const focusRule = parsed.instructions.rules.find((rule: string) => 
-      rule.includes('Focus on')
-    );
-    
-    expect(focusRule).toBeDefined();
-    expect(focusRule).toContain('competitive intelligence');
+    // Instructions should contain information about the selected module
+    expect(parsed.instructions.selected_modules).toContain('Positioning matrix');
+    expect(parsed.instructions.purpose).toBeDefined();
+    expect(parsed.instructions.ai_workflow_protocol).toBeDefined();
   });
 });

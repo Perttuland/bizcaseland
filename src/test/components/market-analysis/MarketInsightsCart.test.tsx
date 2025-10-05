@@ -104,7 +104,7 @@ describe('MarketInsightsCart', () => {
       expect(screen.getByText(/european saas customer service platform/i)).toBeInTheDocument();
     });
 
-    it('displays loading state while extracting insights', () => {
+    it('displays loading state while extracting insights', async () => {
       render(
         <MarketInsightsCart 
           marketData={saasMarketData}
@@ -114,6 +114,11 @@ describe('MarketInsightsCart', () => {
       );
 
       expect(screen.getByText(/extracting insights/i)).toBeInTheDocument();
+      
+      // Wait for loading to complete to avoid act() warnings
+      await waitFor(() => {
+        expect(screen.queryByText(/extracting insights/i)).not.toBeInTheDocument();
+      }, { timeout: 1000 });
     });
 
     it('shows cart item count in header', async () => {
@@ -126,6 +131,11 @@ describe('MarketInsightsCart', () => {
       );
 
       expect(screen.getByText(/0 items/i)).toBeInTheDocument();
+      
+      // Wait for async operations to complete
+      await waitFor(() => {
+        expect(screen.getByText(/available market insights/i)).toBeInTheDocument();
+      });
     });
   });
 

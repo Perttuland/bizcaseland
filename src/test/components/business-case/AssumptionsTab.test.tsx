@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AssumptionsTab } from '@/components/business-case/AssumptionsTab';
 import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock the context
 vi.mock('@/contexts/BusinessDataContext');
@@ -175,8 +176,20 @@ const createMockContext = (data: any) => ({
   updateData: vi.fn(),
   updateAssumption: vi.fn(),
   updateDriver: vi.fn(),
+  addDriver: vi.fn(),
+  removeDriver: vi.fn(),
+  updateDriverRange: vi.fn(),
   exportData: vi.fn()
 });
+
+// Helper function to render with TooltipProvider
+const renderWithTooltipProvider = (component: React.ReactElement) => {
+  return render(
+    <TooltipProvider>
+      {component}
+    </TooltipProvider>
+  );
+};
 
 describe('AssumptionsTab', () => {
   beforeEach(() => {
@@ -187,7 +200,7 @@ describe('AssumptionsTab', () => {
     it('should display no data message when data is null', () => {
       mockUseBusinessData.mockReturnValue(createMockContext(null));
       
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('No Data Available')).toBeInTheDocument();
       expect(screen.getByText('Please load business case data to view assumptions.')).toBeInTheDocument();
@@ -196,7 +209,7 @@ describe('AssumptionsTab', () => {
     it('should display no data message when data is undefined', () => {
       mockUseBusinessData.mockReturnValue(createMockContext(undefined));
       
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('No Data Available')).toBeInTheDocument();
     });
@@ -208,13 +221,13 @@ describe('AssumptionsTab', () => {
     });
 
     it('should display revenue section header', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       expect(screen.getByText('Revenue')).toBeInTheDocument();
     });
 
     // DISABLED: AI-generated test with incorrect assumptions about component output
     it.skip('should display pricing information correctly', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('Average Unit Price')).toBeInTheDocument();
       expect(screen.getByText('€99')).toBeInTheDocument();
@@ -223,7 +236,7 @@ describe('AssumptionsTab', () => {
 
     // DISABLED: AI-generated test with incorrect assumptions about component output
     it.skip('should display volume information for modern data structure without Month prefix', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       // Check Small Business segment
       expect(screen.getByText('Small Business (1-50 employees) - Base Volume')).toBeInTheDocument();
@@ -251,7 +264,7 @@ describe('AssumptionsTab', () => {
 
     // DISABLED: AI-generated test with incorrect assumptions about component output
     it.skip('should display gross margin section for revenue models', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('Gross Margin')).toBeInTheDocument();
       expect(screen.getByText('Cost of Goods Sold %')).toBeInTheDocument();
@@ -263,7 +276,7 @@ describe('AssumptionsTab', () => {
 
     // DISABLED: AI-generated test with incorrect assumptions about component output
     it.skip('should display financial parameters section', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('Financial Parameters')).toBeInTheDocument();
       expect(screen.getByText('Discount Rate')).toBeInTheDocument();
@@ -277,9 +290,9 @@ describe('AssumptionsTab', () => {
     });
 
     it('should display summary cards with correct information', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
-      expect(screen.getByText('RECURRING')).toBeInTheDocument();
+      expect(screen.getByText(/recurring/i)).toBeInTheDocument();
       expect(screen.getByText('EUR')).toBeInTheDocument();
       expect(screen.getByText('36 months')).toBeInTheDocument();
     });
@@ -291,12 +304,12 @@ describe('AssumptionsTab', () => {
     });
 
     it('should display net benefits section for cost savings', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       expect(screen.getByText('Net Benefits')).toBeInTheDocument();
     });
 
     it('should display cost savings assumptions', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('Manual Processing - Baseline Cost')).toBeInTheDocument();
       expect(screen.getByText('€10,000')).toBeInTheDocument();
@@ -306,7 +319,7 @@ describe('AssumptionsTab', () => {
     });
 
     it('should not display gross margin section for cost savings', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       expect(screen.queryByText('Gross Margin')).not.toBeInTheDocument();
     });
   });
@@ -318,7 +331,7 @@ describe('AssumptionsTab', () => {
 
     // DISABLED: AI-generated test with incorrect assumptions about component output
     it.skip('should display legacy volume data correctly', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('Legacy Segment - Base Volume')).toBeInTheDocument();
       expect(screen.getByText('1,000')).toBeInTheDocument();
@@ -335,7 +348,7 @@ describe('AssumptionsTab', () => {
     });
 
     it('should format currency values correctly', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       // EUR values should show € symbol
       expect(screen.getByText('€99')).toBeInTheDocument();
@@ -345,7 +358,7 @@ describe('AssumptionsTab', () => {
 
     // DISABLED: AI-generated test with incorrect assumptions about component output
     it.skip('should format percentage values correctly', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByText('20.0%')).toBeInTheDocument(); // COGS percentage
       expect(screen.getByText('15.0%')).toBeInTheDocument(); // Growth rate
@@ -353,7 +366,7 @@ describe('AssumptionsTab', () => {
     });
 
     it('should format volume values correctly without time prefix', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       // These should be plain numbers, not "Month X"
       expect(screen.getByText('50')).toBeInTheDocument();
@@ -373,7 +386,7 @@ describe('AssumptionsTab', () => {
     });
 
     it('should have proper heading structure', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       // Should have main headings
       expect(screen.getByRole('heading', { name: /business case assumptions/i })).toBeInTheDocument();
@@ -381,7 +394,7 @@ describe('AssumptionsTab', () => {
     });
 
     it('should have proper table structure with headers', () => {
-      render(<AssumptionsTab />);
+      renderWithTooltipProvider(<AssumptionsTab />);
       
       expect(screen.getByRole('table')).toBeInTheDocument();
       expect(screen.getByRole('columnheader', { name: /assumption/i })).toBeInTheDocument();

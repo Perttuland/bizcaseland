@@ -5,6 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { MarketData } from '@/lib/market-calculations';
+import { mergeMarketData, getAvailableModules, validateMarketData } from '@/lib/market-data-utils';
 
 describe('Partial data merge', () => {
   // Helper to create sample existing data
@@ -46,23 +47,10 @@ describe('Partial data merge', () => {
     strategic_planning: {
       market_entry_strategies: [
         {
-          strategy_name: "Direct Sales",
-          description: "New strategy",
-          feasibility_score: { value: 8, unit: "scale_1_10", rationale: "High feasibility" },
-          timeline: { value: 12, unit: "months", rationale: "Quick deployment" },
-          required_investment: { value: 500000, unit: "EUR", rationale: "Initial investment" },
-          expected_market_share: { value: 5, unit: "percentage", rationale: "Realistic target" },
-          risk_level: "medium",
-          key_success_factors: ["Strong sales team", "Brand recognition"]
-        }
-      ],
-      go_to_market_roadmap: [
-        {
-          phase: "Phase 1",
-          description: "Market entry",
-          duration_months: 6,
-          key_activities: ["Launch", "Marketing"],
-          success_metrics: ["Metric 1"]
+          name: "Direct Sales",
+          type: "direct",
+          essence: "Direct sales approach targeting enterprise customers with dedicated sales team.",
+          rationale: "High feasibility with proven track record. Quick deployment possible within 12 months with initial investment of €500k. Expected to capture 5% market share."
         }
       ],
       data_sources: ["Strategy source 1"]
@@ -71,8 +59,6 @@ describe('Partial data merge', () => {
 
   describe('mergeMarketData function', () => {
     it('should merge new module while preserving existing modules', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const newData = createNewStrategicPlanningData();
 
@@ -86,16 +72,14 @@ describe('Partial data merge', () => {
       // Should add new strategic_planning
       expect(merged.strategic_planning).toBeDefined();
       expect(merged.strategic_planning?.market_entry_strategies).toHaveLength(1);
-      expect(merged.strategic_planning?.market_entry_strategies[0].strategy_name).toBe("Direct Sales");
+      expect(merged.strategic_planning?.market_entry_strategies[0].name).toBe("Direct Sales");
 
       // Should not have modules that weren't in either dataset
       expect(merged.competitive_landscape).toBeUndefined();
-      expect(merged.customer_segments).toBeUndefined();
+      expect(merged.customer_analysis).toBeUndefined();
     });
 
     it('should update meta information from new data', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const newData = createNewStrategicPlanningData();
 
@@ -107,8 +91,6 @@ describe('Partial data merge', () => {
     });
 
     it('should overwrite existing module if new data has the same module', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const newMarketSizingData = {
         schema_version: "2.0",
@@ -148,25 +130,28 @@ describe('Partial data merge', () => {
     });
 
     it('should handle merging multiple new modules at once', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const multiModuleData = {
         schema_version: "2.0",
         meta: { title: "Multi-module update", currency: "EUR", base_year: 2024 },
         strategic_planning: createNewStrategicPlanningData().strategic_planning,
-        customer_segments: [
-          {
-            segment_name: "Enterprise",
-            description: "Large companies",
-            demographics: {
-              company_size: { value: 500, unit: "employees", rationale: "Enterprise segment" },
-              revenue_range: { value: 100000000, unit: "EUR_per_year", rationale: "Revenue range" }
-            },
-            segment_value: { value: 50000000, unit: "EUR", rationale: "High value" },
-            percentage_of_tam: { value: 25, unit: "percentage", rationale: "Quarter of market" }
-          }
-        ]
+        customer_analysis: {
+          market_segments: [
+            {
+              id: "enterprise",
+              name: "Enterprise",
+              size_percentage: { value: 25, unit: "percentage", rationale: "Quarter of market" },
+              size_value: { value: 50000000, unit: "EUR", rationale: "High value" },
+              growth_rate: { value: 5, unit: "percentage_per_year", rationale: "Growth rate" },
+              demographics: "Large companies with 500+ employees",
+              pain_points: "Complex needs",
+              customer_profile: "Enterprise buyers",
+              value_drivers: ["Scalability", "Support"],
+              entry_strategy: "Direct sales"
+            }
+          ],
+          data_sources: ["Market research"]
+        }
       };
 
       const merged = mergeMarketData(existing, multiModuleData);
@@ -176,13 +161,11 @@ describe('Partial data merge', () => {
 
       // Should add both new modules
       expect(merged.strategic_planning).toBeDefined();
-      expect(merged.customer_segments).toBeDefined();
-      expect(merged.customer_segments).toHaveLength(1);
+      expect(merged.customer_analysis).toBeDefined();
+      expect(merged.customer_analysis?.market_segments).toHaveLength(1);
     });
 
     it('should handle empty existing data', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const newData = createNewStrategicPlanningData();
       const merged = mergeMarketData({}, newData);
 
@@ -191,8 +174,6 @@ describe('Partial data merge', () => {
     });
 
     it('should handle empty new data', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const merged = mergeMarketData(existing, { schema_version: "2.0" });
 
@@ -202,8 +183,6 @@ describe('Partial data merge', () => {
     });
 
     it('should preserve market_share when merging market_sizing', () => {
-      const { mergeMarketData } = require('@/lib/market-data-utils');
-      
       const existingWithMarketShare = {
         ...createExistingData(),
         market_share: {
@@ -215,7 +194,7 @@ describe('Partial data merge', () => {
           target_position: {
             target_share: { value: 15, unit: "percentage", rationale: "Target" },
             target_timeframe: { value: 5, unit: "years", rationale: "Timeline" },
-            penetration_strategy: "linear",
+            penetration_strategy: "linear" as const,
             key_milestones: []
           }
         }
@@ -232,8 +211,6 @@ describe('Partial data merge', () => {
 
   describe('Module detection', () => {
     it('should correctly identify which modules are present in data', () => {
-      const { getAvailableModules } = require('@/lib/market-data-utils');
-      
       const data = createExistingData();
       const modules = getAvailableModules(data);
 
@@ -244,12 +221,10 @@ describe('Partial data merge', () => {
     });
 
     it('should detect all modules in complete dataset', () => {
-      const { getAvailableModules } = require('@/lib/market-data-utils');
-      
       const completeData = {
         ...createExistingData(),
         strategic_planning: {},
-        customer_segments: [],
+        customer_analysis: {},
         competitive_landscape: {}
       };
 
@@ -263,8 +238,6 @@ describe('Partial data merge', () => {
     });
 
     it('should handle empty data', () => {
-      const { getAvailableModules } = require('@/lib/market-data-utils');
-      
       const modules = getAvailableModules({});
       expect(modules).toHaveLength(0);
     });
@@ -272,8 +245,6 @@ describe('Partial data merge', () => {
 
   describe('Validation after merge', () => {
     it('should validate merged data structure', () => {
-      const { mergeMarketData, validateMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const newData = createNewStrategicPlanningData();
       const merged = mergeMarketData(existing, newData);
@@ -284,16 +255,14 @@ describe('Partial data merge', () => {
     });
 
     it('should detect errors in merged invalid data', () => {
-      const { mergeMarketData, validateMarketData } = require('@/lib/market-data-utils');
-      
       const existing = createExistingData();
       const invalidData = {
         strategic_planning: {
           market_entry_strategies: [
             {
-              // Missing required fields
-              strategy_name: "Incomplete Strategy"
-            }
+              // Missing required fields (missing essence and rationale)
+              name: "Incomplete Strategy"
+            } as any
           ]
         }
       };

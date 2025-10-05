@@ -43,7 +43,7 @@ describe('ModuleImportCard', () => {
     expect(screen.getByRole('button', { name: /get template/i })).toBeInTheDocument();
   });
 
-  it('should have Upload Data button', () => {
+  it('should have Paste Data button', () => {
     render(
       <ModuleImportCard
         moduleId="customer_analysis"
@@ -52,7 +52,7 @@ describe('ModuleImportCard', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /upload/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /paste data/i })).toBeInTheDocument();
   });
 
   it('should call clipboard copy when Get Template is clicked', async () => {
