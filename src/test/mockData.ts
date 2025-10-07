@@ -1,5 +1,6 @@
 import { BusinessData } from '@/contexts/BusinessDataContext';
 import { MarketData } from '@/lib/market-calculations';
+import { OpexItem } from '@/types/business-data';
 
 export const createMockBusinessData = (overrides: Partial<BusinessData> = {}): BusinessData => ({
   meta: {
@@ -42,10 +43,10 @@ export const createMockBusinessData = (overrides: Partial<BusinessData> = {}): B
       ],
       ...overrides.assumptions?.customers
     },
-    opex: [
-      { name: 'Sales & Marketing', value: { value: 5000, unit: 'EUR', rationale: 'Marketing budget' } },
-      { name: 'R&D', value: { value: 3000, unit: 'EUR', rationale: 'Development costs' } },
-      { name: 'G&A', value: { value: 2000, unit: 'EUR', rationale: 'General admin' } }
+    opex: overrides.assumptions?.opex || [
+      { name: 'Sales & Marketing', value: { value: 5000, unit: 'EUR', rationale: 'Marketing budget' } } as OpexItem,
+      { name: 'R&D', value: { value: 3000, unit: 'EUR', rationale: 'Development costs' } } as OpexItem,
+      { name: 'G&A', value: { value: 2000, unit: 'EUR', rationale: 'General admin' } } as OpexItem
     ],
     capex: [],
     growth_settings: {
@@ -410,17 +411,9 @@ export const createMockMarketData = (overrides: Partial<MarketData> = {}): Marke
           rationale: 'Scaled sales and marketing operations'
         }
       ]
-    },
-    penetration_drivers: [
-      {
-        driver: 'Product differentiation',
-        impact: 'high',
-        description: 'Unique AI-powered features',
-        timeline: 'Year 1-2'
-      }
-    ],
-    ...overrides.market_share
-  },
+    }
+  } as any,
+  ...(overrides.market_share && { market_share: overrides.market_share }),
   competitive_landscape: {
     market_structure: {
       concentration_level: 'moderately_concentrated',
@@ -463,71 +456,16 @@ export const createMockMarketData = (overrides: Partial<MarketData> = {}): Marke
         id: 'manufacturing',
         name: 'Manufacturing',
         size_percentage: { value: 35, unit: 'percentage', rationale: 'Largest segment within mid-market enterprise' },
+        size_value: { value: 500000000, unit: 'EUR', rationale: 'Estimated segment size' },
         growth_rate: { value: 10, unit: 'percentage_per_year', rationale: 'Manufacturing digitization driving growth' },
-        target_share: { value: 3.0, unit: 'percentage', rationale: 'Strong value proposition for manufacturing processes' },
+        demographics: 'Mid-size manufacturers with 100-1000 employees',
+        pain_points: 'Manual processes, high error rates',
         customer_profile: 'Mid-size manufacturers with 100-1000 employees',
         value_drivers: ['Process automation', 'Cost reduction', 'Quality improvement'],
         entry_strategy: 'Partner with manufacturing consultants'
       }
-    ],
-    customer_economics: {
-      average_customer_value: {
-        annual_value: { value: 2500, unit: 'EUR_per_customer_per_year', rationale: 'Average annual contract value per customer' },
-        lifetime_value: { value: 12500, unit: 'EUR_per_customer', rationale: 'Based on 5-year average customer lifetime' },
-        acquisition_cost: { value: 1200, unit: 'EUR_per_customer', rationale: 'Sales and marketing cost per acquisition' }
-      },
-      customer_behavior: {
-        purchase_frequency: { value: 1, unit: 'purchases_per_year', rationale: 'Annual contract renewals' },
-        loyalty_rate: { value: 85, unit: 'percentage', rationale: 'High switching costs create loyalty' },
-        referral_rate: { value: 15, unit: 'percentage', rationale: 'Strong word-of-mouth in industry' }
-      }
-    },
-    ...overrides.customer_analysis
-  },
-  market_dynamics: {
-    growth_drivers: [
-      {
-        driver: 'Digital transformation',
-        impact: 'high',
-        timeline: 'Ongoing',
-        description: 'Companies accelerating digital initiatives'
-      }
-    ],
-    market_risks: [
-      {
-        risk: 'Economic downturn',
-        probability: 'medium',
-        impact: 'high',
-        mitigation: 'Focus on cost-saving value proposition'
-      }
-    ],
-    technology_trends: [
-      {
-        trend: 'AI integration',
-        relevance: 'high',
-        impact_timeline: '2024-2026',
-        strategic_response: 'Invest heavily in AI capabilities'
-      }
-    ],
-    ...overrides.market_dynamics
-  },
-  volume_projections: {
-    calculation_method: 'market_share_based',
-    assumptions: {
-      market_growth_compounds: true,
-      share_growth_independent: false,
-      customer_value_stable: true
-    },
-    sensitivity_factors: [
-      {
-        factor: 'market_growth_rate',
-        base_case: 12,
-        optimistic: 18,
-        pessimistic: 8,
-        rationale: 'Market growth sensitivity analysis'
-      }
-    ],
-    ...overrides.volume_projections
-  },
+    ]
+  } as any,
+  ...(overrides.customer_analysis && { customer_analysis: overrides.customer_analysis }),
   ...overrides
-});
+} as any);

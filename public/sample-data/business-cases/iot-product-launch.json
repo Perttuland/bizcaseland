@@ -125,28 +125,49 @@
     },
     "opex": [
       { 
-        "name": "Sales & Marketing", 
-        "value": { 
-          "value": 45000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Digital marketing, content creation, influencer partnerships, and retail channel support" 
-        } 
+        "name": "Sales & Marketing",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 25000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Core marketing team, content creation, and influencer partnerships" 
+          },
+          "variable_revenue_rate": { 
+            "value": 0.08, 
+            "unit": "percentage_of_revenue", 
+            "rationale": "8% of revenue for performance marketing and retail channel support that scales with sales" 
+          }
+        }
       },
       { 
-        "name": "R&D", 
-        "value": { 
-          "value": 25000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Ongoing product development, firmware updates, and next-generation features" 
-        } 
+        "name": "R&D",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 25000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Core engineering team for firmware updates and maintenance" 
+          },
+          "variable_revenue_rate": { 
+            "value": 0.05, 
+            "unit": "percentage_of_revenue", 
+            "rationale": "5% of revenue for next-generation features and product evolution" 
+          }
+        }
       },
       { 
-        "name": "G&A", 
-        "value": { 
-          "value": 18000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Operations, customer support, quality assurance, and administrative functions" 
-        } 
+        "name": "G&A",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 18000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Base operations, quality assurance, and administrative functions" 
+          },
+          "variable_volume_rate": { 
+            "value": 8.0, 
+            "unit": "EUR_per_unit", 
+            "rationale": "Customer support and warranty service costs per unit sold" 
+          }
+        }
       }
     ],
     "capex": [

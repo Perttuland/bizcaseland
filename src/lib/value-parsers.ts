@@ -52,9 +52,11 @@ export function formatEditValue(value: any, unit: string): string {
     return String(value);
   }
 
-  // For ratios/percentages, show as percentage number
+  // For ratios/percentages, show as percentage number (user-friendly format)
   if (unit === 'ratio' || unit === '%' || unit.includes('pct') || unit.includes('percentage') || unit.includes('churn')) {
-    return String((value * 100).toFixed(2));
+    const percentValue = value * 100;
+    // Remove unnecessary decimals (10.00 -> 10, but 10.5 stays as 10.5)
+    return percentValue % 1 === 0 ? String(percentValue) : String(percentValue.toFixed(2));
   }
 
   // For other numbers, show with minimal formatting
@@ -71,8 +73,14 @@ export function validateValue(value: number, unit: string): { isValid: boolean; 
 
   // Ratio/percentage validation
   if (unit === 'ratio' || unit === '%' || unit.includes('pct') || unit.includes('percentage')) {
-    if (value < 0 || value > 1) {
-      return { isValid: false, error: 'Percentage must be between 0% and 100%' };
+    // Allow any positive percentage for OPEX and other business metrics
+    // (OPEX can be more than 100% of revenue, churn should be 0-100%)
+    if (value < 0) {
+      return { isValid: false, error: 'Percentage must be positive' };
+    }
+    // Warn if churn rate is unrealistic (but still allow it)
+    if (unit.includes('churn') && value > 1) {
+      return { isValid: false, error: 'Churn rate must be between 0% and 100%' };
     }
   }
 

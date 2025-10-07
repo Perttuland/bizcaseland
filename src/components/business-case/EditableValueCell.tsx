@@ -92,23 +92,46 @@ export function EditableValueCell({
   };
 
   if (isEditing) {
+    // Generate helpful placeholder based on unit
+    const isPercentage = unit.includes('percentage') || unit.includes('ratio') || unit.includes('pct');
+    let placeholder = 'Enter value';
+    if (isPercentage) {
+      placeholder = 'e.g., 10 for 10%';
+    } else if (unit.includes('EUR') || unit.includes('USD')) {
+      placeholder = 'Enter amount';
+    }
+
     return (
       <div className="relative">
-        <Input
-          ref={inputRef}
-          value={editValue}
-          onChange={(e) => setEditValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          className={cn(
-            'h-8 text-sm font-mono',
-            error && 'border-red-500 focus-visible:ring-red-500'
+        <div className="relative flex items-center">
+          <Input
+            ref={inputRef}
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleBlur}
+            placeholder={placeholder}
+            className={cn(
+              'h-8 text-sm font-mono',
+              error && 'border-red-500 focus-visible:ring-red-500',
+              isPercentage && 'pr-8'
+            )}
+            type="text"
+          />
+          {isPercentage && (
+            <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none">
+              %
+            </span>
           )}
-          type="text"
-        />
+        </div>
         {error && (
           <div className="absolute top-full left-0 mt-1 text-xs text-red-500 whitespace-nowrap z-10">
             {error}
+          </div>
+        )}
+        {isPercentage && !error && (
+          <div className="absolute top-full left-0 mt-1 text-xs text-muted-foreground whitespace-nowrap z-10">
+            Enter as whole number (10 = 10%)
           </div>
         )}
       </div>

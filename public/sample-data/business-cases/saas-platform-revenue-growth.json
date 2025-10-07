@@ -82,28 +82,54 @@
     },
     "opex": [
       { 
-        "name": "Sales & Marketing", 
-        "value": { 
-          "value": 25000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Aggressive marketing spend for customer acquisition and brand building" 
-        } 
+        "name": "Sales & Marketing",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 15000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Base marketing team, tools, and brand presence" 
+          },
+          "variable_revenue_rate": { 
+            "value": 0.12, 
+            "unit": "percentage_of_revenue", 
+            "rationale": "12% of revenue for demand generation, events, and content marketing that scales with growth" 
+          },
+          "variable_volume_rate": { 
+            "value": 20.0, 
+            "unit": "EUR_per_customer", 
+            "rationale": "Onboarding and activation costs per new customer" 
+          }
+        }
       },
       { 
-        "name": "R&D", 
-        "value": { 
-          "value": 40000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Development team for platform features and maintenance" 
-        } 
+        "name": "R&D",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 40000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Core engineering team for platform maintenance" 
+          },
+          "variable_revenue_rate": { 
+            "value": 0.10, 
+            "unit": "percentage_of_revenue", 
+            "rationale": "10% of revenue invested in R&D to scale feature development and innovation" 
+          }
+        }
       },
       { 
-        "name": "G&A", 
-        "value": { 
-          "value": 15000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Administrative overhead including finance, HR, and operations" 
-        } 
+        "name": "G&A",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 15000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Administrative overhead including finance, HR, and operations" 
+          },
+          "variable_volume_rate": { 
+            "value": 12.0, 
+            "unit": "EUR_per_customer", 
+            "rationale": "Customer success and support costs that scale with customer base" 
+          }
+        }
       }
     ],
     "capex": [

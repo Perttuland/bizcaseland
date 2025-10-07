@@ -122,28 +122,49 @@
     },
     "opex": [
       { 
-        "name": "Sales & Marketing", 
-        "value": { 
-          "value": 35000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Localized marketing campaigns, sales team, partner development, and trade shows" 
-        } 
+        "name": "Sales & Marketing",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 35000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Base localized marketing, sales team, and partner development" 
+          },
+          "variable_revenue_rate": { 
+            "value": 0.15, 
+            "unit": "percentage_of_revenue", 
+            "rationale": "15% of revenue for performance marketing and trade show presence that scales with market penetration" 
+          }
+        }
       },
       { 
-        "name": "Compliance & Legal", 
-        "value": { 
-          "value": 28000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Regulatory compliance, legal support, data protection, and local licensing requirements" 
-        } 
+        "name": "R&D",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 28000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Core compliance team, legal support, and regulatory monitoring" 
+          },
+          "variable_revenue_rate": { 
+            "value": 0.03, 
+            "unit": "percentage_of_revenue", 
+            "rationale": "3% of revenue for scaling compliance and audit requirements" 
+          }
+        }
       },
       { 
-        "name": "Technology & Operations", 
-        "value": { 
-          "value": 42000.0, 
-          "unit": "EUR_per_month", 
-          "rationale": "Platform localization, customer support, infrastructure, and development team" 
-        } 
+        "name": "G&A",
+        "cost_structure": {
+          "fixed_component": { 
+            "value": 42000.0, 
+            "unit": "EUR_per_month", 
+            "rationale": "Platform localization, base infrastructure, and core support team" 
+          },
+          "variable_volume_rate": { 
+            "value": 0.02, 
+            "unit": "EUR_per_transaction", 
+            "rationale": "Transaction processing, customer support, and infrastructure costs per transaction" 
+          }
+        }
       }
     ],
     "capex": [

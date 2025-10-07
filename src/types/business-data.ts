@@ -126,10 +126,19 @@ export interface UnitEconomicsAssumptions {
   readonly cac?: ValueWithRationale<PositiveNumber>;
 }
 
-// OpEx item
+// OpEx item with support for both fixed and variable costs
+// For backwards compatibility, 'value' represents fixed cost if used alone
+// New format supports fixed + variable components that scale with business growth
 export interface OpexItem {
-  readonly name: NonEmptyString;
-  readonly value: ValueWithRationale<number>;
+  readonly name: string;
+  // Legacy format: fixed cost only (backwards compatible)
+  readonly value?: { value: number; unit: string; rationale: string };
+  // New format: detailed cost structure with variable components
+  readonly cost_structure?: {
+    readonly fixed_component?: { value: number; unit: string; rationale: string }; // Base monthly cost
+    readonly variable_revenue_rate?: { value: number; unit: string; rationale: string }; // % of revenue (0-1 decimal)
+    readonly variable_volume_rate?: { value: number; unit: string; rationale: string }; // Cost per unit/customer
+  };
 }
 
 // CapEx timeline

@@ -285,104 +285,123 @@ export function BusinessCaseAnalyzer() {
   const loadSampleData = () => {
     const sampleBusinessData = {
       meta: {
-        title: "Sample Software Project Business Case",
-        description: "Example business case for a software project investment with detailed financial projections",
+        title: "Sample SaaS Business Case with Variable OPEX",
+        description: "Example SaaS business case showing realistic OPEX that scales with revenue and customers",
         business_model: "recurring",
         currency: "EUR",
         periods: 60,
         frequency: "monthly"
       },
-      revenue_streams: {
-        subscription_revenue: {
-          pricing: {
-            avg_unit_price: {
-              value: 99,
-              unit: "EUR_per_month",
-              rationale: "Monthly subscription price based on market research"
-            }
-          },
-          volume_drivers: {
-            customers: {
-              penetration: {
-                strategy: "s_curve",
-                max_penetration: {
-                  value: 5000,
-                  unit: "customers",
-                  rationale: "Target market penetration over 5 years"
-                },
-                ramp_up_months: {
-                  value: 36,
-                  unit: "months",
-                  rationale: "3-year ramp up to full market penetration"
-                }
-              }
-            }
-          }
-        }
-      },
-      cost_structure: {
-        fixed_costs: {
-          salaries: {
-            value: 50000,
-            unit: "EUR_per_month",
-            rationale: "Development and operations team salaries"
-          },
-          office_rent: {
-            value: 3000,
-            unit: "EUR_per_month",
-            rationale: "Office space rental costs"
-          },
-          software_licenses: {
-            value: 2000,
-            unit: "EUR_per_month",
-            rationale: "Development tools and infrastructure licenses"
-          }
-        },
-        variable_costs: {
-          customer_support: {
-            value: 15,
-            unit: "EUR_per_customer_per_month",
-            rationale: "Customer support costs per customer"
-          },
-          hosting: {
-            value: 8,
-            unit: "EUR_per_customer_per_month",
-            rationale: "Cloud hosting costs per customer"
-          }
-        }
-      },
-      investments: {
-        initial_development: {
-          value: 200000,
-          unit: "EUR",
-          rationale: "Initial software development investment",
-          timing: "month_0"
-        },
-        marketing_campaign: {
-          value: 50000,
-          unit: "EUR",
-          rationale: "Initial marketing and customer acquisition",
-          timing: "month_0"
-        }
-      },
       assumptions: {
-        growth: {
-          monthly_churn_rate: {
-            value: 2.5,
-            unit: "percentage",
-            rationale: "Expected monthly customer churn rate"
+        pricing: {
+          avg_unit_price: { 
+            value: 99, 
+            unit: "EUR_per_month", 
+            rationale: "Monthly subscription price based on market research" 
           }
         },
         financial: {
-          discount_rate: {
-            value: 10,
-            unit: "percentage_per_year",
-            rationale: "Company cost of capital for NPV calculations"
+          interest_rate: { 
+            value: 0.10, 
+            unit: "ratio", 
+            rationale: "10% discount rate for NPV calculations" 
+          }
+        },
+        customers: {
+          churn_pct: { 
+            value: 0.025, 
+            unit: "percentage", 
+            rationale: "2.5% monthly churn rate" 
           },
-          tax_rate: {
-            value: 25,
-            unit: "percentage",
-            rationale: "Corporate tax rate"
+          segments: [
+            {
+              id: "main_segment",
+              label: "Enterprise Customers",
+              rationale: "Primary customer base with steady growth",
+              volume: {
+                type: "pattern",
+                pattern_type: "geom_growth",
+                series: [{ period: 1, value: 100, unit: "customers", rationale: "Starting customer base" }]
+              }
+            }
+          ]
+        },
+        unit_economics: {
+          cogs_pct: { 
+            value: 0.20, 
+            unit: "percentage_of_revenue", 
+            rationale: "20% COGS for hosting and infrastructure" 
+          },
+          cac: { 
+            value: 500, 
+            unit: "EUR_per_customer", 
+            rationale: "Customer acquisition cost" 
+          }
+        },
+        opex: [
+          { 
+            name: "Sales & Marketing", 
+            cost_structure: {
+              fixed_component: { 
+                value: 5000, 
+                unit: "EUR_per_month", 
+                rationale: "Base marketing team and tools" 
+              },
+              variable_revenue_rate: { 
+                value: 0.10, 
+                unit: "percentage_of_revenue", 
+                rationale: "10% of revenue for demand generation" 
+              }
+            }
+          },
+          { 
+            name: "R&D", 
+            cost_structure: {
+              fixed_component: { 
+                value: 20000, 
+                unit: "EUR_per_month", 
+                rationale: "Core engineering team" 
+              },
+              variable_revenue_rate: { 
+                value: 0.08, 
+                unit: "percentage_of_revenue", 
+                rationale: "8% of revenue for scaling R&D" 
+              }
+            }
+          },
+          { 
+            name: "G&A", 
+            cost_structure: {
+              fixed_component: { 
+                value: 3000, 
+                unit: "EUR_per_month", 
+                rationale: "Base admin costs" 
+              },
+              variable_volume_rate: { 
+                value: 15, 
+                unit: "EUR_per_customer", 
+                rationale: "Customer support and success costs per customer" 
+              }
+            }
+          }
+        ],
+        capex: [
+          {
+            name: "Initial Product Development",
+            timeline: {
+              type: "time_series",
+              pattern_type: "linear_growth",
+              series: [
+                { period: 1, value: 200000, unit: "EUR", rationale: "Initial platform development" },
+                { period: 13, value: 50000, unit: "EUR", rationale: "Year 2 platform enhancements" }
+              ]
+            }
+          }
+        ],
+        growth_settings: {
+          geom_growth: {
+            start: { value: 100, unit: "customers", rationale: "Initial customer base" },
+            monthly_growth: { value: 0.05, unit: "ratio", rationale: "5% monthly growth in customer base" }
           }
         }
       }

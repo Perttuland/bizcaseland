@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { setNestedValue } from '@/lib/utils/nested-operations';
 import { safeJSONStringify } from '@/lib/utils/json-validation';
+import { OpexItem } from '@/types/business-data';
 
 export interface BusinessData {
   schema_version?: string;
@@ -50,10 +51,7 @@ export interface BusinessData {
       cogs_pct?: { value: number; unit: string; rationale: string };
       cac?: { value: number; unit: string; rationale: string };
     };
-    opex?: Array<{
-      name: string;
-      value: { value: number; unit: string; rationale: string };
-    }>;
+    opex?: OpexItem[];
     capex?: Array<{
       name: string;
       timeline?: {

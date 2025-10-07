@@ -22,7 +22,7 @@ export function SensitivityDriverBadge({
   unit
 }: SensitivityDriverBadgeProps) {
   // Check if this is a percentage-based value
-  const isPercentage = unit === '%' || unit === 'ratio' || unit === 'pct' || unit === 'percentage' || unit?.includes('pct');
+  const isPercentage = unit === '%' || unit === 'ratio' || unit === 'pct' || unit?.includes('pct') || unit?.includes('percentage') || unit?.includes('churn');
   
   // Convert stored values to display values (for percentages: 0.05 -> 5)
   const toDisplayValue = (value: number): number => {

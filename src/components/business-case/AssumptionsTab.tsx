@@ -65,7 +65,7 @@ export function AssumptionsTab() {
       if (unit.includes('EUR') || unit.includes('USD')) {
         return formatCurrency(value);
       }
-      if (unit === 'ratio' || unit.includes('pct')) {
+      if (unit === 'ratio' || unit.includes('pct') || unit.includes('percentage')) {
         return `${(value * 100).toFixed(1)}%`;
       }
       if (unit.includes('hours')) {
@@ -73,6 +73,9 @@ export function AssumptionsTab() {
       }
       if (unit === 'month' || unit.includes('month') && !unit.includes('per_month')) {
         return `Month ${value}`;
+      }
+      if (unit.includes('per_customer') || unit.includes('per_unit')) {
+        return `${formatCurrency(value)} ${unit.replace('EUR_', '').replace('_', ' ')}`;
       }
       return value.toLocaleString();
     }
@@ -186,7 +189,13 @@ export function AssumptionsTab() {
         if (field === 'cac') return 'assumptions.unit_economics.cac.value';
         break;
       case 'opex':
-        return `assumptions.opex[${index}].value.value`;
+        // Legacy format
+        if (field === 'value') return `assumptions.opex[${index}].value.value`;
+        // New format with cost_structure
+        if (field === 'fixed_component') return `assumptions.opex[${index}].cost_structure.fixed_component.value`;
+        if (field === 'variable_revenue_rate') return `assumptions.opex[${index}].cost_structure.variable_revenue_rate.value`;
+        if (field === 'variable_volume_rate') return `assumptions.opex[${index}].cost_structure.variable_volume_rate.value`;
+        break;
       case 'capex':
         return `assumptions.capex[${index}].timeline.series[0].value`;
       case 'financial':
@@ -543,19 +552,82 @@ export function AssumptionsTab() {
 
     if (data.assumptions?.opex) {
       data.assumptions.opex.forEach((opex, index) => {
-        const opexPath = generateDataPath('opex', index);
-        const opexDriver = findSensitivityDriver(opexPath);
-        
-        rows.push({
-          label: `  ${opex.name}`,
-          value: opex.value?.value,
-          unit: opex.value?.unit,
-          rationale: opex.value?.rationale,
-          category: 'opex',
-          isSubItem: true,
-          sensitivityDriver: opexDriver,
-          dataPath: opexPath
-        });
+        // Check if using new cost_structure format or legacy value format
+        if (opex.cost_structure) {
+          // New format with variable costs
+          rows.push({
+            label: `  ${opex.name}`,
+            category: 'opex',
+            isSubItem: false,
+            // This is just a header row for this OPEX item
+          });
+          
+          // Fixed component
+          if (opex.cost_structure.fixed_component) {
+            const fixedPath = generateDataPath('opex', index, 'fixed_component');
+            const fixedDriver = findSensitivityDriver(fixedPath);
+            
+            rows.push({
+              label: `    ${opex.name} - Fixed Component`,
+              value: opex.cost_structure.fixed_component.value,
+              unit: opex.cost_structure.fixed_component.unit,
+              rationale: opex.cost_structure.fixed_component.rationale,
+              category: 'opex',
+              isSubItem: true,
+              sensitivityDriver: fixedDriver,
+              dataPath: fixedPath
+            });
+          }
+          
+          // Variable revenue rate
+          if (opex.cost_structure.variable_revenue_rate) {
+            const revPath = generateDataPath('opex', index, 'variable_revenue_rate');
+            const revDriver = findSensitivityDriver(revPath);
+            
+            rows.push({
+              label: `    ${opex.name} - Variable Revenue Rate`,
+              value: opex.cost_structure.variable_revenue_rate.value,
+              unit: opex.cost_structure.variable_revenue_rate.unit,
+              rationale: opex.cost_structure.variable_revenue_rate.rationale,
+              category: 'opex',
+              isSubItem: true,
+              sensitivityDriver: revDriver,
+              dataPath: revPath
+            });
+          }
+          
+          // Variable volume rate
+          if (opex.cost_structure.variable_volume_rate) {
+            const volPath = generateDataPath('opex', index, 'variable_volume_rate');
+            const volDriver = findSensitivityDriver(volPath);
+            
+            rows.push({
+              label: `    ${opex.name} - Variable Volume Rate`,
+              value: opex.cost_structure.variable_volume_rate.value,
+              unit: opex.cost_structure.variable_volume_rate.unit,
+              rationale: opex.cost_structure.variable_volume_rate.rationale,
+              category: 'opex',
+              isSubItem: true,
+              sensitivityDriver: volDriver,
+              dataPath: volPath
+            });
+          }
+        } else if (opex.value) {
+          // Legacy format with fixed value only
+          const opexPath = generateDataPath('opex', index, 'value');
+          const opexDriver = findSensitivityDriver(opexPath);
+          
+          rows.push({
+            label: `  ${opex.name}`,
+            value: opex.value.value,
+            unit: opex.value.unit,
+            rationale: opex.value.rationale,
+            category: 'opex',
+            isSubItem: true,
+            sensitivityDriver: opexDriver,
+            dataPath: opexPath
+          });
+        }
       });
     }
 

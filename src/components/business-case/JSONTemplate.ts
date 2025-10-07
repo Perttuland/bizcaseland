@@ -95,9 +95,41 @@ export const JSONTemplate = `{
       "cac": { "value": 0.0, "unit": "EUR", "rationale": "TODO" }
     },
     "opex": [
-      { "name": "Sales & Marketing", "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" } },
-      { "name": "R&D",              "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" } },
-      { "name": "G&A",              "value": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO" } }
+      {
+        "name": "Sales & Marketing",
+        "_documentation": "OPEX supports both fixed-only (legacy) and variable cost structures. Use cost_structure for realistic scaling.",
+        "_formats": {
+          "legacy_fixed_only": "Use 'value' field for fixed monthly cost that never changes",
+          "new_variable_costs": "Use 'cost_structure' with fixed_component, variable_revenue_rate, and/or variable_volume_rate"
+        },
+        "_examples": {
+          "fixed_only": "{ 'value': { 'value': 5000, 'unit': 'EUR_per_month', 'rationale': 'Fixed marketing spend' } }",
+          "revenue_based": "{ 'cost_structure': { 'fixed_component': { 'value': 5000, ... }, 'variable_revenue_rate': { 'value': 0.10, 'unit': 'percentage_of_revenue', 'rationale': '10% of revenue' } } }",
+          "volume_based": "{ 'cost_structure': { 'fixed_component': { 'value': 3000, ... }, 'variable_volume_rate': { 'value': 15, 'unit': 'EUR_per_customer', 'rationale': '15 EUR per customer' } } }",
+          "mixed": "{ 'cost_structure': { 'fixed_component': {...}, 'variable_revenue_rate': {...}, 'variable_volume_rate': {...} } }"
+        },
+        "cost_structure": {
+          "fixed_component": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO-Base monthly S&M cost regardless of scale" },
+          "variable_revenue_rate": { "value": 0.0, "unit": "percentage_of_revenue", "rationale": "TODO-S&M as % of revenue (0.10 = 10%). Use for demand generation that scales with revenue." },
+          "variable_volume_rate": { "value": 0.0, "unit": "EUR_per_customer", "rationale": "TODO-S&M cost per customer/unit. Use for CAC-like costs." }
+        }
+      },
+      {
+        "name": "R&D",
+        "cost_structure": {
+          "fixed_component": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO-Core engineering team cost" },
+          "variable_revenue_rate": { "value": 0.0, "unit": "percentage_of_revenue", "rationale": "TODO-R&D investment as % of revenue (typically 8-15% for growing tech companies)" },
+          "variable_volume_rate": { "value": 0.0, "unit": "EUR_per_customer", "rationale": "TODO-R&D cost per customer (rarely used, typically revenue-based)" }
+        }
+      },
+      {
+        "name": "G&A",
+        "cost_structure": {
+          "fixed_component": { "value": 0.0, "unit": "EUR_per_month", "rationale": "TODO-Base admin/overhead costs" },
+          "variable_revenue_rate": { "value": 0.0, "unit": "percentage_of_revenue", "rationale": "TODO-G&A as % of revenue (if scales with company size)" },
+          "variable_volume_rate": { "value": 0.0, "unit": "EUR_per_customer", "rationale": "TODO-Customer support/success cost per customer. Use for scalable support costs." }
+        }
+      }
     ],
     "capex": [
       {

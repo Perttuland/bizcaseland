@@ -163,7 +163,12 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
     const cogs = -Math.round(revenue * (businessData?.assumptions?.unit_economics?.cogs_pct?.value || 0));
     const grossProfit = revenue + cogs;
     
-    const salesMarketing = -Math.round((businessData?.assumptions?.opex?.[0]?.value?.value || 0));
+    // Calculate OPEX using new variable cost structure
+    const opexResult = calculateOpexForMonth(businessData, i, revenue, totalSalesVolume);
+    const salesMarketing = -opexResult.salesMarketing; // Make negative (expense)
+    const rd = -opexResult.rd; // Make negative (expense)
+    const ga = -opexResult.ga; // Make negative (expense)
+    
     const cac = businessData?.assumptions?.unit_economics?.cac?.value || 0;
     
     // For recurring models: CAC only applies to new customers
@@ -172,8 +177,6 @@ export function generateMonthlyData(businessData: BusinessData): MonthlyData[] {
       ? -Math.round(newCustomers * cac)
       : -Math.round(totalSalesVolume * cac);
     
-    const rd = -Math.round((businessData?.assumptions?.opex?.[1]?.value?.value || 0));
-    const ga = -Math.round((businessData?.assumptions?.opex?.[2]?.value?.value || 0));
     const totalOpex = salesMarketing + totalCAC + rd + ga;
     
     const ebitda = grossProfit + totalOpex;
@@ -842,6 +845,101 @@ function getDefaultMetrics(): CalculatedMetrics {
     breakEvenMonth: 0,
     monthlyData: []
   };
+}
+
+/**
+ * Result type for OPEX calculation
+ */
+export interface OpexCalculationResult {
+  salesMarketing: number;
+  rd: number;
+  ga: number;
+  totalOpex: number;
+}
+
+/**
+ * Calculate OPEX costs for a specific month with support for variable costs
+ * Supports both legacy fixed-only format and new format with variable components
+ * 
+ * @param businessData - Business case data
+ * @param monthIndex - Zero-based month index
+ * @param revenue - Revenue for the month (for revenue-based variable costs)
+ * @param volume - Volume/customers for the month (for volume-based variable costs)
+ * @returns Object with breakdown of OPEX costs (positive values)
+ */
+export function calculateOpexForMonth(
+  businessData: BusinessData | null,
+  monthIndex: number,
+  revenue: number,
+  volume: number
+): OpexCalculationResult {
+  if (!businessData?.assumptions?.opex) {
+    return {
+      salesMarketing: 0,
+      rd: 0,
+      ga: 0,
+      totalOpex: 0
+    };
+  }
+
+  const opexItems = businessData.assumptions.opex;
+  
+  // Calculate each OPEX category
+  const salesMarketing = calculateSingleOpexItem(opexItems[0], revenue, volume);
+  const rd = calculateSingleOpexItem(opexItems[1], revenue, volume);
+  const ga = calculateSingleOpexItem(opexItems[2], revenue, volume);
+  
+  const totalOpex = salesMarketing + rd + ga;
+
+  return {
+    salesMarketing,
+    rd,
+    ga,
+    totalOpex
+  };
+}
+
+/**
+ * Calculate a single OPEX item value
+ * Handles both legacy format (value only) and new format (cost_structure)
+ */
+function calculateSingleOpexItem(
+  opexItem: { 
+    name: string; 
+    value?: { value: number; unit: string; rationale: string }; 
+    cost_structure?: {
+      fixed_component?: { value: number; unit: string; rationale: string };
+      variable_revenue_rate?: { value: number; unit: string; rationale: string };
+      variable_volume_rate?: { value: number; unit: string; rationale: string };
+    };
+  } | undefined,
+  revenue: number,
+  volume: number
+): number {
+  if (!opexItem) {
+    return 0;
+  }
+
+  // New format: cost_structure with fixed and variable components
+  if (opexItem.cost_structure) {
+    const fixedComponent = opexItem.cost_structure.fixed_component?.value || 0;
+    const variableRevenueRate = opexItem.cost_structure.variable_revenue_rate?.value || 0;
+    const variableVolumeRate = opexItem.cost_structure.variable_volume_rate?.value || 0;
+
+    const total = 
+      fixedComponent +
+      (revenue * variableRevenueRate) +
+      (volume * variableVolumeRate);
+
+    return Math.round(total);
+  }
+
+  // Legacy format: fixed value only (backwards compatibility)
+  if (opexItem.value?.value !== undefined) {
+    return opexItem.value.value;
+  }
+
+  return 0;
 }
 
 /**

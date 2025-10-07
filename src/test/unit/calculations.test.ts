@@ -29,6 +29,7 @@ import {
   formatPercent,
   isIRRError,
   getIRRErrorMessage,
+  calculateOpexForMonth,
   MonthlyData,
   CalculatedMetrics,
   IRR_ERROR_CODES
@@ -1552,6 +1553,345 @@ describe('Calculations Engine', () => {
         const volume = {};
 
         expect(calculateSegmentGeometricGrowth(volume, 0)).toBe(0);
+      });
+    });
+  });
+
+  describe('Variable OPEX Calculations', () => {
+    describe('calculateOpexForMonth', () => {
+      it('should handle legacy fixed-only OPEX format (backwards compatibility)', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { name: "Sales & Marketing", value: { value: 5000, unit: "EUR_per_month", rationale: "Fixed S&M cost" } },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed R&D cost" } },
+              { name: "G&A", value: { value: 3000, unit: "EUR_per_month", rationale: "Fixed G&A cost" } }
+            ]
+          }
+        });
+        
+        const result = calculateOpexForMonth(businessData, 0, 100000, 500);
+        
+        expect(result.salesMarketing).toBe(5000);
+        expect(result.rd).toBe(10000);
+        expect(result.ga).toBe(3000);
+        expect(result.totalOpex).toBe(18000);
+      });
+
+      it('should calculate revenue-based variable OPEX', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { 
+                name: "Sales & Marketing", 
+                cost_structure: {
+                  fixed_component: { value: 5000, unit: "EUR_per_month", rationale: "Base S&M cost" },
+                  variable_revenue_rate: { value: 0.10, unit: "percentage_of_revenue", rationale: "10% of revenue for marketing" }
+                }
+              },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed R&D" } },
+              { name: "G&A", value: { value: 3000, unit: "EUR_per_month", rationale: "Fixed G&A" } }
+            ]
+          }
+        });
+        
+        const revenue = 100000;
+        const result = calculateOpexForMonth(businessData, 0, revenue, 500);
+        
+        // S&M should be: 5000 (fixed) + 100000 * 0.10 (variable) = 15000
+        expect(result.salesMarketing).toBe(15000);
+        expect(result.rd).toBe(10000);
+        expect(result.ga).toBe(3000);
+        expect(result.totalOpex).toBe(28000);
+      });
+
+      it('should calculate volume-based variable OPEX', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { name: "Sales & Marketing", value: { value: 5000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { 
+                name: "G&A", 
+                cost_structure: {
+                  fixed_component: { value: 3000, unit: "EUR_per_month", rationale: "Base G&A cost" },
+                  variable_volume_rate: { value: 15, unit: "EUR_per_customer", rationale: "Support cost per customer" }
+                }
+              }
+            ]
+          }
+        });
+        
+        const volume = 500;
+        const result = calculateOpexForMonth(businessData, 0, 100000, volume);
+        
+        expect(result.salesMarketing).toBe(5000);
+        expect(result.rd).toBe(10000);
+        // G&A should be: 3000 (fixed) + 500 * 15 (variable) = 10500
+        expect(result.ga).toBe(10500);
+        expect(result.totalOpex).toBe(25500);
+      });
+
+      it('should calculate mixed fixed + revenue + volume OPEX', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { 
+                name: "Sales & Marketing", 
+                cost_structure: {
+                  fixed_component: { value: 5000, unit: "EUR_per_month", rationale: "Base cost" },
+                  variable_revenue_rate: { value: 0.10, unit: "percentage_of_revenue", rationale: "10% of revenue" },
+                  variable_volume_rate: { value: 20, unit: "EUR_per_customer", rationale: "20 per customer" }
+                }
+              },
+              { 
+                name: "R&D", 
+                cost_structure: {
+                  fixed_component: { value: 20000, unit: "EUR_per_month", rationale: "Base R&D" },
+                  variable_revenue_rate: { value: 0.08, unit: "percentage_of_revenue", rationale: "8% of revenue" }
+                }
+              },
+              { 
+                name: "G&A", 
+                cost_structure: {
+                  fixed_component: { value: 3000, unit: "EUR_per_month", rationale: "Base G&A" },
+                  variable_volume_rate: { value: 15, unit: "EUR_per_customer", rationale: "15 per customer" }
+                }
+              }
+            ]
+          }
+        });
+        
+        const revenue = 100000;
+        const volume = 500;
+        const result = calculateOpexForMonth(businessData, 0, revenue, volume);
+        
+        // S&M: 5000 + (100000 * 0.10) + (500 * 20) = 5000 + 10000 + 10000 = 25000
+        expect(result.salesMarketing).toBe(25000);
+        
+        // R&D: 20000 + (100000 * 0.08) = 20000 + 8000 = 28000
+        expect(result.rd).toBe(28000);
+        
+        // G&A: 3000 + (500 * 15) = 3000 + 7500 = 10500
+        expect(result.ga).toBe(10500);
+        
+        expect(result.totalOpex).toBe(63500);
+      });
+
+      it('should handle zero revenue gracefully', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { 
+                name: "Sales & Marketing", 
+                cost_structure: {
+                  fixed_component: { value: 5000, unit: "EUR_per_month", rationale: "Base" },
+                  variable_revenue_rate: { value: 0.10, unit: "percentage_of_revenue", rationale: "10%" }
+                }
+              },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "G&A", value: { value: 3000, unit: "EUR_per_month", rationale: "Fixed" } }
+            ]
+          }
+        });
+        
+        const result = calculateOpexForMonth(businessData, 0, 0, 100);
+        
+        // Only fixed component should apply
+        expect(result.salesMarketing).toBe(5000);
+        expect(result.rd).toBe(10000);
+        expect(result.ga).toBe(3000);
+        expect(result.totalOpex).toBe(18000);
+      });
+
+      it('should handle zero volume gracefully', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { name: "Sales & Marketing", value: { value: 5000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { 
+                name: "G&A", 
+                cost_structure: {
+                  fixed_component: { value: 3000, unit: "EUR_per_month", rationale: "Base" },
+                  variable_volume_rate: { value: 15, unit: "EUR_per_customer", rationale: "Per customer" }
+                }
+              }
+            ]
+          }
+        });
+        
+        const result = calculateOpexForMonth(businessData, 0, 100000, 0);
+        
+        expect(result.salesMarketing).toBe(5000);
+        expect(result.rd).toBe(10000);
+        // Only fixed component for G&A
+        expect(result.ga).toBe(3000);
+        expect(result.totalOpex).toBe(18000);
+      });
+
+      it('should handle missing opex array', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {}
+        });
+        
+        const result = calculateOpexForMonth(businessData, 0, 100000, 500);
+        
+        expect(result.salesMarketing).toBe(0);
+        expect(result.rd).toBe(0);
+        expect(result.ga).toBe(0);
+        expect(result.totalOpex).toBe(0);
+      });
+
+      it('should handle fixed-only cost_structure (no variable components)', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { 
+                name: "Sales & Marketing", 
+                cost_structure: {
+                  fixed_component: { value: 5000, unit: "EUR_per_month", rationale: "Base only" }
+                }
+              },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "G&A", value: { value: 3000, unit: "EUR_per_month", rationale: "Fixed" } }
+            ]
+          }
+        });
+        
+        const result = calculateOpexForMonth(businessData, 0, 100000, 500);
+        
+        expect(result.salesMarketing).toBe(5000);
+        expect(result.rd).toBe(10000);
+        expect(result.ga).toBe(3000);
+        expect(result.totalOpex).toBe(18000);
+      });
+
+      it('should round OPEX values to whole numbers', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { 
+                name: "Sales & Marketing", 
+                cost_structure: {
+                  fixed_component: { value: 5000.75, unit: "EUR_per_month", rationale: "Base" },
+                  variable_revenue_rate: { value: 0.103, unit: "percentage_of_revenue", rationale: "10.3%" }
+                }
+              },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "G&A", value: { value: 3000, unit: "EUR_per_month", rationale: "Fixed" } }
+            ]
+          }
+        });
+        
+        const revenue = 10000;
+        const result = calculateOpexForMonth(businessData, 0, revenue, 0);
+        
+        // 5000.75 + (10000 * 0.103) = 5000.75 + 1030 = 6030.75, rounded to 6031
+        expect(result.salesMarketing).toBe(Math.round(5000.75 + 1030));
+        expect(Number.isInteger(result.salesMarketing)).toBe(true);
+        expect(Number.isInteger(result.rd)).toBe(true);
+        expect(Number.isInteger(result.ga)).toBe(true);
+      });
+    });
+
+    describe('Integration with generateMonthlyData', () => {
+      it('should use variable OPEX in monthly data generation', () => {
+        const businessData = createMockBusinessData({
+          meta: {
+            title: 'Variable OPEX Test',
+            description: 'Testing variable OPEX',
+            business_model: 'recurring',
+            currency: 'EUR',
+            periods: 12,
+            frequency: 'monthly'
+          },
+          assumptions: {
+            pricing: {
+              avg_unit_price: { value: 100, unit: "EUR_per_month", rationale: "Subscription price" }
+            },
+            customers: {
+              segments: [
+                {
+                  id: "segment1",
+                  label: "Main Segment",
+                  rationale: "Primary customer base",
+                  volume: {
+                    type: "pattern",
+                    pattern_type: "linear_growth",
+                    series: [{ period: 1, value: 100, unit: "customers", rationale: "Start" }]
+                  }
+                }
+              ]
+            },
+            opex: [
+              { 
+                name: "Sales & Marketing", 
+                cost_structure: {
+                  fixed_component: { value: 5000, unit: "EUR_per_month", rationale: "Base" },
+                  variable_revenue_rate: { value: 0.10, unit: "percentage_of_revenue", rationale: "10%" }
+                }
+              },
+              { 
+                name: "R&D", 
+                cost_structure: {
+                  fixed_component: { value: 10000, unit: "EUR_per_month", rationale: "Base" }
+                }
+              },
+              { 
+                name: "G&A", 
+                cost_structure: {
+                  fixed_component: { value: 3000, unit: "EUR_per_month", rationale: "Base" },
+                  variable_volume_rate: { value: 10, unit: "EUR_per_customer", rationale: "Per customer" }
+                }
+              }
+            ]
+          }
+        });
+        
+        const monthlyData = generateMonthlyData(businessData);
+        
+        expect(monthlyData).toHaveLength(12);
+        
+        // Month 1: 100 customers * 100 EUR = 10,000 revenue
+        const month1 = monthlyData[0];
+        expect(month1.salesMarketing).toBeLessThan(0); // Should be negative
+        // S&M: -(5000 + 10000 * 0.10) = -(5000 + 1000) = -6000
+        expect(Math.abs(month1.salesMarketing)).toBe(6000);
+        // R&D: -10000
+        expect(Math.abs(month1.rd)).toBe(10000);
+        // G&A: -(3000 + 100 * 10) = -(3000 + 1000) = -4000
+        expect(Math.abs(month1.ga)).toBe(4000);
+        
+        // Verify OPEX scales with growth
+        const lastMonth = monthlyData[11];
+        // If revenue grows, S&M should grow too
+        if (lastMonth.revenue > month1.revenue) {
+          expect(Math.abs(lastMonth.salesMarketing)).toBeGreaterThan(Math.abs(month1.salesMarketing));
+        }
+      });
+
+      it('should maintain backwards compatibility with old format in monthly data', () => {
+        const businessData = createMockBusinessData({
+          assumptions: {
+            opex: [
+              { name: "Sales & Marketing", value: { value: 5000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "R&D", value: { value: 10000, unit: "EUR_per_month", rationale: "Fixed" } },
+              { name: "G&A", value: { value: 3000, unit: "EUR_per_month", rationale: "Fixed" } }
+            ]
+          }
+        });
+        
+        const monthlyData = generateMonthlyData(businessData);
+        
+        expect(monthlyData.length).toBeGreaterThan(0);
+        
+        // All months should have the same fixed OPEX
+        monthlyData.forEach(month => {
+          expect(Math.abs(month.salesMarketing)).toBe(5000);
+          expect(Math.abs(month.rd)).toBe(10000);
+          expect(Math.abs(month.ga)).toBe(3000);
+        });
       });
     });
   });
