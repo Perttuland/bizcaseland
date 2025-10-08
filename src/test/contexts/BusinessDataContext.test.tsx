@@ -234,4 +234,273 @@ describe('BusinessDataContext', () => {
 
     expect(result.current.data?.assumptions?.pricing?.avg_unit_price?.value).toBe(999);
   });
+
+  describe('Segment Volume Editing', () => {
+    it('updates segment base volume correctly', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      // Ensure segment structure with pattern-based volume
+      if (!mockData.assumptions.customers) {
+        mockData.assumptions.customers = { segments: [] };
+      }
+      mockData.assumptions.customers.segments = [
+        {
+          id: 'test_segment',
+          label: 'Test Segment',
+          rationale: 'Test',
+          volume: {
+            type: 'pattern',
+            pattern_type: 'geom_growth',
+            series: [{ period: 1, value: 100, unit: 'units', rationale: 'Base value' }]
+          }
+        }
+      ];
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.updateAssumption('assumptions.customers.segments[0].volume.series[0].value', 200);
+      });
+
+      expect(result.current.data?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value).toBe(200);
+    });
+
+    it('updates segment growth rate from global settings', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      // Setup with growth_settings
+      mockData.assumptions.growth_settings = {
+        geom_growth: {
+          start: { value: 100, unit: 'units', rationale: 'Base' },
+          monthly_growth: { value: 0.05, unit: 'ratio_per_month', rationale: '5% monthly growth' }
+        }
+      };
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.updateAssumption('assumptions.growth_settings.geom_growth.monthly_growth.value', 0.10);
+      });
+
+      expect(result.current.data?.assumptions?.growth_settings?.geom_growth?.monthly_growth?.value).toBe(0.10);
+    });
+
+    it('updates segment volume rationale', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      if (!mockData.assumptions.customers) {
+        mockData.assumptions.customers = { segments: [] };
+      }
+      mockData.assumptions.customers.segments = [
+        {
+          id: 'test_segment',
+          label: 'Test Segment',
+          rationale: 'Test',
+          volume: {
+            type: 'pattern',
+            pattern_type: 'geom_growth',
+            series: [{ period: 1, value: 100, unit: 'units', rationale: 'Old rationale' }]
+          }
+        }
+      ];
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.updateAssumption('assumptions.customers.segments[0].volume.series[0].rationale', 'Updated rationale');
+      });
+
+      expect(result.current.data?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.rationale).toBe('Updated rationale');
+    });
+
+    it('handles multiple segments correctly', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      if (!mockData.assumptions.customers) {
+        mockData.assumptions.customers = { segments: [] };
+      }
+      mockData.assumptions.customers.segments = [
+        {
+          id: 'segment_1',
+          label: 'Segment 1',
+          rationale: 'First',
+          volume: {
+            type: 'pattern',
+            pattern_type: 'geom_growth',
+            series: [{ period: 1, value: 100, unit: 'units', rationale: 'Base 1' }]
+          }
+        },
+        {
+          id: 'segment_2',
+          label: 'Segment 2',
+          rationale: 'Second',
+          volume: {
+            type: 'pattern',
+            pattern_type: 'geom_growth',
+            series: [{ period: 1, value: 200, unit: 'units', rationale: 'Base 2' }]
+          }
+        }
+      ];
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.updateAssumption('assumptions.customers.segments[1].volume.series[0].value', 300);
+      });
+
+      expect(result.current.data?.assumptions?.customers?.segments?.[0]?.volume?.series?.[0]?.value).toBe(100);
+      expect(result.current.data?.assumptions?.customers?.segments?.[1]?.volume?.series?.[0]?.value).toBe(300);
+    });
+  });
+
+  describe('Segment Sensitivity Drivers', () => {
+    it('adds segment volume as sensitivity driver', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      mockData.drivers = [];
+      if (!mockData.assumptions.customers) {
+        mockData.assumptions.customers = { segments: [] };
+      }
+      mockData.assumptions.customers.segments = [
+        {
+          id: 'test_segment',
+          label: 'Test Segment',
+          rationale: 'Test',
+          volume: {
+            type: 'pattern',
+            pattern_type: 'geom_growth',
+            series: [{ period: 1, value: 100, unit: 'units', rationale: 'Base value' }]
+          }
+        }
+      ];
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.addDriver(
+          'assumptions.customers.segments[0].volume.series[0].value',
+          'segment_base_volume',
+          [80, 90, 100, 110, 120],
+          'Sensitivity analysis for segment base volume',
+          'units'
+        );
+      });
+
+      expect(result.current.data?.drivers?.length).toBe(1);
+      expect(result.current.data?.drivers?.[0].path).toBe('assumptions.customers.segments[0].volume.series[0].value');
+      expect(result.current.data?.drivers?.[0].key).toBe('segment_base_volume');
+    });
+
+    it('removes segment driver correctly', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      mockData.drivers = [
+        {
+          key: 'segment_volume',
+          path: 'assumptions.customers.segments[0].volume.series[0].value',
+          range: [80, 90, 100, 110, 120],
+          rationale: 'Test driver'
+        }
+      ];
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.removeDriver('assumptions.customers.segments[0].volume.series[0].value');
+      });
+
+      expect(result.current.data?.drivers?.length).toBe(0);
+    });
+
+    it('updates segment driver range', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      mockData.drivers = [
+        {
+          key: 'segment_volume',
+          path: 'assumptions.customers.segments[0].volume.series[0].value',
+          range: [80, 90, 100, 110, 120],
+          rationale: 'Test driver'
+        }
+      ];
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.updateDriverRange('assumptions.customers.segments[0].volume.series[0].value', [50, 75, 100, 125, 150]);
+      });
+
+      const driver = result.current.data?.drivers?.find(
+        d => d.path === 'assumptions.customers.segments[0].volume.series[0].value'
+      );
+      expect(driver?.range).toEqual([50, 75, 100, 125, 150]);
+    });
+
+    it('supports growth rate as sensitivity driver', () => {
+      const { result } = renderHook(() => useBusinessData(), {
+        wrapper: createWrapper(),
+      });
+
+      const mockData = createMockBusinessData();
+      mockData.drivers = [];
+      mockData.assumptions.growth_settings = {
+        geom_growth: {
+          start: { value: 100, unit: 'units', rationale: 'Base' },
+          monthly_growth: { value: 0.05, unit: 'ratio_per_month', rationale: '5% monthly growth' }
+        }
+      };
+
+      act(() => {
+        result.current.updateData(mockData);
+      });
+
+      act(() => {
+        result.current.addDriver(
+          'assumptions.growth_settings.geom_growth.monthly_growth.value',
+          'monthly_growth_rate',
+          [0.03, 0.05, 0.07, 0.10, 0.15],
+          'Growth rate sensitivity',
+          'ratio_per_month'
+        );
+      });
+
+      expect(result.current.data?.drivers?.length).toBe(1);
+      expect(result.current.data?.drivers?.[0].path).toBe('assumptions.growth_settings.geom_growth.monthly_growth.value');
+    });
+  });
 });

@@ -72,18 +72,23 @@ export const JSONTemplate = `{
           "label": "TODO-Human label",
           "rationale": "TODO-why this segment matters",
           "volume": {
+            "_instructions": "Define volume growth per segment. Either use 'pattern' with growth settings OR 'time_series' with explicit values.",
+            "_pattern_guidance": "When type='pattern': segment grows using pattern_type (geom_growth, seasonal_growth, or linear_growth). The growth_settings.geom_growth.monthly_growth applies to ALL segments unless you override it.",
+            "_yearly_adjustments_warning": "IMPORTANT: yearly_adjustments.volume_factors MULTIPLY the base growth pattern. Factor 1.8 means 1.8x the volume at that point. This compounds with ongoing growth, creating exponential effects. Use time_series instead if you want explicit control over volumes.",
+            "_time_series_alternative": "When type='time_series': explicitly list volume for each key period. Engine interpolates between points. Use this when yearly_adjustments create unrealistic compounding.",
             "type": "pattern|time_series",
             "pattern_type": "geom_growth|seasonal_growth|linear_growth",
             "series": [
-              { "period": 1, "value": 0, "unit": "units|accounts", "rationale": "TODO-Starting volume or time series data point" }
+              { "period": 1, "value": 0, "unit": "units|accounts", "rationale": "TODO-Starting volume (base for pattern) or explicit time series value" }
             ],
             "yearly_adjustments": {
+              "_usage": "OPTIONAL multiplicative adjustments. Use sparingly - these multiply the ongoing growth pattern.",
               "volume_factors": [
-                { "year": 1, "factor": 1.0, "rationale": "TODO-Year 1 volume expectations" },
-                { "year": 2, "factor": 1.0, "rationale": "TODO-Year 2 volume adjustments" }
+                { "year": 1, "factor": 1.0, "rationale": "TODO-Year 1 multiplier (1.0 = no adjustment)" },
+                { "year": 2, "factor": 1.0, "rationale": "TODO-Year 2 multiplier (e.g., 1.5 = 50% boost on top of base growth)" }
               ],
               "volume_overrides": [
-                { "period": 13, "volume": 0, "rationale": "TODO-specific period volume override" }
+                { "period": 13, "volume": 0, "rationale": "TODO-Replace calculated volume for specific month" }
               ]
             }
           }

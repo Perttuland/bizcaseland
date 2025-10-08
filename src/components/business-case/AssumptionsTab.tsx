@@ -201,6 +201,25 @@ export function AssumptionsTab() {
       case 'financial':
         if (field === 'interest_rate') return 'assumptions.financial.interest_rate.value';
         break;
+      case 'segment':
+        // Segment volume fields
+        if (field === 'base_volume') return `assumptions.customers.segments[${index}].volume.series[0].value`;
+        if (field === 'base_volume_rationale') return `assumptions.customers.segments[${index}].volume.series[0].rationale`;
+        break;
+      case 'segment_growth':
+        // Growth rate fields - different paths depending on pattern type
+        if (field === 'geom_growth') return 'assumptions.growth_settings.geom_growth.monthly_growth.value';
+        if (field === 'geom_growth_rationale') return 'assumptions.growth_settings.geom_growth.monthly_growth.rationale';
+        if (field === 'linear_growth') return 'assumptions.growth_settings.linear_growth.monthly_flat_increase.value';
+        if (field === 'linear_growth_rationale') return 'assumptions.growth_settings.linear_growth.monthly_flat_increase.rationale';
+        if (field === 'seasonal_growth') return 'assumptions.growth_settings.seasonal_growth.yoy_growth.value';
+        if (field === 'seasonal_growth_rationale') return 'assumptions.growth_settings.seasonal_growth.yoy_growth.rationale';
+        break;
+      case 'segment_yearly_factor':
+        // Yearly adjustment factors
+        if (field === 'factor_value') return `assumptions.customers.segments[${index}].volume.yearly_adjustments.volume_factors[${field}].factor`;
+        if (field === 'factor_rationale') return `assumptions.customers.segments[${index}].volume.yearly_adjustments.volume_factors[${field}].rationale`;
+        break;
       default:
         return null;
     }
@@ -337,13 +356,18 @@ export function AssumptionsTab() {
             }
             
             if (baseValue !== undefined) {
+              const baseVolumePath = generateDataPath('segment', index, 'base_volume');
+              const baseVolumeDriver = findSensitivityDriver(baseVolumePath);
+              
               rows.push({
                 label: `  ${segmentAny.name || segment.label} - Base Volume`,
                 value: baseValue,
                 unit: baseUnit || 'units_per_month',
                 rationale: baseRationale || `Base volume for ${segmentAny.name || segment.label}`,
                 category: 'volume',
-                isSubItem: true
+                isSubItem: true,
+                sensitivityDriver: baseVolumeDriver,
+                dataPath: baseVolumePath
               });
             }
             
@@ -378,13 +402,27 @@ export function AssumptionsTab() {
                 ? 'Linear Growth' 
                 : 'Growth Rate';
               
+              // Generate data path based on pattern type
+              let growthPath = null;
+              if (patternType === 'geom_growth') {
+                growthPath = generateDataPath('segment_growth', undefined, 'geom_growth');
+              } else if (patternType === 'linear_growth') {
+                growthPath = generateDataPath('segment_growth', undefined, 'linear_growth');
+              } else if (patternType === 'seasonal_growth') {
+                growthPath = generateDataPath('segment_growth', undefined, 'seasonal_growth');
+              }
+              
+              const growthDriver = findSensitivityDriver(growthPath);
+              
               rows.push({
                 label: `  ${segmentAny.name || segment.label} - ${growthLabel}`,
                 value: growthValue,
                 unit: growthUnit,
                 rationale: growthRationale || 'Growth rate assumption',
                 category: 'volume',
-                isSubItem: true
+                isSubItem: true,
+                sensitivityDriver: growthDriver,
+                dataPath: growthPath
               });
             }
             
@@ -403,26 +441,36 @@ export function AssumptionsTab() {
             // Handle yearly adjustments if present
             if (segmentAny.volume.yearly_adjustments?.volume_factors) {
               segmentAny.volume.yearly_adjustments.volume_factors.forEach((factor: any, factorIndex: number) => {
+                const factorPath = `assumptions.customers.segments[${index}].volume.yearly_adjustments.volume_factors[${factorIndex}].factor`;
+                const factorDriver = findSensitivityDriver(factorPath);
+                
                 rows.push({
-                  label: `  ${segmentAny.name || segment.label} - Year ${factor.year} Factor`,
+                  label: `    ${segmentAny.name || segment.label} - Year ${factor.year} Factor`,
                   value: factor.factor,
                   unit: 'multiplier',
                   rationale: factor.rationale,
                   category: 'volume',
-                  isSubItem: true
+                  isSubItem: true,
+                  sensitivityDriver: factorDriver,
+                  dataPath: factorPath
                 });
               });
             }
           }
           // Handle modern data structure with base_value and growth_rate (direct in volume object)
           else if (segmentAny.volume?.base_value !== undefined) {
+            const baseVolumePath = `assumptions.customers.segments[${index}].volume.base_value`;
+            const baseVolumeDriver = findSensitivityDriver(baseVolumePath);
+            
             rows.push({
               label: `  ${segmentAny.name || segment.label} - Base Volume`,
               value: segmentAny.volume.base_value,
               unit: segmentAny.volume.unit || 'units_per_month',
               rationale: segmentAny.volume.rationale || `Base volume for ${segmentAny.name || segment.label}`,
               category: 'volume',
-              isSubItem: true
+              isSubItem: true,
+              sensitivityDriver: baseVolumeDriver,
+              dataPath: baseVolumePath
             });
           
             // Show growth rate based on pattern type
@@ -433,6 +481,8 @@ export function AssumptionsTab() {
               const growthUnit = segmentAny.volume.pattern_type === 'linear_growth'
                 ? 'units_per_month'
                 : 'ratio';
+              const growthPath = `assumptions.customers.segments[${index}].volume.growth_rate`;
+              const growthDriver = findSensitivityDriver(growthPath);
               
               rows.push({
                 label: `  ${segmentAny.name || segment.label} - ${growthLabel}`,
@@ -440,7 +490,9 @@ export function AssumptionsTab() {
                 unit: growthUnit,
                 rationale: segmentAny.volume.growth_rationale || 'Growth rate assumption',
                 category: 'volume',
-                isSubItem: true
+                isSubItem: true,
+                sensitivityDriver: growthDriver,
+                dataPath: growthPath
               });
             }
             
@@ -474,23 +526,33 @@ export function AssumptionsTab() {
           
           // Handle legacy data structure for backward compatibility
           else if (segment.volume?.base_year_total) {
+            const baseVolumePath = `assumptions.customers.segments[${index}].volume.base_year_total.value`;
+            const baseVolumeDriver = findSensitivityDriver(baseVolumePath);
+            
             rows.push({
               label: `  ${segmentAny.name || segment.label} - Base Volume`,
               value: segment.volume.base_year_total.value,
               unit: segment.volume.base_year_total.unit,
               rationale: segment.volume.base_year_total.rationale,
               category: 'volume',
-              isSubItem: true
+              isSubItem: true,
+              sensitivityDriver: baseVolumeDriver,
+              dataPath: baseVolumePath
             });
           
             if (segment.volume?.yoy_growth) {
+              const growthPath = `assumptions.customers.segments[${index}].volume.yoy_growth.value`;
+              const growthDriver = findSensitivityDriver(growthPath);
+              
               rows.push({
                 label: `  ${segmentAny.name || segment.label} - Growth Rate`,
                 value: segment.volume.yoy_growth.value,
                 unit: segment.volume.yoy_growth.unit,
                 rationale: segment.volume.yoy_growth.rationale,
                 category: 'volume',
-                isSubItem: true
+                isSubItem: true,
+                sensitivityDriver: growthDriver,
+                dataPath: growthPath
               });
             }
           }
