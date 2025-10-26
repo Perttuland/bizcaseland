@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { MutableRefObject } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ interface Driver {
 interface SensitivityAnalysisProps {
   drivers: Driver[];
   businessData: any;
-  baselineRef: React.MutableRefObject<any>;
+  baselineRef: MutableRefObject<any>;
   driverValues: {[key: string]: number};
   onDriverChange: (driverKey: string, value: number) => void;
 }
@@ -34,6 +34,26 @@ export function SensitivityAnalysis({
     return driverValues[driver.key] !== undefined 
       ? driverValues[driver.key] 
       : getNestedValue(businessData, driver.path);
+  };
+  
+  // Infer unit from the path if not provided
+  const getDriverUnit = (driver: Driver): string | undefined => {
+    if (driver.unit) return driver.unit;
+    
+    // Try to infer unit from the value object at the driver's path
+    try {
+      // Remove '.value' from the end of the path to get the parent object
+      const parentPath = driver.path.replace(/\.value$/, '');
+      const parentObj = getNestedValue(businessData, parentPath);
+      
+      if (parentObj && typeof parentObj === 'object' && 'unit' in parentObj) {
+        return parentObj.unit as string;
+      }
+    } catch (e) {
+      // Silent fail - we'll handle undefined unit below
+    }
+    
+    return undefined;
   };
 
   if (drivers.length === 0) {
@@ -57,13 +77,26 @@ export function SensitivityAnalysis({
             const minValue = Math.min(...driver.range);
             const maxValue = Math.max(...driver.range);
             const baseValue = getNestedValue(baselineRef.current || businessData, driver.path);
+            
+            // Skip this driver if we can't get valid values
+            if (currentValue === undefined || currentValue === null || baseValue === undefined || baseValue === null) {
+              console.warn(`Skipping driver ${driver.key} - unable to get values from path: ${driver.path}`);
+              return null;
+            }
+            
             const isModified = Math.abs(currentValue - baseValue) > 0.001;
             
+            // Get the unit for this driver
+            const driverUnit = getDriverUnit(driver);
+            
             // Check if this is a percentage-based value
-            const isPercentage = driver.unit === '%' || driver.unit === 'ratio' || driver.unit === 'pct' || driver.unit === 'percentage' || driver.unit?.includes('pct');
+            const isPercentage = driverUnit === '%' || driverUnit === 'ratio' || driverUnit === 'pct' || driverUnit === 'percentage' || driverUnit?.includes('pct') || driverUnit?.includes('churn');
             
             // Format values for display (percentages: 0.05 -> 5%)
             const formatDisplayValue = (value: number): string => {
+              if (value === undefined || value === null) {
+                return 'N/A';
+              }
               if (businessData.meta.currency && driver.path.includes('price')) {
                 return formatCurrency(value, businessData.meta.currency);
               }
@@ -75,6 +108,9 @@ export function SensitivityAnalysis({
             
             // Format values for buttons (percentages: 0.05 -> 5)
             const formatButtonValue = (value: number): string => {
+              if (value === undefined || value === null) {
+                return 'N/A';
+              }
               if (businessData.meta.currency && driver.path.includes('price')) {
                 return formatCurrency(value, businessData.meta.currency).replace(/[€$£]/g, '').trim();
               }

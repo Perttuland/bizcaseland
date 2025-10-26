@@ -52,13 +52,13 @@ export interface DataContextValue {
   clearMarketData: () => void;
   
   // Driver Management
-  addBusinessDriver: (path: string, key: string, range: number[], rationale: string, unit?: string) => void;
+  addBusinessDriver: (path: string, key: string, label: string, range: [number, number], rationale: string, unit?: string) => void;
   removeBusinessDriver: (path: string) => void;
-  updateBusinessDriverRange: (path: string, range: number[]) => void;
+  updateBusinessDriverRange: (path: string, range: [number, number]) => void;
   
-  addMarketDriver: (label: string, path: string, range: number[], rationale: string) => void;
+  addMarketDriver: (label: string, path: string, range: [number, number], rationale: string) => void;
   removeMarketDriver: (path: string) => void;
-  updateMarketDriverRange: (path: string, range: number[]) => void;
+  updateMarketDriverRange: (path: string, range: [number, number]) => void;
   
   // Cross-tool operations
   syncDataFromStorage: () => void;
@@ -247,7 +247,7 @@ export function DataProvider({ children }: DataProviderProps) {
   // Driver Management - Business
   // ============================================================================
 
-  const addBusinessDriver = useCallback((path: string, key: string, range: number[], rationale: string, unit?: string) => {
+  const addBusinessDriver = useCallback((path: string, key: string, label: string, range: [number, number], rationale: string, unit?: string) => {
     setState(prev => {
       if (!prev.business.data) return prev;
 
@@ -259,7 +259,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
       const newData = {
         ...prev.business.data,
-        drivers: [...drivers, { key, path, range, rationale, unit }],
+        drivers: [...drivers, { key, label, path, range: range as readonly [number, number], rationale, unit }],
       };
 
       storageService.save(STORAGE_KEYS.BUSINESS_DATA, newData);
@@ -297,14 +297,14 @@ export function DataProvider({ children }: DataProviderProps) {
     });
   }, []);
 
-  const updateBusinessDriverRange = useCallback((path: string, range: number[]) => {
+  const updateBusinessDriverRange = useCallback((path: string, range: [number, number]) => {
     setState(prev => {
       if (!prev.business.data || !prev.business.data.drivers) return prev;
 
       const newData = {
         ...prev.business.data,
         drivers: prev.business.data.drivers.map(d =>
-          d.path === path ? { ...d, range } : d
+          d.path === path ? { ...d, range: range as readonly [number, number] } : d
         ),
       };
 
@@ -325,7 +325,7 @@ export function DataProvider({ children }: DataProviderProps) {
   // Driver Management - Market
   // ============================================================================
 
-  const addMarketDriver = useCallback((label: string, path: string, range: number[], rationale: string) => {
+  const addMarketDriver = useCallback((label: string, path: string, range: [number, number], rationale: string) => {
     setState(prev => {
       if (!prev.market.data) return prev;
 
@@ -339,7 +339,7 @@ export function DataProvider({ children }: DataProviderProps) {
 
       const newData = {
         ...prev.market.data,
-        drivers: [...drivers, { key, label, path, range, rationale }],
+        drivers: [...drivers, { key, label, path, range: range as readonly [number, number], rationale }],
       };
 
       storageService.save(STORAGE_KEYS.MARKET_DATA, newData);
@@ -377,14 +377,14 @@ export function DataProvider({ children }: DataProviderProps) {
     });
   }, []);
 
-  const updateMarketDriverRange = useCallback((path: string, range: number[]) => {
+  const updateMarketDriverRange = useCallback((path: string, range: [number, number]) => {
     setState(prev => {
       if (!prev.market.data || !prev.market.data.drivers) return prev;
 
       const newData = {
         ...prev.market.data,
         drivers: prev.market.data.drivers.map(d =>
-          d.path === path ? { ...d, range } : d
+          d.path === path ? { ...d, range: range as readonly [number, number] } : d
         ),
       };
 
