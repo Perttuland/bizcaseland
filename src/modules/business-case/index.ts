@@ -11,6 +11,7 @@ export { AssumptionsTab } from './components/AssumptionsTab';
 export { CashFlowStatement } from './components/CashFlowStatement';
 export { FinancialAnalysis } from './components/FinancialAnalysis';
 export { SensitivityAnalysis } from './components/SensitivityAnalysis';
+export { VolumeAnalysisTab } from './components/VolumeAnalysisTab';
 
 // UI components
 export { EditableValueCell } from './components/EditableValueCell';
