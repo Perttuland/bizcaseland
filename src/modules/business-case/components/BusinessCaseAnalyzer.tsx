@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -16,45 +13,33 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { 
-  Calculator, 
-  Upload, 
-  AlertCircle, 
-  CheckCircle2, 
-  BarChart3, 
+  Calculator,
   TrendingUp, 
-  Download, 
-  Edit3, 
-  RefreshCw, 
-  Target, 
+  Target,
   ArrowLeft,
   FileText,
-  PieChart,
   DollarSign,
   Activity,
   RotateCcw,
-  FileDown
+  FileDown,
+  BarChart3
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { safeJSONParse, validateBusinessData } from '@/core/services';
-import { JSONTemplateComponent, downloadTemplate } from './JSONTemplateComponent';
 import { FinancialAnalysis } from './FinancialAnalysis';
 import { AssumptionsTab } from './AssumptionsTab';
 import { CashFlowStatement } from './CashFlowStatement';
+import { VolumeAnalysisTab } from './VolumeAnalysisTab';
 import { useBusinessData, useNavigation } from '@/core/contexts';
 import { BusinessData } from '@/core/types';
 import { ThemeToggle } from '@/components/features/ThemeToggle';
-import { BUSINESS_CASE_SAMPLE_DATA } from './SampleData';
-import { ExampleBusinessCases } from './ExampleBusinessCases';
 import { exportBusinessCaseToPDF } from '@/core/services';
 import { calculateBusinessMetrics } from '@/core/engine';
+import { DataManagementModule } from './modules/DataManagementModule';
 
 export function BusinessCaseAnalyzer() {
   const { data: jsonData, updateData, clearData } = useBusinessData();
   const { syncFromStorage } = useNavigation();
-  const [inputJson, setInputJson] = useState('');
-  const [isValidJson, setIsValidJson] = useState<boolean | null>(null);
-  const [hasUploadedData, setHasUploadedData] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,7 +80,7 @@ export function BusinessCaseAnalyzer() {
       }
       setShouldAutoSwitch(false);
     }
-  }, [jsonData, shouldAutoSwitch]); // Only respond to data changes and auto-switch flag
+  }, [jsonData, shouldAutoSwitch, activeTab]);
 
   const moduleConfig = [
     {
@@ -113,6 +98,13 @@ export function BusinessCaseAnalyzer() {
       color: 'bg-green-500'
     },
     {
+      id: 'volume',
+      title: 'Volume Analysis',
+      icon: BarChart3,
+      description: 'Customer segment volumes and trends',
+      color: 'bg-blue-500'
+    },
+    {
       id: 'assumptions',
       title: 'Assumptions',
       icon: Activity,
@@ -128,62 +120,9 @@ export function BusinessCaseAnalyzer() {
     }
   ];
 
-  const handleSampleData = () => {
-    const sampleJson = JSON.stringify(BUSINESS_CASE_SAMPLE_DATA, null, 2);
-    setInputJson(sampleJson);
-    validateJson(sampleJson);
-    toast({
-      title: "Sample Data Loaded",
-      description: "Payroll automation sample data has been loaded successfully.",
-      variant: "default",
-    });
-  };
-
-  const loadExampleBusinessCase = async (fileName: string, title: string) => {
-    try {
-      const response = await fetch(`/sample-data/business-cases/${fileName}`);
-      if (!response.ok) throw new Error('Failed to load example');
-      
-      const exampleData = await response.json();
-      const exampleJson = JSON.stringify(exampleData, null, 2);
-      
-      setInputJson(exampleJson);
-      validateJson(exampleJson);
-      
-      // Also update the data in the context to make it available for analysis
-      const parseResult = safeJSONParse(exampleJson);
-      if (parseResult.success) {
-        const businessDataValidation = validateBusinessData(parseResult.data);
-        if (businessDataValidation.success) {
-          updateData(parseResult.data as BusinessData);
-          setHasUploadedData(true);
-          setShouldAutoSwitch(true); // Signal that we should auto-switch after data load
-          syncFromStorage(); // Sync with DataContext
-        }
-      }
-      
-      toast({
-        title: "Example Loaded",
-        description: `${title} example has been loaded successfully.`,
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to Load Example",
-        description: "Could not load the example business case. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleResetAllData = () => {
-          clearData();
-    // Also clear the BusinessDataContext state
+    clearData();
     updateData(null);
-    // Clear local state
-    setInputJson('');
-    setIsValidJson(null);
-    setHasUploadedData(false);
     toast({
       title: "All Data Reset",
       description: "All business case and market analysis data has been cleared successfully.",
@@ -191,259 +130,10 @@ export function BusinessCaseAnalyzer() {
     });
   };
 
-  const handleJsonPaste = (value: string) => {
-    setInputJson(value);
-    validateJson(value);
-  };
-
-  const validateJson = (value: string) => {
-    if (!value.trim()) {
-      setIsValidJson(null);
-      return;
-    }
-
-    const parseResult = safeJSONParse(value);
-    
-    if (!parseResult.success) {
-      setIsValidJson(false);
-      toast({
-        title: "Invalid JSON",
-        description: parseResult.error || "Failed to parse JSON",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const businessDataValidation = validateBusinessData(parseResult.data);
-    
-    if (!businessDataValidation.success) {
-      setIsValidJson(false);
-      toast({
-        title: "Invalid Format",
-        description: businessDataValidation.error || "Invalid business data format",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsValidJson(true);
-    
-    if (businessDataValidation.warnings && businessDataValidation.warnings.length > 0) {
-      toast({
-        title: "Data Warnings",
-        description: `${businessDataValidation.warnings.length} validation warnings found. Check console for details.`,
-        variant: "default",
-      });
-      console.warn('Business data validation warnings:', businessDataValidation.warnings);
-    }
-  };
-
-  const refreshData = () => {
-    if (!isValidJson || !inputJson.trim()) {
-      toast({
-        title: "Cannot Refresh",
-        description: "Please ensure JSON is valid before refreshing.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const parseResult = safeJSONParse(inputJson);
-    
-    if (!parseResult.success) {
-      toast({
-        title: "Parse Failed",
-        description: parseResult.error || "Failed to parse JSON data.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const businessDataValidation = validateBusinessData(parseResult.data);
-    
-    if (!businessDataValidation.success) {
-      toast({
-        title: "Validation Failed",
-        description: businessDataValidation.error || "Data validation failed.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updateData(parseResult.data as BusinessData);
-    setHasUploadedData(true);
+  const refreshData = (data: BusinessData) => {
+    updateData(data);
     setShouldAutoSwitch(true); // Signal that we should auto-switch after data load
     syncFromStorage(); // Sync with DataContext
-    
-    toast({
-      title: "Data Loaded Successfully",
-      description: "Business case data has been loaded and validated.",
-      variant: "default",
-    });
-  };
-
-  const loadSampleData = () => {
-    const sampleBusinessData = {
-      meta: {
-        title: "Sample SaaS Business Case with Variable OPEX",
-        description: "Example SaaS business case showing realistic OPEX that scales with revenue and customers",
-        business_model: "recurring",
-        currency: "EUR",
-        periods: 60,
-        frequency: "monthly"
-      },
-      assumptions: {
-        pricing: {
-          avg_unit_price: { 
-            value: 99, 
-            unit: "EUR_per_month", 
-            rationale: "Monthly subscription price based on market research" 
-          }
-        },
-        financial: {
-          interest_rate: { 
-            value: 0.10, 
-            unit: "ratio", 
-            rationale: "10% discount rate for NPV calculations" 
-          }
-        },
-        customers: {
-          churn_pct: { 
-            value: 0.025, 
-            unit: "percentage", 
-            rationale: "2.5% monthly churn rate" 
-          },
-          segments: [
-            {
-              id: "main_segment",
-              label: "Enterprise Customers",
-              rationale: "Primary customer base with steady growth",
-              volume: {
-                type: "pattern",
-                pattern_type: "geom_growth",
-                series: [{ period: 1, value: 100, unit: "customers", rationale: "Starting customer base" }]
-              }
-            }
-          ]
-        },
-        unit_economics: {
-          cogs_pct: { 
-            value: 0.20, 
-            unit: "percentage_of_revenue", 
-            rationale: "20% COGS for hosting and infrastructure" 
-          },
-          cac: { 
-            value: 500, 
-            unit: "EUR_per_customer", 
-            rationale: "Customer acquisition cost" 
-          }
-        },
-        opex: [
-          { 
-            name: "Sales & Marketing", 
-            cost_structure: {
-              fixed_component: { 
-                value: 5000, 
-                unit: "EUR_per_month", 
-                rationale: "Base marketing team and tools" 
-              },
-              variable_revenue_rate: { 
-                value: 0.10, 
-                unit: "percentage_of_revenue", 
-                rationale: "10% of revenue for demand generation" 
-              }
-            }
-          },
-          { 
-            name: "R&D", 
-            cost_structure: {
-              fixed_component: { 
-                value: 20000, 
-                unit: "EUR_per_month", 
-                rationale: "Core engineering team" 
-              },
-              variable_revenue_rate: { 
-                value: 0.08, 
-                unit: "percentage_of_revenue", 
-                rationale: "8% of revenue for scaling R&D" 
-              }
-            }
-          },
-          { 
-            name: "G&A", 
-            cost_structure: {
-              fixed_component: { 
-                value: 3000, 
-                unit: "EUR_per_month", 
-                rationale: "Base admin costs" 
-              },
-              variable_volume_rate: { 
-                value: 15, 
-                unit: "EUR_per_customer", 
-                rationale: "Customer support and success costs per customer" 
-              }
-            }
-          }
-        ],
-        capex: [
-          {
-            name: "Initial Product Development",
-            timeline: {
-              type: "time_series",
-              pattern_type: "linear_growth",
-              series: [
-                { period: 1, value: 200000, unit: "EUR", rationale: "Initial platform development" },
-                { period: 13, value: 50000, unit: "EUR", rationale: "Year 2 platform enhancements" }
-              ]
-            }
-          }
-        ],
-        growth_settings: {
-          geom_growth: {
-            start: { value: 100, unit: "customers", rationale: "Initial customer base" },
-            monthly_growth: { value: 0.05, unit: "ratio", rationale: "5% monthly growth in customer base" }
-          }
-        }
-      }
-    };
-
-    const jsonString = JSON.stringify(sampleBusinessData, null, 2);
-    setInputJson(jsonString);
-    validateJson(jsonString);
-    
-    toast({
-      title: "Sample Data Loaded",
-      description: "Sample business case data has been loaded. Click 'Update Data' to apply it.",
-      variant: "default",
-    });
-  };
-
-  const exportDataAsJSON = () => {
-    if (!jsonData) {
-      toast({
-        title: "No Data",
-        description: "No data available to export.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const jsonString = JSON.stringify(jsonData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `business-case-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: "Export Successful",
-      description: "Business case data exported as JSON successfully.",
-      variant: "default",
-    });
   };
 
   const exportDataAsPDF = async () => {
@@ -462,10 +152,7 @@ export function BusinessCaseAnalyzer() {
         description: "Creating your comprehensive business case analysis.",
       });
 
-      // Calculate metrics to include in the PDF
       const calculations = calculateBusinessMetrics(jsonData);
-      
-      // Generate the PDF with all calculations
       await exportBusinessCaseToPDF(jsonData, calculations);
 
       toast({
@@ -481,15 +168,6 @@ export function BusinessCaseAnalyzer() {
         variant: "destructive",
       });
     }
-  };
-
-  const ValidationBadge = () => {
-    if (isValidJson === null) return null;
-    return (
-      <Badge variant={isValidJson ? "default" : "destructive"} className="ml-2">
-        {isValidJson ? "Valid" : "Invalid"}
-      </Badge>
-    );
   };
 
   // Show data input screen if no data
@@ -536,122 +214,11 @@ export function BusinessCaseAnalyzer() {
           </p>
         </div>
 
-        <Card className="max-w-6xl mx-auto">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Get Started with Business Case Analysis
-            </CardTitle>
-            <p className="text-muted-foreground mt-2">
-              Choose from ready-made examples below, or import your own business case data
-            </p>
-          </CardHeader>
-          <CardContent>
-            {/* Examples Section */}
-            <div className="mb-8">
-              <ExampleBusinessCases onLoadExample={loadExampleBusinessCase} />
-            </div>
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or import your own data
-                </span>
-              </div>
-            </div>
-
-            {/* Advanced Options */}
-            <div className="space-y-4">
-              <div className="text-center mb-4">
-                <h3 className="text-sm font-medium mb-2">Import Your Own Business Case</h3>
-                <p className="text-xs text-muted-foreground mb-3">
-                  If you have your own business case data, you can paste it below or download a template to get started
-                </p>
-                
-                {/* GenAI Workflow Explanation */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-300">AI</span>
-                      </div>
-                    </div>
-                    <div className="text-left">
-                      <h4 className="text-sm font-medium text-blue-900 dark:text-blue-200 mb-2">
-                        💡 Pro Tip: Use AI to Create Your Business Case
-                      </h4>
-                      <div className="text-xs text-blue-700 dark:text-blue-300 space-y-2">
-                        <p>
-                          <strong>Save time with AI assistance!</strong> Instead of creating business case data from scratch, 
-                          you can use any AI chat tool (ChatGPT, Claude, Gemini, etc.) to help you:
-                        </p>
-                        <div className="pl-4 space-y-1">
-                          <p>• <strong>Step 1:</strong> Download our template and describe your business idea to the AI</p>
-                          <p>• <strong>Step 2:</strong> Ask the AI to fill in the template with realistic numbers and assumptions</p>
-                          <p>• <strong>Step 3:</strong> Copy the AI-generated data and paste it here for instant analysis</p>
-                        </div>
-                        <p className="italic">
-                          The template includes detailed instructions that guide AI tools to create comprehensive, 
-                          realistic business case data tailored to your specific project.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 justify-center mb-4">
-                <JSONTemplateComponent />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={downloadTemplate}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Template
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="json-input" className="text-sm font-medium">
-                    Business Case Data
-                  </label>
-                  <ValidationBadge />
-                </div>
-                <Textarea
-                  id="json-input"
-                  placeholder="Paste your business case data here (this should be structured data from our template)..."
-                  value={inputJson}
-                  onChange={(e) => handleJsonPaste(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  💡 Tip: Use one of the examples above to see how the analysis works, then adapt it for your own project
-                </p>
-              </div>
-
-              <div className="flex gap-2 justify-center">
-                <Button 
-                  onClick={refreshData}
-                  disabled={!isValidJson}
-                  className="flex items-center gap-2"
-                  size="lg"
-                >
-                  <Calculator className="h-4 w-4" />
-                  Start Analysis
-                </Button>
-                <Button variant="outline" onClick={() => setInputJson('')} size="lg">
-                  Clear
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Use DataManagementModule with showUploadOnly prop */}
+        <DataManagementModule 
+          onDataLoad={refreshData}
+          showUploadOnly={true}
+        />
       </div>
     );
   }
@@ -740,7 +307,7 @@ export function BusinessCaseAnalyzer() {
 
       {/* Main Tabs Interface */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           {moduleConfig.map((module) => {
             const IconComponent = module.icon;
             return (
@@ -764,77 +331,21 @@ export function BusinessCaseAnalyzer() {
           <FinancialAnalysis />
         </TabsContent>
 
+        <TabsContent value="volume" className="space-y-6">
+          <VolumeAnalysisTab />
+        </TabsContent>
+
         <TabsContent value="assumptions" className="space-y-6">
           <AssumptionsTab />
         </TabsContent>
 
         <TabsContent value="data" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Data Management
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2 mb-4">
-                <JSONTemplateComponent />
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={loadSampleData}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Load Sample Data
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={exportDataAsJSON}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export as JSON
-                </Button>
-                <Button 
-                  variant="default" 
-                  size="sm"
-                  onClick={exportDataAsPDF}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Export as PDF
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="json-update" className="text-sm font-medium">
-                  Update Business Case Data
-                </label>
-                <Textarea
-                  id="json-update"
-                  placeholder="Paste updated JSON data here..."
-                  value={inputJson}
-                  onChange={(e) => handleJsonPaste(e.target.value)}
-                  className="min-h-[200px] font-mono text-sm"
-                />
-                <ValidationBadge />
-              </div>
-
-              <div className="flex gap-2">
-                <Button 
-                  onClick={refreshData}
-                  disabled={!isValidJson}
-                  className="flex items-center gap-2"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Update Data
-                </Button>
-                <Button variant="outline" onClick={() => setInputJson('')}>
-                  Clear Input
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <DataManagementModule 
+            businessData={jsonData}
+            onDataLoad={refreshData}
+            onDataUpdate={refreshData}
+            onNavigateToVolume={() => setActiveTab('volume')}
+          />
         </TabsContent>
       </Tabs>
     </div>
