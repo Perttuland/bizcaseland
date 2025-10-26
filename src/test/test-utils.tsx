@@ -4,10 +4,8 @@ import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { BusinessDataProvider } from '@/contexts/BusinessDataContext';
-import { DataManagerProvider } from '@/contexts/DataManagerContext';
-import { AppProvider } from '@/contexts/AppContext';
-import { ThemeProvider } from '@/contexts/ThemeProvider';
+import { DataProvider } from '@/core/contexts';
+import { ThemeProvider } from '@/core/contexts/ThemeProvider';
 
 // Create a custom render function that includes providers
 const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
@@ -24,13 +22,9 @@ const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
       <ThemeProvider defaultTheme="light" storageKey="test-ui-theme">
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <AppProvider>
-              <BusinessDataProvider>
-                <DataManagerProvider>
-                  {children}
-                </DataManagerProvider>
-              </BusinessDataProvider>
-            </AppProvider>
+            <DataProvider>
+              {children}
+            </DataProvider>
           </TooltipProvider>
         </QueryClientProvider>
       </ThemeProvider>
@@ -72,13 +66,9 @@ export const renderWithProviders = (
         <ThemeProvider defaultTheme="light" storageKey="test-ui-theme">
           <QueryClientProvider client={queryClient}>
             <TooltipProvider>
-              <AppProvider>
-                <BusinessDataProvider>
-                  <DataManagerProvider>
-                    {children}
-                  </DataManagerProvider>
-                </BusinessDataProvider>
-              </AppProvider>
+              <DataProvider>
+                {children}
+              </DataProvider>
             </TooltipProvider>
           </QueryClientProvider>
         </ThemeProvider>

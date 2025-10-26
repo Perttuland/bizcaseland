@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, beforeEach, expect } from 'vitest';
-import { AssumptionsTab } from '@/components/business-case/AssumptionsTab';
-import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { AssumptionsTab } from '@/modules/business-case/components/AssumptionsTab';
+import { useBusinessData } from '@/core/contexts';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock the context
-vi.mock('@/contexts/BusinessDataContext');
+vi.mock('@/core/contexts');
 const mockUseBusinessData = vi.mocked(useBusinessData);
 
 // Test data with geom_growth pattern structure (like the Ad-Free Content Subscription case)

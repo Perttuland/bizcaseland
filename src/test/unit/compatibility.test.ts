@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calculateBusinessMetrics, generateMonthlyData } from '@/lib/calculations';
+import { calculateBusinessMetrics, generateMonthlyData } from '@/core/engine/calculators/business-calculator-full';
 import { createMockBusinessData, createMockCostSavingsData } from '@/test/mockData';
 
 describe('Revenue Model Compatibility Tests', () => {

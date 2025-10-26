@@ -1,5 +1,5 @@
-import { BusinessData } from '@/contexts/BusinessDataContext';
-import { MarketData } from '@/lib/market-calculations';
+import { BusinessData } from '@/core/types';
+import { MarketData } from '@/core/types/market';
 import { OpexItem } from '@/types/business-data';
 
 export const createMockBusinessData = (overrides: Partial<BusinessData> = {}): BusinessData => ({

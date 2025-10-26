@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render, mockLocalStorage, mockURL } from '@/test/test-utils';
-import { BusinessCaseAnalyzer } from '@/components/business-case/BusinessCaseAnalyzer';
+import { BusinessCaseAnalyzer } from '@/modules/business-case';
 import { createMockBusinessData } from '@/test/mockData';
 
 // Mock the navigation hook

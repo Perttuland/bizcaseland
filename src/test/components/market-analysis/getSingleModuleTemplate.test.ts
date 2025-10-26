@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { getSingleModuleTemplate, getFullTemplate } from '@/components/market-analysis/MarketAnalysisTemplate';
+import { getSingleModuleTemplate, getFullTemplate } from '@/modules/market-analysis/components/MarketAnalysisTemplate';
 
 describe('getSingleModuleTemplate', () => {
   describe('Module extraction', () => {

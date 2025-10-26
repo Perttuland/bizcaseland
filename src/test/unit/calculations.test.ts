@@ -33,8 +33,8 @@ import {
   MonthlyData,
   CalculatedMetrics,
   IRR_ERROR_CODES
-} from '@/lib/calculations';
-import { BusinessData } from '@/contexts/BusinessDataContext';
+} from '@/core/engine/calculators/business-calculator-full';
+import { BusinessData } from '@/core/types';
 import { createMockBusinessData, createMockMonthlyData, createMockCostSavingsData } from '@/test/mockData';
 
 describe('Calculations Engine', () => {

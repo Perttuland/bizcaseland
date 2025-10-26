@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateModularTemplate } from '@/components/market-analysis/MarketAnalysisTemplate';
+import { generateModularTemplate } from '@/modules/market-analysis/components/MarketAnalysisTemplate';
 
 describe('Modular Template Generation', () => {
   it('should generate template with only market_sizing module', () => {

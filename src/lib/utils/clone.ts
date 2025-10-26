@@ -64,11 +64,11 @@ export function shallowClone<T extends Record<string, any>>(obj: T): T {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
-  
+
   if (Array.isArray(obj)) {
     return [...obj] as T;
   }
-  
+
   return { ...obj };
 }
 
@@ -82,12 +82,12 @@ export function selectiveDeepClone<T>(obj: T, pathsToClone: string[]): T {
   }
 
   const result = shallowClone(obj);
-  
+
   for (const path of pathsToClone) {
     const pathParts = path.split('.');
     let current = result as any;
     let original = obj as any;
-    
+
     // Navigate to the parent of the target
     for (let i = 0; i < pathParts.length - 1; i++) {
       const part = pathParts[i];
@@ -99,13 +99,13 @@ export function selectiveDeepClone<T>(obj: T, pathsToClone: string[]): T {
         original = original[part];
       }
     }
-    
+
     // Clone the final property
     const finalProp = pathParts[pathParts.length - 1];
     if (original[finalProp] !== undefined) {
       current[finalProp] = safeDeepClone(original[finalProp]);
     }
   }
-  
+
   return result;
 }

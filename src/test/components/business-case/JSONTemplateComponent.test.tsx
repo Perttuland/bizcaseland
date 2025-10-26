@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { JSONTemplateComponent } from '@/components/business-case/JSONTemplateComponent';
+import { JSONTemplateComponent } from '@/modules/business-case/components/JSONTemplateComponent';
 
 // Mock the toast hook
 const mockToast = vi.fn();

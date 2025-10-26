@@ -1,32 +1,9 @@
-## Copilot Instructions for Bizcaseland
-
-**Purpose:** Help AI coding agents become productive quickly in this repo.
-
-**IMPORTANT**: Use `;` instead of `&&` when chaining terminal commands (VSCode environment).
-
----
-
-## 📚 Core Documentation (Read These First!)
-
-Before making changes, consult these master documents:
-
-1. **[docs/SPECIFICATIONS.md](../docs/SPECIFICATIONS.md)** - Product specs, user journey, UX principles, JSON templates
-2. **[docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md)** - Technical architecture, component structure, state management, calculations
-3. **[docs/TEST_ARCHITECTURE.md](../docs/TEST_ARCHITECTURE.md)** - Testing strategy, test patterns, coverage requirements
-
-**Rule:** If specs/architecture docs conflict with this file, the docs/ files are the source of truth.
-
----
-
-## 🎯 Quick Start
 
 **What is Bizcaseland?**  
 An AI-first business analysis platform where users:
 1. Export JSON templates from our tool
 2. Populate them with AI (ChatGPT/Claude) with rationale
 3. Import back to visualize and analyze
-4. Edit inline, run sensitivity analysis
-5. Export as JSON or PDF
 
 **Two Main Tools:**
 - **Business Case Analyzer** (`/business`) - Financial modeling with NPV, IRR, sensitivity analysis
@@ -34,7 +11,6 @@ An AI-first business analysis platform where users:
 
 **Entry Point:** `src/main.tsx` → `App.tsx` → React Router → `pages/Index.tsx` (landing) or tool pages
 
-**State:** Global `AppContext` + localStorage persistence (no backend)
 
 ---
 
@@ -51,9 +27,7 @@ src/
 │   ├── shared/             # Reusable cross-tool components
 │   └── ui/                 # shadcn/ui base components
 ├── lib/                    # Business logic
-│   ├── calculations.ts              # Business case financial engine
-│   ├── market-calculations.ts       # Market analysis calculations
-│   └── market-suite-calculations.ts # Market suite metrics
+│   ├── calculations.ts              # Calculations engine
 ├── contexts/               # React Context providers
 │   ├── AppContext.tsx              # Global state + localStorage
 │   └── BusinessDataContext.tsx     # Legacy (being migrated)

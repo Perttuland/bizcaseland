@@ -11,8 +11,8 @@ import {
   calculateMarketOpportunityScore,
   formatMarketCurrency,
   formatMarketPercent,
-  MarketData
-} from '@/lib/market-calculations';
+} from '@/core/engine/calculators/market-calculator';
+import type { MarketData } from '@/core/types/market';
 import { createMockMarketData } from '@/test/mockData';
 
 describe('Market Calculations Engine', () => {

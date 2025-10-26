@@ -1,12 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AssumptionsTab } from '@/components/business-case/AssumptionsTab';
-import { useBusinessData } from '@/contexts/BusinessDataContext';
+import { AssumptionsTab } from '@/modules/business-case/components/AssumptionsTab';
+import { useBusinessData } from '@/core/contexts';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Mock the context
-vi.mock('@/contexts/BusinessDataContext');
+vi.mock('@/core/contexts');
 const mockUseBusinessData = vi.mocked(useBusinessData);
 
 // Mock data structures using 'as any' to handle type mismatches

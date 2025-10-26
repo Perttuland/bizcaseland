@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { calculateTotalVolumeForMonth } from '@/lib/calculations';
-import { BusinessData } from '@/contexts/BusinessDataContext';
+import { calculateTotalVolumeForMonth } from '@/core/engine/calculators/business-calculator-full';
+import { BusinessData } from '@/core/types';
 
 describe('Simple Multi-Segment Test', () => {
   it('should pass a basic test', () => {

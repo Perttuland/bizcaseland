@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { calculateBusinessMetrics } from '@/lib/calculations';
+import { calculateBusinessMetrics } from '@/core/engine/calculators/business-calculator-full';
 import fintechSampleData from '@/../public/sample-data/business-cases/fintech-market-entry.json';
 
 describe('Realistic Business Case Sample Data Tests', () => {
