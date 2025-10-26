@@ -8,7 +8,6 @@ import {
   MarketBusinessInsights as SyncMarketBusinessInsights,
   exportUnifiedInsights
 } from '@/lib/utils/data-sync';
-import { CrossToolDataService, SourcedBusinessAssumption } from '@/lib/utils/cross-tool-integration';
 
 // NEW: Market Insights Cart Integration
 import { MarketInsightsCartService } from '@/lib/market-insights-cart-service';
@@ -63,15 +62,6 @@ interface DataManagerContextType {
   // Cross-tool insights
   getMarketInsights: () => MarketBusinessInsights | null;
   validateDataConsistency: () => ValidationResult[];
-  
-  // NEW: Market to Business transfer functionality
-  transferMarketVolumeToBusinessCase: (
-    targetSegmentId: string,
-    options?: { preserveUserData?: boolean; userNotes?: string }
-  ) => Promise<{ success: boolean; message: string }>;
-  
-  // Enhanced business data management with sourced assumptions
-  updateBusinessDataWithSource: (path: string, sourcedAssumption: SourcedBusinessAssumption) => void;
   
   // NEW: Market Insights Cart Integration
   marketInsightsCart: {
@@ -280,110 +270,6 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
     return results;
   }, [currentProject]);
 
-  // NEW: Core transfer functionality from market to business case
-  const transferMarketVolumeToBusinessCase = useCallback(async (
-    targetSegmentId: string,
-    options: { preserveUserData?: boolean; userNotes?: string } = {}
-  ): Promise<{ success: boolean; message: string }> => {
-    
-    if (!currentProject?.marketData) {
-      return { success: false, message: 'No market data available for transfer' };
-    }
-
-    if (!currentProject?.businessData) {
-      return { success: false, message: 'No business case data to update' };
-    }
-
-    try {
-      // Use the CrossToolDataService to create sourced assumption
-      const sourcedAssumption = CrossToolDataService.transferMarketVolume(
-        currentProject.marketData,
-        targetSegmentId,
-        { 
-          preserveUserData: options.preserveUserData ?? true, 
-          confidence_threshold: 0.7 
-        }
-      );
-
-      // Add user notes if provided
-      if (options.userNotes) {
-        sourcedAssumption.sources.market_analysis!.source_metadata.user_notes = options.userNotes;
-      }
-
-      // Find and update the target segment
-      const updatedBusinessData = { ...currentProject.businessData };
-      if (!updatedBusinessData.assumptions) updatedBusinessData.assumptions = {};
-      if (!updatedBusinessData.assumptions.customers) updatedBusinessData.assumptions.customers = {};
-      if (!updatedBusinessData.assumptions.customers.segments) updatedBusinessData.assumptions.customers.segments = [];
-
-      const segmentIndex = updatedBusinessData.assumptions.customers.segments.findIndex(
-        segment => segment.id === targetSegmentId
-      );
-
-      if (segmentIndex === -1) {
-        return { success: false, message: `Customer segment ${targetSegmentId} not found` };
-      }
-
-      // Update the segment with sourced assumption (for now, we'll integrate with existing structure)
-      const segment = updatedBusinessData.assumptions.customers.segments[segmentIndex];
-      if (!segment.volume) {
-        segment.volume = {
-          type: 'pattern',
-          pattern_type: 'linear_growth'
-        };
-      }
-      
-      // For backwards compatibility, update the existing structure but add source metadata
-      // Support both old and new data structures
-      if (!segment.volume) {
-        segment.volume = {} as any;
-      }
-      
-      // Modern structure
-      (segment.volume as any).base_value = sourcedAssumption.value;
-      (segment.volume as any).unit = sourcedAssumption.unit;
-      (segment.volume as any).rationale = `${sourcedAssumption.rationale} [Source: Market Analysis, Confidence: ${(sourcedAssumption.sources.market_analysis!.source_metadata.confidence_score! * 100).toFixed(0)}%]`;
-      
-      // Legacy structure for backward compatibility
-      segment.volume.base_year_total = {
-        value: sourcedAssumption.value,
-        unit: sourcedAssumption.unit,
-        rationale: `${sourcedAssumption.rationale} [Source: Market Analysis, Confidence: ${(sourcedAssumption.sources.market_analysis!.source_metadata.confidence_score! * 100).toFixed(0)}%]`
-      };
-
-      // Store the full sourced assumption in a comment field for future use
-      // Note: This is a temporary approach until we fully migrate to SourcedBusinessAssumption structure
-      segment.rationale = `${segment.rationale || ''} [Market Transfer: ${new Date().toISOString()}]`;
-
-      updateBusinessData(updatedBusinessData);
-
-      return { 
-        success: true, 
-        message: `Successfully transferred volume projection (${sourcedAssumption.value.toLocaleString()} ${sourcedAssumption.unit}) to ${targetSegmentId}` 
-      };
-
-    } catch (error) {
-      console.error('Transfer failed:', error);
-      return { 
-        success: false, 
-        message: `Transfer failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
-      };
-    }
-  }, [currentProject, updateBusinessData]);
-
-  // Enhanced business data update with source tracking
-  const updateBusinessDataWithSource = useCallback((path: string, sourcedAssumption: SourcedBusinessAssumption) => {
-    if (!currentProject) return;
-
-    // This would implement path-based updates with source tracking
-    // For now, we'll use the existing updateBusinessData method
-    console.log('Updating business data with source at path:', path, sourcedAssumption);
-    
-    // TODO: Implement full path-based sourced assumption updates
-    // This requires enhancing the BusinessData interface to support SourcedBusinessAssumption
-    
-  }, [currentProject]);
-
   // Placeholder implementations for remaining methods
   const loadProject = useCallback(async (projectId: string): Promise<boolean> => {
     const project = projects.find(p => p.projectId === projectId);
@@ -571,8 +457,6 @@ export function DataManagerProvider({ children }: { children: React.ReactNode })
     importProject,
     getMarketInsights,
     validateDataConsistency,
-    transferMarketVolumeToBusinessCase,
-    updateBusinessDataWithSource,
     marketInsightsCart: {
       cartState,
       cartService,

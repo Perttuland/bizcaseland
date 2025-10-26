@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, AlertTriangle, Send, BarChart3 } from 'lucide-react';
-import { MarketToBusinessTransfer } from '@/components/shared/CrossToolDataTransfer';
 import { useDataManager } from '@/contexts/DataManagerContext';
 import { MarketData } from '@/lib/market-calculations';
 
@@ -155,18 +154,6 @@ export function MarketAnalysisIntegrationPanel({
           </div>
         </CardContent>
       </Card>
-
-      {/* Data Transfer Component */}
-      {isMarketAnalysisComplete && (
-        <MarketToBusinessTransfer
-          marketData={marketData}
-          onTransferComplete={(transferData) => {
-            // Handle successful transfer
-            console.log('Data transferred:', transferData);
-            // Could show success message, navigate to business case, etc.
-          }}
-        />
-      )}
 
       {/* Integration History */}
       {currentProject?.businessData && (
