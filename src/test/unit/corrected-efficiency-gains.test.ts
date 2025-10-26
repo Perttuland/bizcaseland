@@ -8,8 +8,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { calculateEfficiencyGainsForMonth } from '@/lib/calculations';
-import { BusinessData } from '@/contexts/BusinessDataContext';
+import { calculateEfficiencyGainsForMonth } from '@/core/engine/calculators/business-calculator-full';
+import { BusinessData } from '@/core/types';
 
 describe('Corrected Efficiency Gains Logic', () => {
   it('should calculate efficiency gains as: improved value × value per unit', () => {

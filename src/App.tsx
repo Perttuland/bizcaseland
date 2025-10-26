@@ -2,17 +2,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { BusinessDataProvider } from "./contexts/BusinessDataContext";
-import { DataManagerProvider } from "./contexts/DataManagerContext";
-import { AppProvider } from "./contexts/AppContext";
-import { ThemeProvider } from "./contexts/ThemeProvider";
-import { ErrorBoundary } from "./components/shared";
+import { DataProvider } from "@/core/contexts";
+import { ThemeProvider } from "@/core/contexts/ThemeProvider";
+import { ErrorBoundary } from "./components/features";
 import { Index } from "./pages/Index";
 import { NotFound } from "./pages/NotFound";
-import CrossToolDemo from "./pages/CrossToolDemo";
 import { LandingPage } from "./components/landing";
-import { BusinessCaseAnalyzer } from "./components/business-case";
-import { MarketAnalysisSuite } from "./components/market-analysis/MarketAnalysisSuite";
+import { BusinessCaseAnalyzer } from "./modules/business-case";
+import { MarketAnalysisSuite } from "./modules/market-analysis";
 
 const queryClient = new QueryClient();
 
@@ -22,26 +19,21 @@ function App() {
       <ThemeProvider defaultTheme="light" storageKey="bizcaseland-ui-theme">
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
-            <AppProvider>
-              <BusinessDataProvider>
-                <DataManagerProvider>
-                  <Toaster />
-                  <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/business" element={<BusinessCaseAnalyzer />} />
-                    <Route path="/market" element={<MarketAnalysisSuite />} />
-                    <Route path="/demo" element={<CrossToolDemo />} />
-                    <Route path="/legacy" element={<Index />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-                </DataManagerProvider>
-            </BusinessDataProvider>
-          </AppProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
+            <DataProvider>
+              <Toaster />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/business" element={<BusinessCaseAnalyzer />} />
+                  <Route path="/market" element={<MarketAnalysisSuite />} />
+                  <Route path="/legacy" element={<Index />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </DataProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

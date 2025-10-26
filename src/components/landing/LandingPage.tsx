@@ -14,8 +14,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useNavigate } from 'react-router-dom';
-import { ThemeToggle } from '../shared/ThemeToggle';
-import { useApp } from '@/contexts/AppContext';
+import { ThemeToggle } from '@/components/features/ThemeToggle';
+import { useData, useDataStatus } from '@/core/contexts';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Calculator, 
@@ -33,12 +33,10 @@ import {
 
 export function LandingPage() {
   const navigate = useNavigate();
-  const { appState, clearAllData } = useApp();
+  const { clearAllData } = useData();
+  const { hasBusinessData, hasMarketData } = useDataStatus();
   const { toast } = useToast();
   
-  const hasBusinessData = appState.hasBusinessData;
-  const hasMarketData = appState.hasMarketData;
-
   const switchToBusinessMode = () => {
     navigate('/business');
   };

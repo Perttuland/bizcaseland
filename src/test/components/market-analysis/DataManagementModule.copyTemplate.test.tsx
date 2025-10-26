@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { DataManagementModule } from '@/components/market-analysis/modules/DataManagementModule';
+import { DataManagementModule } from '@/modules/market-analysis/components/modules/DataManagementModule';
 
 // Mock the toast hook
 const mockToast = vi.fn();

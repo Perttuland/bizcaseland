@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { mergeMarketData, getAvailableModules } from '@/lib/market-data-utils';
-import { MarketData } from '@/lib/market-calculations';
+import { mergeMarketData, getAvailableModules } from '@/core/engine/utils/market-data-utils';
+import { MarketData } from '@/core/types/market';
 
 describe('Partial data merge', () => {
   it('should merge new strategic_planning without overwriting market_sizing', () => {

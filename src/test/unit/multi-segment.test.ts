@@ -6,8 +6,8 @@ import {
   generateMonthlyData,
   MonthlyData,
   CalculatedMetrics
-} from '@/lib/calculations';
-import { BusinessData } from '@/contexts/BusinessDataContext';
+} from '@/core/engine/calculators/business-calculator-full';
+import { BusinessData } from '@/core/types';
 
 describe('Multi-Segment Customer Support', () => {
   let multiSegmentBusinessData: any; // Using any to bypass strict typing for testing

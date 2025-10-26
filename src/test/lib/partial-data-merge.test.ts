@@ -4,8 +4,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { MarketData } from '@/lib/market-calculations';
-import { mergeMarketData, getAvailableModules, validateMarketData } from '@/lib/market-data-utils';
+import { MarketData } from '@/core/types/market';
+import { mergeMarketData, getAvailableModules, validateMarketData } from '@/core/engine/utils/market-data-utils';
 
 describe('Partial data merge', () => {
   // Helper to create sample existing data
